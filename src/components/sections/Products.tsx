@@ -15,6 +15,7 @@ import { useContentStore } from "@/lib/content-store";
 import { PRODUCT_CATEGORIES } from "@/lib/products-data";
 import type { ProductItem } from "@/lib/content-store";
 import { COMPANY } from "@/lib/data";
+import SafeImage from "@/components/ui/safe-image";
 
 export default function Products() {
   const products = useContentStore((s) => s.products);
@@ -109,10 +110,9 @@ export default function Products() {
               >
                 {/* Product image */}
                 <div className="relative aspect-square overflow-hidden bg-slate-100">
-                  <img
+                  <SafeImage
                     src={product.image}
                     alt={product.name}
-                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-sky-950/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -211,10 +211,11 @@ export default function Products() {
               <div className="grid md:grid-cols-2 gap-0">
                 {/* Left: Image */}
                 <div className="relative h-64 md:h-full min-h-[400px] overflow-hidden">
-                  <img
-                    src={selected.image}
-                    alt={selected.name}
+                  <SafeImage
+                    src={selected?.image}
+                    alt={selected?.name || "Product image"}
                     className="w-full h-full object-cover"
+                    loading="eager"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-sky-950/40 to-transparent" />
 

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { STATS, COMPANY } from "@/lib/data";
 import { useContentStore } from "@/lib/content-store";
+import SafeImage from "@/components/ui/safe-image";
 
 // Animated counter
 function Counter({ value, suffix = "" }: { value: number; suffix?: string }) {
@@ -126,10 +127,11 @@ export default function About() {
             className="relative order-2 lg:order-1"
           >
             <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-cyan-500/20 aspect-[4/5] sm:aspect-[5/4] border-4 border-white/10">
-              <img
+              <SafeImage
                 src={about.image}
                 alt="Proyek kolam renang villa oleh Dunia Pool & Pond"
                 className="w-full h-full object-cover"
+                loading="eager"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-sky-950/80 via-sky-950/20 to-transparent" />
 

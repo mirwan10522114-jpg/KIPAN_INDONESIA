@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { MessageCircle, ChevronDown, Award, MapPin } from "lucide-react";
 import { useContentStore } from "@/lib/content-store";
+import SafeImage from "@/components/ui/safe-image";
 
 export default function Hero() {
   const hero = useContentStore((s) => s.hero);
@@ -19,10 +20,11 @@ export default function Hero() {
     >
       {/* Background image */}
       <div className="absolute inset-0">
-        <img
+        <SafeImage
           src={hero.backgroundImage}
           alt="Kolam renang mewah karya Dunia Pool & Pond"
           className="w-full h-full object-cover"
+          loading="eager"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-sky-950/90 via-sky-900/75 to-sky-900/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-sky-950/80 via-transparent to-sky-950/30" />

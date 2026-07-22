@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
 import { Quote, CheckCircle2, Award, PenLine } from "lucide-react";
 import { useContentStore } from "@/lib/content-store";
+import SafeImage from "@/components/ui/safe-image";
 
 export default function LeaderMessage() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -76,10 +77,11 @@ export default function LeaderMessage() {
                 style={{ transformStyle: "preserve-3d", perspective: 1000 }}
                 className="relative rounded-3xl overflow-hidden shadow-2xl shadow-cyan-500/20 border-4 border-white/10"
               >
-                <img
+                <SafeImage
                   src={leader.photo}
                   alt={`${leader.name} - ${leader.role}`}
                   className="w-full aspect-[3/4] object-cover"
+                  loading="eager"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-sky-950/95 via-sky-950/30 to-transparent" />
 

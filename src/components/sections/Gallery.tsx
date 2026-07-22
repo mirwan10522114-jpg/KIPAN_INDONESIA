@@ -6,6 +6,7 @@ import { X, MapPin, ZoomIn, Upload, ImageOff, ChevronLeft, ChevronRight } from "
 import { GALLERY_ITEMS, GALLERY_CATEGORIES, COMPANY } from "@/lib/data";
 import type { GalleryItem } from "@/lib/data";
 import { useContentStore } from "@/lib/content-store";
+import SafeImage from "@/components/ui/safe-image";
 
 export default function Gallery() {
   const [filter, setFilter] = useState<string>("Semua");
@@ -142,10 +143,9 @@ export default function Gallery() {
                 onClick={() => openLightbox(idx)}
                 className="group relative overflow-hidden rounded-2xl bg-slate-200 shadow-sm hover:shadow-xl transition-shadow aspect-square"
               >
-                <img
+                <SafeImage
                   src={item.image}
                   alt={item.title}
-                  loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 {/* Gradient overlay */}
@@ -257,10 +257,11 @@ export default function Gallery() {
               className="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl"
             >
               <div className="relative">
-                <img
-                  src={filtered[lightboxIdx].image}
-                  alt={filtered[lightboxIdx].title}
+                <SafeImage
+                  src={filtered[lightboxIdx]?.image}
+                  alt={filtered[lightboxIdx]?.title || "Gallery image"}
                   className="w-full max-h-[70vh] object-contain bg-sky-950"
+                  loading="eager"
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-sky-950/95 via-sky-950/80 to-transparent">
                   <span className="inline-block bg-gradient-to-r from-cyan-500 to-sky-600 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">

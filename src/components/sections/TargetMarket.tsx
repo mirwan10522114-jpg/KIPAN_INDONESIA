@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { TARGET_SEGMENTS, COMPANY } from "@/lib/data";
 import { useContentStore } from "@/lib/content-store";
+import SafeImage from "@/components/ui/safe-image";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Home,
@@ -111,10 +112,11 @@ export default function TargetMarket() {
           >
             {/* Image */}
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-lg">
-              <img
-                src={segment.image}
-                alt={segment.title}
+              <SafeImage
+                src={segment?.image}
+                alt={segment?.title || "Segment image"}
                 className="w-full h-full object-cover"
+                loading="eager"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-sky-950/70 via-transparent to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">

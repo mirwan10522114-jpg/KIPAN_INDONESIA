@@ -149,6 +149,18 @@ export default function AdminLogin({ open, onClose, onSuccess }: AdminLoginProps
                   Password: <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono">{ADMIN_CREDENTIALS.password}</code>
                 </p>
               </div>
+
+              {/* Shortcut hint */}
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center gap-2">
+                <kbd className="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-mono text-slate-700 shadow-sm">Ctrl</kbd>
+                <span className="text-slate-400 text-xs">+</span>
+                <kbd className="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-mono text-slate-700 shadow-sm">Shift</kbd>
+                <span className="text-slate-400 text-xs">+</span>
+                <kbd className="px-2 py-0.5 bg-white border border-slate-300 rounded text-[10px] font-mono text-slate-700 shadow-sm">A</kbd>
+                <span className="text-[11px] text-slate-500 ml-1">
+                  untuk membuka admin kapan saja
+                </span>
+              </div>
             </form>
           </motion.div>
         </motion.div>

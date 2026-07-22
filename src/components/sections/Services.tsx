@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { SERVICES, COMPANY } from "@/lib/data";
 import { useContentStore } from "@/lib/content-store";
+import SafeImage from "@/components/ui/safe-image";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   HardHat,
@@ -120,10 +121,11 @@ export default function Services() {
                 <TiltCard className="group relative bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-sky-900/10 transition-shadow duration-500 h-full">
                   {/* Top: image + number overlay */}
                   <div className="relative h-56 overflow-hidden">
-                    <img
+                    <SafeImage
                       src={service.image}
                       alt={service.title}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      loading="eager"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-sky-950/85 via-sky-900/40 to-transparent" />
 
