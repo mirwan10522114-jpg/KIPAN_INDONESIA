@@ -884,11 +884,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
                 ) : (
                   <div className="space-y-6">
                     {/* Stats */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-blue-50 rounded-xl p-4 text-center">
-                        <div className="text-2xl font-extrabold text-blue-600">{drillDownData.statistik?.totalAnggota || 0}</div>
-                        <div className="text-xs text-slate-500">Anggota</div>
-                      </div>
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="bg-violet-50 rounded-xl p-4 text-center">
                         <div className="text-2xl font-extrabold text-violet-600">{drillDownData.statistik?.totalPengurus || 0}</div>
                         <div className="text-xs text-slate-500">Pengurus</div>
@@ -901,8 +897,8 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
 
                     {/* Pengurus List */}
                     <div>
-                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Pengurus</h4>
-                      <div className="space-y-2">
+                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Pengurus ({drillDownData.statistik?.totalPengurus || 0})</h4>
+                      <div className="space-y-2 max-h-72 overflow-y-auto">
                         {drillDownData.pengurusList?.map((p: any) => (
                           <div key={p.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-sky-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -910,7 +906,9 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-semibold text-slate-800 truncate">{p.namaLengkap}</div>
-                              <div className="text-xs text-slate-500">{p.jabatan}</div>
+                              <div className="text-xs text-slate-500 truncate">
+                                {p.jabatan}{p.bidang && p.bidang !== "Pengurus Harian" ? ` • ${p.bidang}` : ""}
+                              </div>
                             </div>
                             <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-semibold shrink-0 ${
                               (p.level || "").toLowerCase() === "nasional" ? "bg-violet-100 text-violet-700" :
@@ -921,33 +919,9 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
                         {(!drillDownData.pengurusList || drillDownData.pengurusList.length === 0) && (
                           <p className="text-xs text-slate-400 text-center py-3">Belum ada pengurus</p>
                         )}
-                      </div>
-                    </div>
-
-                    {/* Anggota List */}
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Anggota ({drillDownData.statistik?.totalAnggota || 0})</h4>
-                      <div className="space-y-1 max-h-48 overflow-y-auto">
-                        {drillDownData.anggotaList?.slice(0, 20).map((a: any) => (
-                          <div key={a.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                              {a.namaLengkap?.charAt(0) || "?"}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-medium text-slate-800 truncate">{a.namaLengkap}</div>
-                              <div className="text-[10px] text-slate-400 font-mono">{a.nia}</div>
-                            </div>
-                            <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-semibold ${
-                              a.status === "AKTIF" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
-                            }`}>{a.status}</span>
-                          </div>
-                        ))}
-                        {(!drillDownData.anggotaList || drillDownData.anggotaList.length === 0) && (
-                          <p className="text-xs text-slate-400 text-center py-3">Belum ada anggota</p>
-                        )}
-                        {drillDownData.anggotaList?.length > 20 && (
+                        {drillDownData.pengurusList?.length > 20 && (
                           <p className="text-[10px] text-slate-400 text-center pt-2">
-                            Menampilkan 20 dari {drillDownData.statistik?.totalAnggota || 0} anggota
+                            Menampilkan 20 dari {drillDownData.statistik?.totalPengurus || 0} pengurus
                           </p>
                         )}
                       </div>

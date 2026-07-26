@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, MapPin, Building2, Users, UserCog, Info, History, BarChart3,
-  Edit, FileText, ExternalLink, Calendar, TrendingUp, Activity,
-  CheckCircle2, XCircle, Mail, Phone, Plus,
+  X, MapPin, Building2, UserCog, Info, BarChart3,
+  Edit, TrendingUp, Activity, CheckCircle2,
 } from "lucide-react";
 import SafeImage from "@/components/ui/safe-image";
 
@@ -28,7 +27,7 @@ interface WilayahDetailProps {
 }
 
 export default function WilayahDetailDialog({
-  wilayahId, type, onClose, onEdit, onViewPengurus, onViewAnggota, onAddAnggota,
+  wilayahId, type, onClose, onEdit, onViewPengurus,
 }: WilayahDetailProps) {
   const [activeTab, setActiveTab] = useState("informasi");
   const [data, setData] = useState<any>(null);
@@ -101,7 +100,6 @@ export default function WilayahDetailDialog({
                   <div className="flex flex-wrap gap-4 mt-3 text-sm">
                     <div className="flex items-center gap-1.5"><UserCog className="w-4 h-4" /><span>Ketua: {w?.ketua || "-"}</span></div>
                     {type === "provinsi" && <div className="flex items-center gap-1.5"><Building2 className="w-4 h-4" /><span>{s?.totalKabupaten || 0} Kabupaten/Kota</span></div>}
-                    <div className="flex items-center gap-1.5"><Users className="w-4 h-4" /><span>{s?.totalAnggota || 0} Anggota</span></div>
                     <div className="flex items-center gap-1.5"><UserCog className="w-4 h-4" /><span>{s?.totalPengurus || 0} Pengurus</span></div>
                   </div>
                 </div>
@@ -161,7 +159,6 @@ export default function WilayahDetailDialog({
                             <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Kode</th>
                             <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
                             <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Ketua</th>
-                            <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Anggota</th>
                             <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Pengurus</th>
                             <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Status</th>
                           </tr>
@@ -172,7 +169,6 @@ export default function WilayahDetailDialog({
                               <td className="px-3 py-2 text-xs font-mono text-slate-600">{k.kode}</td>
                               <td className="px-3 py-2 text-sm font-semibold text-blue-950">{k.nama}</td>
                               <td className="px-3 py-2 text-sm text-slate-600">{k.ketua || "-"}</td>
-                              <td className="px-3 py-2 text-center text-sm font-bold text-emerald-600">{k.jumlahAnggota}</td>
                               <td className="px-3 py-2 text-center text-sm font-bold text-violet-600">{k.jumlahPengurus}</td>
                               <td className="px-3 py-2 text-center">
                                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold border ${statusBadge(k.status)}`}>{k.status}</span>
@@ -180,7 +176,7 @@ export default function WilayahDetailDialog({
                             </tr>
                           ))}
                           {(!data.kabupatenList || data.kabupatenList.length === 0) && (
-                            <tr><td colSpan={6} className="px-3 py-8 text-center text-sm text-slate-400">Belum ada kabupaten/kota</td></tr>
+                            <tr><td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-400">Belum ada kabupaten/kota</td></tr>
                           )}
                         </tbody>
                       </table>
@@ -219,66 +215,19 @@ export default function WilayahDetailDialog({
                     </div>
                   )}
 
-                  {/* ANGGOTA */}
-                  {activeTab === "anggota" && (
-                    <div>
-                      <div className="flex justify-end mb-3">
-                        <button
-                          onClick={() => { setDetailId(null); onAddAnggota?.(); }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700"
-                        >
-                          <Plus className="w-3.5 h-3.5" /> Tambah Anggota
-                        </button>
-                      </div>
-                      <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-slate-50 border-b border-slate-200">
-                          <tr>
-                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">NIA</th>
-                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
-                            <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Angkatan</th>
-                            <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {data.anggotaList?.map((a: any) => (
-                            <tr key={a.id} onClick={() => onViewAnggota?.(a.id)} className="hover:bg-slate-50 cursor-pointer">
-                              <td className="px-3 py-2 text-xs font-mono text-blue-600">{a.nia}</td>
-                              <td className="px-3 py-2 text-sm font-medium text-slate-800">{a.namaLengkap}</td>
-                              <td className="px-3 py-2 text-center text-xs text-slate-500">{a.angkatan || "-"}</td>
-                              <td className="px-3 py-2 text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold ${
-                                  a.status === "AKTIF" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-                                }`}>{a.status}</span>
-                              </td>
-                            </tr>
-                          ))}
-                          {(!data.anggotaList || data.anggotaList.length === 0) && (
-                            <tr><td colSpan={4} className="px-3 py-8 text-center text-sm text-slate-400">Belum ada anggota</td></tr>
-                          )}
-                        </tbody>
-                      </table>
-                      {data.anggotaList?.length > 0 && (
-                        <p className="text-xs text-slate-400 mt-3 text-center">Menampilkan {data.anggotaList.length} dari {s?.totalAnggota || 0} anggota</p>
-                      )}
-                      </div>
-                    </div>
-                  )}
-
                   {/* STATISTIK */}
                   {activeTab === "statistik" && (
                     <div className="space-y-6">
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <StatCard label="Total Anggota" value={s?.totalAnggota || 0} color="from-blue-500 to-sky-500" icon={Users} />
-                        <StatCard label="Anggota Aktif" value={s?.anggotaAktif || 0} color="from-emerald-500 to-teal-500" icon={CheckCircle2} />
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <StatCard label="Total Pengurus" value={s?.totalPengurus || 0} color="from-violet-500 to-purple-500" icon={UserCog} />
+                        <StatCard label="Pengurus Aktif" value={s?.pengurusAktif || 0} color="from-emerald-500 to-teal-500" icon={CheckCircle2} />
                         {type === "provinsi" && <StatCard label="Kabupaten" value={s?.totalKabupaten || 0} color="from-cyan-500 to-blue-500" icon={Building2} />}
                       </div>
 
                       {/* Monthly growth bar chart */}
                       <div className="bg-slate-50 rounded-2xl p-5">
                         <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-blue-600" /> Pertumbuhan Anggota (6 Bulan)
+                          <TrendingUp className="w-4 h-4 text-blue-600" /> Pertumbuhan Pengurus (6 Bulan)
                         </h4>
                         <div className="flex items-end gap-3 h-40">
                           {s?.monthlyGrowth?.map((m: any, idx: number) => {
@@ -303,19 +252,15 @@ export default function WilayahDetailDialog({
 
                       {/* Distribution */}
                       <div className="bg-slate-50 rounded-2xl p-5">
-                        <h4 className="text-sm font-bold text-slate-700 mb-4">Distribusi Status Anggota</h4>
-                        <div className="grid grid-cols-3 gap-3">
+                        <h4 className="text-sm font-bold text-slate-700 mb-4">Distribusi Status Pengurus</h4>
+                        <div className="grid grid-cols-2 gap-3">
                           <div className="text-center p-3 bg-white rounded-xl">
-                            <div className="text-2xl font-bold text-emerald-600">{s?.anggotaAktif || 0}</div>
-                            <div className="text-xs text-slate-500">Aktif</div>
-                          </div>
-                          <div className="text-center p-3 bg-white rounded-xl">
-                            <div className="text-2xl font-bold text-slate-400">{s?.anggotaNonaktif || 0}</div>
-                            <div className="text-xs text-slate-500">Nonaktif</div>
-                          </div>
-                          <div className="text-center p-3 bg-white rounded-xl">
-                            <div className="text-2xl font-bold text-blue-600">{s?.pengurusAktif || 0}</div>
+                            <div className="text-2xl font-bold text-emerald-600">{s?.pengurusAktif || 0}</div>
                             <div className="text-xs text-slate-500">Pengurus Aktif</div>
+                          </div>
+                          <div className="text-center p-3 bg-white rounded-xl">
+                            <div className="text-2xl font-bold text-slate-400">{(s?.totalPengurus || 0) - (s?.pengurusAktif || 0)}</div>
+                            <div className="text-xs text-slate-500">Nonaktif / Selesai</div>
                           </div>
                         </div>
                       </div>

@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
   Building2,
-  Users,
   UserCog,
   Plus,
   Search,
@@ -97,7 +96,6 @@ export default function WilayahPage({
     status: p.status,
     ketua: p.ketua || "",
     jumlahKabupaten: p._count?.kabupaten || 0,
-    jumlahAnggota: p._count?.anggota || 0,
     jumlahPengurus: p._count?.pengurus || 0,
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
@@ -110,7 +108,6 @@ export default function WilayahPage({
     provinsiNama: k.provinsi?.nama || "",
     status: k.status,
     ketua: k.ketua || "",
-    jumlahAnggota: k._count?.anggota || 0,
     jumlahPengurus: k._count?.pengurus || 0,
     createdAt: k.createdAt,
     updatedAt: k.updatedAt,
@@ -120,7 +117,6 @@ export default function WilayahPage({
   const statCards = [
     { label: "Total Provinsi", value: provData.length, total: 38, icon: MapPin, color: "from-blue-500 to-sky-500", targetPage: null },
     { label: "Total Kabupaten/Kota", value: kabData.length, total: 514, icon: Building2, color: "from-sky-500 to-cyan-500", targetPage: null },
-    { label: "Total Anggota", value: provData.reduce((a: number, b: any) => a + (b.jumlahAnggota || 0), 0), total: null, icon: Users, color: "from-emerald-500 to-teal-500", targetPage: "anggota" },
     { label: "Total Pengurus", value: provData.reduce((a: number, b: any) => a + (b.jumlahPengurus || 0), 0), total: null, icon: UserCog, color: "from-violet-500 to-purple-500", targetPage: "pengurus" },
   ];
 
@@ -181,7 +177,6 @@ export default function WilayahPage({
     aktif: filteredProv.filter((p: any) => p.status === "Aktif").length,
     pembentukan: filteredProv.filter((p: any) => p.status === "Pembentukan").length,
     nonaktif: filteredProv.filter((p: any) => p.status === "Nonaktif").length,
-    totalAnggota: filteredProv.reduce((a: number, b: any) => a + (b.jumlahAnggota || 0), 0),
     totalPengurus: filteredProv.reduce((a: number, b: any) => a + (b.jumlahPengurus || 0), 0),
     totalKabupaten: filteredProv.reduce((a: number, b: any) => a + (b.jumlahKabupaten || 0), 0),
   } : {
@@ -189,7 +184,6 @@ export default function WilayahPage({
     aktif: filteredKab.filter((k: any) => k.status === "Aktif").length,
     pembentukan: filteredKab.filter((k: any) => k.status === "Pembentukan").length,
     nonaktif: filteredKab.filter((k: any) => k.status === "Nonaktif").length,
-    totalAnggota: filteredKab.reduce((a: number, b: any) => a + (b.jumlahAnggota || 0), 0),
     totalPengurus: filteredKab.reduce((a: number, b: any) => a + (b.jumlahPengurus || 0), 0),
     totalKabupaten: 0,
   };
@@ -295,13 +289,6 @@ export default function WilayahPage({
       if (tab === "provinsi") filter.provinsiNama = item.nama;
       else filter.kabupatenNama = item.nama;
       onNavigate?.("pengurus", filter);
-    }, show: true },
-    { label: "Lihat Anggota", icon: Users, action: (item: any) => {
-      setActionMenuId(null);
-      const filter: Record<string, string> = {};
-      if (tab === "provinsi") filter.provinsiNama = item.nama;
-      else filter.kabupatenNama = item.nama;
-      onNavigate?.("anggota", filter);
     }, show: true },
     { label: "Nonaktifkan", icon: Ban, action: (item: any) => {
       // Toggle status
@@ -480,13 +467,12 @@ export default function WilayahPage({
               </span>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
             <SummaryCard label={`Total ${tab === "provinsi" ? "Provinsi" : "Kabupaten"}`} value={filterSummary.total} color="text-blue-600" bg="bg-blue-50" />
             <SummaryCard label="Aktif" value={filterSummary.aktif} color="text-emerald-600" bg="bg-emerald-50" />
             <SummaryCard label="Pembentukan" value={filterSummary.pembentukan} color="text-amber-600" bg="bg-amber-50" />
             <SummaryCard label="Nonaktif" value={filterSummary.nonaktif} color="text-slate-600" bg="bg-slate-100" />
-            <SummaryCard label="Total Anggota" value={filterSummary.totalAnggota} color="text-violet-600" bg="bg-violet-50" />
-            <SummaryCard label="Total Pengurus" value={filterSummary.totalPengurus} color="text-cyan-600" bg="bg-cyan-50" />
+            <SummaryCard label="Total Pengurus" value={filterSummary.totalPengurus} color="text-violet-600" bg="bg-violet-50" />
           </div>
         </div>
       )}
@@ -539,7 +525,6 @@ export default function WilayahPage({
                     <Th onClick={() => handleSort("kode")} icon={getSortIcon("kode")}>Kode</Th>
                     <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama Provinsi</Th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Kab/Kota</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Anggota</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Pengurus</th>
                     <Th onClick={() => handleSort("ketua")} icon={getSortIcon("ketua")}>Ketua</Th>
                     <Th onClick={() => handleSort("status")} icon={getSortIcon("status")}>Status</Th>
@@ -550,7 +535,6 @@ export default function WilayahPage({
                     <Th onClick={() => handleSort("kode")} icon={getSortIcon("kode")}>Kode</Th>
                     <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama Kabupaten/Kota</Th>
                     <Th onClick={() => handleSort("provinsiNama")} icon={getSortIcon("provinsiNama")}>Provinsi</Th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Anggota</th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Pengurus</th>
                     <Th onClick={() => handleSort("ketua")} icon={getSortIcon("ketua")}>Ketua</Th>
                     <Th onClick={() => handleSort("status")} icon={getSortIcon("status")}>Status</Th>
@@ -586,18 +570,6 @@ export default function WilayahPage({
                     {tab === "kabupaten" && (
                       <td className="px-4 py-3 text-sm text-slate-600">{item.provinsiNama}</td>
                     )}
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onNavigate?.("anggota", { provinsi: tab === "provinsi" ? item.nama : item.provinsiNama, kabupaten: tab === "kabupaten" ? item.nama : undefined });
-                        }}
-                        className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
-                        title="Lihat daftar anggota"
-                      >
-                        {item.jumlahAnggota.toLocaleString("id-ID")}
-                      </button>
-                    </td>
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={(e) => {

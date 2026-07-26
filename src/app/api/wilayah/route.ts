@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
     const provinsi = await db.provinsi.findMany({
       include: {
-        _count: { select: { kabupaten: true, anggota: true, pengurus: true } },
+        _count: { select: { kabupaten: true, pengurus: true } },
       },
       orderBy: { nama: "asc" },
     });
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     const kabupaten = await db.kabupaten.findMany({
       include: {
         provinsi: { select: { nama: true, kode: true } },
-        _count: { select: { anggota: true, pengurus: true } },
+        _count: { select: { pengurus: true } },
       },
       orderBy: { nama: "asc" },
     });

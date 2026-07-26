@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 // GET /api/wilayah/[id]/detail?type=provinsi|kabupaten
-// Returns: wilayah info + pengurus + anggota + kabupaten (if provinsi) + statistik + activity
+// Returns: wilayah info + pengurus + kabupaten (if provinsi) + statistik + activity
+// Note: Konsep "Anggota" sudah dihapus — semua orang adalah Pengurus dengan jabatan tertentu.
+// Statistik monthlyGrowth sekarang menghitung jumlah pengurus baru per bulan.
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -19,7 +21,7 @@ export async function GET(
         include: {
           kabupaten: {
             include: {
-              _count: { select: { anggota: true, pengurus: true } },
+              _count: { select: { pengurus: true } },
             },
             orderBy: { nama: "asc" },
           },
@@ -35,20 +37,13 @@ export async function GET(
                   nia: true,
                 },
               },
-              jabatan: { select: { nama: true, level: true, urutan: true } },
+              jabatan: { select: { nama: true, bidang: true, level: true, urutan: true } },
               kabupaten: { select: { nama: true } },
             },
             orderBy: [
               { level: "asc" },
               { jabatan: { urutan: "asc" } },
             ],
-          },
-          anggota: {
-            include: {
-              kabupaten: { select: { nama: true } },
-            },
-            orderBy: { createdAt: "desc" },
-            take: 100,
           },
         },
       });
@@ -57,23 +52,20 @@ export async function GET(
         return NextResponse.json({ success: false, error: "Provinsi tidak ditemukan" }, { status: 404 });
       }
 
-      // Statistik
-      const totalAnggota = await db.anggota.count({ where: { provinsiId: id } });
-      const anggotaAktif = await db.anggota.count({ where: { provinsiId: id, status: "AKTIF" } });
-      const anggotaNonaktif = await db.anggota.count({ where: { provinsiId: id, status: "NONAKTIF" } });
+      // Statistik — hanya pengurus
       const totalPengurus = await db.pengurus.count({ where: { provinsiId: id } });
       const pengurusAktif = await db.pengurus.count({ where: { provinsiId: id, status: "Aktif" } });
       const totalKabupaten = await db.kabupaten.count({ where: { provinsiId: id } });
 
-      // Monthly growth (last 6 months)
+      // Monthly growth (last 6 months) — count pengurus baru
       const monthlyGrowth = [];
       for (let i = 5; i >= 0; i--) {
         const monthStart = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
         const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() - i + 1, 1);
-        const count = await db.anggota.count({
+        const count = await db.pengurus.count({
           where: {
             provinsiId: id,
-            tanggalAngkat: { gte: monthStart, lt: monthEnd },
+            tanggalMulai: { gte: monthStart, lt: monthEnd },
           },
         });
         monthlyGrowth.push({
@@ -101,13 +93,13 @@ export async function GET(
             nama: k.nama,
             ketua: k.ketua,
             status: k.status,
-            jumlahAnggota: k._count.anggota,
             jumlahPengurus: k._count.pengurus,
           })),
           pengurusList: provinsi.pengurus.map((p) => ({
             id: p.id,
             namaLengkap: p.anggota?.namaLengkap || "-",
             jabatan: p.jabatan?.nama || "-",
+            bidang: p.jabatan?.bidang || "-",
             level: p.level,
             foto: p.anggota?.foto,
             email: p.anggota?.email,
@@ -118,21 +110,7 @@ export async function GET(
             nomorSK: p.nomorSK,
             wilayah: p.kabupaten?.nama || provinsi.nama,
           })),
-          anggotaList: provinsi.anggota.map((a) => ({
-            id: a.id,
-            nia: a.nia,
-            namaLengkap: a.namaLengkap,
-            foto: a.foto,
-            status: a.status,
-            angkatan: a.angkatan,
-            kabupaten: a.kabupaten?.nama,
-            tanggalDaftar: a.tanggalDaftar,
-            tanggalAngkat: a.tanggalAngkat,
-          })),
           statistik: {
-            totalAnggota,
-            anggotaAktif,
-            anggotaNonaktif,
             totalPengurus,
             pengurusAktif,
             totalKabupaten,
@@ -163,16 +141,12 @@ export async function GET(
                 nia: true,
               },
             },
-            jabatan: { select: { nama: true, level: true, urutan: true } },
+            jabatan: { select: { nama: true, bidang: true, level: true, urutan: true } },
           },
           orderBy: [
             { level: "asc" },
             { jabatan: { urutan: "asc" } },
           ],
-        },
-        anggota: {
-          orderBy: { createdAt: "desc" },
-          take: 100,
         },
       },
     });
@@ -181,18 +155,17 @@ export async function GET(
       return NextResponse.json({ success: false, error: "Kabupaten tidak ditemukan" }, { status: 404 });
     }
 
-    const totalAnggota = await db.anggota.count({ where: { kabupatenId: id } });
-    const anggotaAktif = await db.anggota.count({ where: { kabupatenId: id, status: "AKTIF" } });
     const totalPengurus = await db.pengurus.count({ where: { kabupatenId: id } });
+    const pengurusAktif = await db.pengurus.count({ where: { kabupatenId: id, status: "Aktif" } });
 
     const monthlyGrowth = [];
     for (let i = 5; i >= 0; i--) {
       const monthStart = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
       const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() - i + 1, 1);
-      const count = await db.anggota.count({
+      const count = await db.pengurus.count({
         where: {
           kabupatenId: id,
-          tanggalAngkat: { gte: monthStart, lt: monthEnd },
+          tanggalMulai: { gte: monthStart, lt: monthEnd },
         },
       });
       monthlyGrowth.push({
@@ -219,6 +192,7 @@ export async function GET(
           id: p.id,
           namaLengkap: p.anggota?.namaLengkap || "-",
           jabatan: p.jabatan?.nama || "-",
+          bidang: p.jabatan?.bidang || "-",
           level: p.level,
           foto: p.anggota?.foto,
           email: p.anggota?.email,
@@ -229,22 +203,9 @@ export async function GET(
           nomorSK: p.nomorSK,
           wilayah: kabupaten.nama,
         })),
-        anggotaList: kabupaten.anggota.map((a) => ({
-          id: a.id,
-          nia: a.nia,
-          namaLengkap: a.namaLengkap,
-          foto: a.foto,
-          status: a.status,
-          angkatan: a.angkatan,
-          tanggalDaftar: a.tanggalDaftar,
-          tanggalAngkat: a.tanggalAngkat,
-        })),
         statistik: {
-          totalAnggota,
-          anggotaAktif,
-          anggotaNonaktif: totalAnggota - anggotaAktif,
           totalPengurus,
-          pengurusAktif: await db.pengurus.count({ where: { kabupatenId: id, status: "Aktif" } }),
+          pengurusAktif,
           totalKabupaten: 0,
           monthlyGrowth,
         },
