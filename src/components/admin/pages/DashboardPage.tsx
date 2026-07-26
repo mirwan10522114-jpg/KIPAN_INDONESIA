@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Users,
   UserPlus,
@@ -21,6 +21,7 @@ import {
   Globe,
   Shield,
   Calendar,
+  X,
 } from "lucide-react";
 
 interface DashboardData {
@@ -52,6 +53,10 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [showAllProvinsi, setShowAllProvinsi] = useState(false);
+  const [drillDownProv, setDrillDownProv] = useState<string | null>(null);
+  const [drillDownData, setDrillDownData] = useState<any>(null);
+  const [drillDownLoading, setDrillDownLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -207,9 +212,37 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
     { label: "Ditolak", value: data.pendaftaranByStatus.DITOLAK || 0, color: "bg-rose-100 text-rose-700" },
   ];
 
-  // Chart data - anggota per provinsi (top 8)
-  const topProvinsi = data.anggotaPerProvinsi.slice(0, 8);
-  const maxAnggota = Math.max(...topProvinsi.map((p) => p.jumlah), 1);
+  // Chart data - ALL provinsi with anggota
+  const allProvinsiWithData = data.anggotaPerProvinsi;
+  const maxAnggota = Math.max(...allProvinsiWithData.map((p) => p.jumlah), 1);
+  const visibleProvinsi = showAllProvinsi ? allProvinsiWithData : allProvinsiWithData.slice(0, 8);
+
+  const handleProvinsiClick = async (provinsiNama: string) => {
+    setDrillDownProv(provinsiNama);
+    setDrillDownLoading(true);
+    setDrillDownData(null);
+    try {
+      const res = await fetch("/api/dashboard", { cache: "no-store" });
+      const json = await res.json();
+      if (json.success) {
+        // Find provinsi ID from wilayah API
+        const wilRes = await fetch("/api/wilayah?type=provinsi", { cache: "no-store" });
+        const wilJson = await wilRes.json();
+        const prov = wilJson.data?.find((p: any) => p.nama === provinsiNama);
+        if (prov) {
+          const detailRes = await fetch(`/api/wilayah/${prov.id}/detail?type=provinsi`, { cache: "no-store" });
+          const detailJson = await detailRes.json();
+          if (detailJson.success) {
+            setDrillDownData(detailJson.data);
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDrillDownLoading(false);
+    }
+  };
 
   // Perlu tindakan
   const perluTindakan = [
@@ -480,17 +513,28 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-blue-950">Top 8 Provinsi (Anggota Terbanyak)</h3>
+              <h3 className="font-bold text-blue-950">Anggota per Provinsi</h3>
             </div>
-            <span className="text-xs text-slate-400">Bar Chart</span>
+            {allProvinsiWithData.length > 8 && (
+              <button
+                onClick={() => setShowAllProvinsi(!showAllProvinsi)}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+              >
+                {showAllProvinsi ? "Tampilkan sedikit" : `Lihat semua (${allProvinsiWithData.length})`}
+              </button>
+            )}
           </div>
-          <div className="space-y-3">
-            {topProvinsi.map((p, idx) => (
+          <div className="space-y-3 max-h-96 overflow-y-auto pr-2
+                          [&::-webkit-scrollbar]:w-1.5
+                          [&::-webkit-scrollbar-thumb]:bg-blue-200
+                          [&::-webkit-scrollbar-thumb]:rounded-full
+                          [&::-webkit-scrollbar-track]:bg-transparent">
+            {visibleProvinsi.map((p, idx) => (
               <div
                 key={idx}
-                onClick={() => onNavigate?.("anggota")}
+                onClick={() => handleProvinsiClick(p.nama)}
                 className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors group"
-                title={`Klik untuk lihat anggota ${p.nama}`}
+                title={`Klik untuk lihat detail ${p.nama}`}
               >
                 <span className="text-xs font-bold text-slate-400 w-6">#{idx + 1}</span>
                 <div className="flex-1">
@@ -502,14 +546,14 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${(p.jumlah / maxAnggota) * 100}%` }}
-                      transition={{ delay: idx * 0.08, duration: 0.6 }}
+                      transition={{ delay: idx * 0.04, duration: 0.4 }}
                       className="h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full"
                     />
                   </div>
                 </div>
               </div>
             ))}
-            {topProvinsi.length === 0 && (
+            {visibleProvinsi.length === 0 && (
               <p className="text-sm text-slate-500 text-center py-4">Belum ada data anggota per provinsi</p>
             )}
           </div>
@@ -797,6 +841,124 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
         </div>
         <LineChart data={data.monthlyTrend || []} />
       </motion.div>
+
+      {/* Drill-down Popup */}
+      <AnimatePresence>
+        {drillDownProv && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setDrillDownProv(null)}
+            className="fixed inset-0 z-[300] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="relative bg-gradient-to-r from-blue-600 to-sky-500 p-5 text-white">
+                <button onClick={() => setDrillDownProv(null)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <MapPin className="w-6 h-6" />
+                  <div>
+                    <h2 className="text-xl font-bold">{drillDownProv}</h2>
+                    <p className="text-xs text-blue-100">Detail Anggota & Pengurus</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                {drillDownLoading ? (
+                  <div className="space-y-3">
+                    {[1,2,3,4].map((i) => <div key={i} className="h-4 bg-slate-200 animate-pulse rounded" />)}
+                  </div>
+                ) : !drillDownData ? (
+                  <p className="text-sm text-slate-500 text-center py-8">Gagal memuat data</p>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-blue-50 rounded-xl p-4 text-center">
+                        <div className="text-2xl font-extrabold text-blue-600">{drillDownData.statistik?.totalAnggota || 0}</div>
+                        <div className="text-xs text-slate-500">Anggota</div>
+                      </div>
+                      <div className="bg-violet-50 rounded-xl p-4 text-center">
+                        <div className="text-2xl font-extrabold text-violet-600">{drillDownData.statistik?.totalPengurus || 0}</div>
+                        <div className="text-xs text-slate-500">Pengurus</div>
+                      </div>
+                      <div className="bg-cyan-50 rounded-xl p-4 text-center">
+                        <div className="text-2xl font-extrabold text-cyan-600">{drillDownData.statistik?.totalKabupaten || 0}</div>
+                        <div className="text-xs text-slate-500">Kabupaten</div>
+                      </div>
+                    </div>
+
+                    {/* Pengurus List */}
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Pengurus</h4>
+                      <div className="space-y-2">
+                        {drillDownData.pengurusList?.map((p: any) => (
+                          <div key={p.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-sky-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                              {p.namaLengkap?.charAt(0) || "?"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-semibold text-slate-800 truncate">{p.namaLengkap}</div>
+                              <div className="text-xs text-slate-500">{p.jabatan}</div>
+                            </div>
+                            <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-semibold shrink-0 ${
+                              (p.level || "").toLowerCase() === "nasional" ? "bg-violet-100 text-violet-700" :
+                              (p.level || "").toLowerCase() === "provinsi" ? "bg-blue-100 text-blue-700" : "bg-cyan-100 text-cyan-700"
+                            }`}>{p.level}</span>
+                          </div>
+                        ))}
+                        {(!drillDownData.pengurusList || drillDownData.pengurusList.length === 0) && (
+                          <p className="text-xs text-slate-400 text-center py-3">Belum ada pengurus</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Anggota List */}
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Anggota ({drillDownData.statistik?.totalAnggota || 0})</h4>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {drillDownData.anggotaList?.slice(0, 20).map((a: any) => (
+                          <div key={a.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                              {a.namaLengkap?.charAt(0) || "?"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium text-slate-800 truncate">{a.namaLengkap}</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{a.nia}</div>
+                            </div>
+                            <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-semibold ${
+                              a.status === "AKTIF" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
+                            }`}>{a.status}</span>
+                          </div>
+                        ))}
+                        {(!drillDownData.anggotaList || drillDownData.anggotaList.length === 0) && (
+                          <p className="text-xs text-slate-400 text-center py-3">Belum ada anggota</p>
+                        )}
+                        {drillDownData.anggotaList?.length > 20 && (
+                          <p className="text-[10px] text-slate-400 text-center pt-2">
+                            Menampilkan 20 dari {drillDownData.statistik?.totalAnggota || 0} anggota
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
