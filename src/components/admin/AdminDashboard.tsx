@@ -53,7 +53,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
   const renderPage = () => {
     switch (activePage) {
       case "dashboard": return <DashboardPage onNavigate={setActivePage} />;
-      case "wilayah": return <WilayahPage />;
+      case "wilayah": return <WilayahPage onNavigate={setActivePage} />;
       case "pengurus": return <PengurusPage />;
       case "anggota": return <AnggotaPage />;
       case "pendaftaran": return <PendaftaranPage onVerify={(id) => setActivePage("verifikasi")} />;

@@ -1,177 +1,588 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { MapPin, Building2, Users, UserCog, Plus, Search, Eye, Edit, Trash2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  MapPin,
+  Building2,
+  Users,
+  UserCog,
+  Plus,
+  Search,
+  RefreshCw,
+  Download,
+  FileText,
+  Eye,
+  Edit,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  ChevronUp,
+  ChevronDown,
+  MapPinned,
+  Ban,
+  Trash2,
+  ArrowUpDown,
+  Inbox,
+} from "lucide-react";
 import { PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
+import WilayahDetailDialog, { type WilayahDetail } from "./WilayahDetailDialog";
 
-export default function WilayahPage() {
+type SortDir = "asc" | "desc" | null;
+
+export default function WilayahPage({
+  onNavigate,
+  userRole = "SUPER_ADMIN",
+}: {
+  onNavigate?: (page: string, filter?: Record<string, string>) => void;
+  userRole?: string;
+}) {
   const [tab, setTab] = useState<"provinsi" | "kabupaten">("provinsi");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
+  const [provinsiFilter, setProvinsiFilter] = useState("Semua");
+  const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [detail, setDetail] = useState<WilayahDetail | null>(null);
+  const [detailType, setDetailType] = useState<"provinsi" | "kabupaten">("provinsi");
+  const [actionMenuId, setActionMenuId] = useState<number | null>(null);
 
-  const filteredProv = PROVINSI_LIST.filter((p) => {
-    const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
-  const filteredKab = KABUPATEN_LIST.filter((k) => {
-    const matchSearch = k.nama.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "Semua" || k.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  // Initial load
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Permission check
+  const canCreateProvinsi = userRole === "SUPER_ADMIN";
+  const canCreateKabupaten = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
+  const canDelete = userRole === "SUPER_ADMIN";
+  const canEdit = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
+
+  // Stat cards
+  const statCards = [
+    { label: "Total Provinsi", value: PROVINSI_LIST.length, total: 38, icon: MapPin, color: "from-blue-500 to-sky-500", targetPage: null },
+    { label: "Total Kabupaten/Kota", value: KABUPATEN_LIST.length, total: 514, icon: Building2, color: "from-sky-500 to-cyan-500", targetPage: null },
+    { label: "Total Anggota", value: PROVINSI_LIST.reduce((a, b) => a + b.jumlahAnggota, 0), total: null, icon: Users, color: "from-emerald-500 to-teal-500", targetPage: "anggota" },
+    { label: "Total Pengurus", value: PROVINSI_LIST.reduce((a, b) => a + b.jumlahPengurus, 0), total: null, icon: UserCog, color: "from-violet-500 to-purple-500", targetPage: "pengurus" },
+  ];
+
+  // Filter data
+  const filteredProv = useMemo(() => {
+    let result = PROVINSI_LIST.filter((p) => {
+      const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
+        p.kode.toLowerCase().includes(search.toLowerCase()) ||
+        (p.ketua || "").toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+    if (sortBy && sortDir) {
+      result = [...result].sort((a: any, b: any) => {
+        const aVal = a[sortBy];
+        const bVal = b[sortBy];
+        if (typeof aVal === "string") {
+          return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      });
+    }
+    return result;
+  }, [search, statusFilter, sortBy, sortDir]);
+
+  const filteredKab = useMemo(() => {
+    let result = KABUPATEN_LIST.filter((k) => {
+      const matchSearch = k.nama.toLowerCase().includes(search.toLowerCase()) ||
+        k.kode.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === "Semua" || k.status === statusFilter;
+      const matchProv = provinsiFilter === "Semua" || k.provinsiNama === provinsiFilter;
+      return matchSearch && matchStatus && matchProv;
+    });
+    if (sortBy && sortDir) {
+      result = [...result].sort((a: any, b: any) => {
+        const aVal = a[sortBy];
+        const bVal = b[sortBy];
+        if (typeof aVal === "string") {
+          return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      });
+    }
+    return result;
+  }, [search, statusFilter, provinsiFilter, sortBy, sortDir]);
+
+  const currentData = tab === "provinsi" ? filteredProv : filteredKab;
+  const totalData = currentData.length;
+  const totalPages = Math.ceil(totalData / rowsPerPage) || 1;
+  const currentPage = Math.min(page, totalPages);
+  const startIdx = (currentPage - 1) * rowsPerPage;
+  const endIdx = Math.min(startIdx + rowsPerPage, totalData);
+  const pageData = currentData.slice(startIdx, endIdx);
+
+  const handleSort = (col: string) => {
+    if (sortBy === col) {
+      setSortDir(sortDir === "asc" ? "desc" : sortDir === "desc" ? null : "asc");
+      if (sortDir === "desc") {
+        setSortBy(null);
+        setSortDir(null);
+      }
+    } else {
+      setSortBy(col);
+      setSortDir("asc");
+    }
+  };
+
+  const getSortIcon = (col: string) => {
+    if (sortBy !== col) return <ArrowUpDown className="w-3 h-3 text-slate-300" />;
+    if (sortDir === "asc") return <ChevronUp className="w-3 h-3 text-blue-600" />;
+    if (sortDir === "desc") return <ChevronDown className="w-3 h-3 text-blue-600" />;
+    return <ArrowUpDown className="w-3 h-3 text-slate-300" />;
+  };
+
+  const switchTab = (newTab: "provinsi" | "kabupaten") => {
+    if (newTab === tab) return;
+    setLoading(true);
+    setTab(newTab);
+    setPage(1);
+    setTimeout(() => setLoading(false), 600);
+  };
+
+  const handleRefresh = () => {
+    setLoading(true);
+    setSearch("");
+    setStatusFilter("Semua");
+    setProvinsiFilter("Semua");
+    setSortBy(null);
+    setSortDir(null);
+    setPage(1);
+    setTimeout(() => setLoading(false), 600);
+  };
+
+  const statusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      Aktif: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      Pembentukan: "bg-amber-100 text-amber-700 border-amber-200",
+      Nonaktif: "bg-slate-100 text-slate-600 border-slate-200",
+      Dibekukan: "bg-rose-100 text-rose-700 border-rose-200",
+    };
+    return styles[status] || "bg-slate-100 text-slate-600 border-slate-200";
+  };
+
+  const showDetail = (item: any, type: "provinsi" | "kabupaten") => {
+    setDetailType(type);
+    setDetail({
+      id: item.id,
+      kode: item.kode,
+      nama: item.nama,
+      status: item.status,
+      ketua: item.ketua || "",
+      jumlahKabupaten: type === "provinsi" ? item.jumlahKabupaten : undefined,
+      jumlahAnggota: item.jumlahAnggota,
+      jumlahPengurus: item.jumlahPengurus,
+      provinsiNama: type === "kabupaten" ? item.provinsiNama : undefined,
+      createdAt: "2024-01-15",
+      updatedAt: "2024-06-10",
+    });
+    setActionMenuId(null);
+  };
+
+  const actions = [
+    { label: "Detail", icon: Eye, action: (item: any) => showDetail(item, tab), show: true },
+    { label: "Edit", icon: Edit, action: () => {}, show: canEdit },
+    { label: "Kelola Pengurus", icon: UserCog, action: () => onNavigate?.("pengurus"), show: true },
+    { label: "Lihat Anggota", icon: Users, action: () => onNavigate?.("anggota"), show: true },
+    { label: "Nonaktifkan", icon: Ban, action: () => {}, show: canDelete, danger: false },
+    { label: "Hapus", icon: Trash2, action: () => {}, show: canDelete, danger: true },
+  ];
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-blue-950">Master Wilayah</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Kelola data provinsi dan kabupaten/kota se-Indonesia
+            Kelola data wilayah organisasi KIPAN: Nasional → Provinsi → Kabupaten/Kota
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-          <Plus className="w-4 h-4" />
-          Tambah Wilayah
-        </button>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((s, idx) => {
+          const Icon = s.icon;
+          return (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.08 }}
+              whileHover={{ y: -3 }}
+              onClick={() => s.targetPage && onNavigate?.(s.targetPage)}
+              className={`bg-white rounded-2xl p-5 shadow-sm border border-slate-100 ${s.targetPage ? "cursor-pointer hover:border-blue-200" : ""}`}
+            >
+              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center shadow-md mb-3`}>
+                <Icon className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-3xl font-extrabold text-blue-950">
+                {s.value.toLocaleString("id-ID")}
+                {s.total && <span className="text-base text-slate-400">/{s.total}</span>}
+              </div>
+              <div className="text-sm text-slate-500 mt-1">{s.label}</div>
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-white p-1 rounded-xl border border-slate-200 w-fit">
-        <button
-          onClick={() => setTab("provinsi")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            tab === "provinsi"
-              ? "bg-blue-600 text-white"
-              : "text-slate-600 hover:bg-slate-100"
-          }`}
-        >
-          <MapPin className="w-4 h-4 inline mr-1.5" />
-          Provinsi ({PROVINSI_LIST.length})
-        </button>
-        <button
-          onClick={() => setTab("kabupaten")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            tab === "kabupaten"
-              ? "bg-blue-600 text-white"
-              : "text-slate-600 hover:bg-slate-100"
-          }`}
-        >
-          <Building2 className="w-4 h-4 inline mr-1.5" />
-          Kabupaten/Kota ({KABUPATEN_LIST.length})
-        </button>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2 bg-white p-1 rounded-xl border border-slate-200">
+          <button
+            onClick={() => switchTab("provinsi")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              tab === "provinsi" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <MapPin className="w-4 h-4 inline mr-1.5" />
+            Provinsi ({PROVINSI_LIST.length})
+          </button>
+          <button
+            onClick={() => switchTab("kabupaten")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              tab === "kabupaten" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <Building2 className="w-4 h-4 inline mr-1.5" />
+            Kabupaten/Kota ({KABUPATEN_LIST.length})
+          </button>
+        </div>
+        {((tab === "provinsi" && canCreateProvinsi) || (tab === "kabupaten" && canCreateKabupaten)) && (
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <Plus className="w-4 h-4" />
+            {tab === "provinsi" ? "Tambah Provinsi" : "Tambah Kabupaten/Kota"}
+          </button>
+        )}
       </div>
 
-      {/* Search & Filter */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 max-w-md">
+      {/* Toolbar */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari wilayah..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder={tab === "provinsi" ? "Cari nama, kode, atau ketua provinsi..." : "Cari nama atau kode kabupaten..."}
+            className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
           />
         </div>
+        {tab === "kabupaten" && (
+          <select
+            value={provinsiFilter}
+            onChange={(e) => { setProvinsiFilter(e.target.value); setPage(1); }}
+            className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+          >
+            <option value="Semua">Semua Provinsi</option>
+            {[...new Set(KABUPATEN_LIST.map((k) => k.provinsiNama))].map((p) => (
+              <option key={p}>{p}</option>
+            ))}
+          </select>
+        )}
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
         >
           <option value="Semua">Semua Status</option>
           <option value="Aktif">Aktif</option>
           <option value="Pembentukan">Pembentukan</option>
+          <option value="Nonaktif">Nonaktif</option>
+          <option value="Dibekukan">Dibekukan</option>
         </select>
-        <span className="text-xs text-slate-500">
-          {tab === "provinsi" ? `${filteredProv.length} dari ${PROVINSI_LIST.length}` : `${filteredKab.length} dari ${KABUPATEN_LIST.length}`} wilayah
-        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleRefresh}
+            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+            title="Export Excel"
+          >
+            <Download className="w-4 h-4" />
+          </button>
+          <button
+            className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+            title="Export PDF"
+          >
+            <FileText className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          {tab === "provinsi" ? (
+        {loading ? (
+          /* Skeleton Loading */
+          <div className="p-6 space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="w-12 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="flex-1 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="w-20 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="w-16 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="w-24 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="w-20 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="w-8 h-4 bg-slate-200 animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
+        ) : pageData.length === 0 ? (
+          /* Empty State */
+          <div className="p-16 text-center">
+            <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+              <Inbox className="w-10 h-10 text-slate-300" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-700 mb-1">Belum ada data wilayah</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              {search || statusFilter !== "Semua" || provinsiFilter !== "Semua"
+                ? "Tidak ada data yang sesuai dengan filter. Coba ubah filter atau kata kunci pencarian."
+                : `Belum ada ${tab === "provinsi" ? "provinsi" : "kabupaten/kota"} yang terdaftar.`}
+            </p>
+            {((tab === "provinsi" && canCreateProvinsi) || (tab === "kabupaten" && canCreateKabupaten)) && !search && statusFilter === "Semua" && provinsiFilter === "Semua" && (
+              <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
+                <Plus className="w-4 h-4" />
+                {tab === "provinsi" ? "Tambah Provinsi" : "Tambah Kabupaten/Kota"}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Kode</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Nama Provinsi</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Kabupaten</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Anggota</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Pengurus</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Ketua</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Aksi</th>
-                </tr>
+              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+                {tab === "provinsi" ? (
+                  <tr>
+                    <Th onClick={() => handleSort("kode")} icon={getSortIcon("kode")}>Kode</Th>
+                    <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama Provinsi</Th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Kab/Kota</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Anggota</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Pengurus</th>
+                    <Th onClick={() => handleSort("ketua")} icon={getSortIcon("ketua")}>Ketua</Th>
+                    <Th onClick={() => handleSort("status")} icon={getSortIcon("status")}>Status</Th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Aksi</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <Th onClick={() => handleSort("kode")} icon={getSortIcon("kode")}>Kode</Th>
+                    <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama Kabupaten/Kota</Th>
+                    <Th onClick={() => handleSort("provinsiNama")} icon={getSortIcon("provinsiNama")}>Provinsi</Th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Anggota</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Pengurus</th>
+                    <Th onClick={() => handleSort("ketua")} icon={getSortIcon("ketua")}>Ketua</Th>
+                    <Th onClick={() => handleSort("status")} icon={getSortIcon("status")}>Status</Th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Aksi</th>
+                  </tr>
+                )}
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredProv.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm font-mono text-slate-600">{p.kode}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-blue-950">{p.nama}</td>
-                    <td className="px-4 py-3 text-sm text-center text-slate-600">{p.jumlahKabupaten}</td>
-                    <td className="px-4 py-3 text-sm text-center font-semibold text-blue-600">{p.jumlahAnggota.toLocaleString("id-ID")}</td>
-                    <td className="px-4 py-3 text-sm text-center text-slate-600">{p.jumlahPengurus}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{p.ketua}</td>
+                {pageData.map((item: any) => (
+                  <tr
+                    key={item.id}
+                    className="hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => showDetail(item, tab)}
+                  >
+                    <td className="px-4 py-3 text-sm font-mono text-slate-600">{item.kode}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-blue-950">{item.nama}</td>
+                    {tab === "provinsi" && (
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            switchTab("kabupaten");
+                            setProvinsiFilter(item.nama);
+                            setPage(1);
+                          }}
+                          className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline"
+                          title="Lihat kabupaten di provinsi ini"
+                        >
+                          {item.jumlahKabupaten}
+                        </button>
+                      </td>
+                    )}
+                    {tab === "kabupaten" && (
+                      <td className="px-4 py-3 text-sm text-slate-600">{item.provinsiNama}</td>
+                    )}
                     <td className="px-4 py-3 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                        p.status === "Aktif" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                      }`}>
-                        {p.status}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigate?.("anggota", { provinsi: tab === "provinsi" ? item.nama : item.provinsiNama, kabupaten: tab === "kabupaten" ? item.nama : undefined });
+                        }}
+                        className="text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+                        title="Lihat daftar anggota"
+                      >
+                        {item.jumlahAnggota.toLocaleString("id-ID")}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigate?.("pengurus", { wilayah: item.nama });
+                        }}
+                        className="text-sm font-bold text-violet-600 hover:text-violet-700 hover:underline"
+                        title="Lihat daftar pengurus"
+                      >
+                        {item.jumlahPengurus}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{item.ketua || "-"}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusBadge(item.status)}`}>
+                        {item.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Lihat"><Eye className="w-4 h-4" /></button>
-                        <button className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded" title="Edit"><Edit className="w-4 h-4" /></button>
+                    <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      <div className="relative inline-block">
+                        <button
+                          onClick={() => setActionMenuId(actionMenuId === item.id ? null : item.id)}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+                          title="Menu aksi"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        <AnimatePresence>
+                          {actionMenuId === item.id && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-2xl border border-slate-100 py-1 z-20"
+                            >
+                              {actions.filter((a) => a.show).map((action, idx) => {
+                                const Icon = action.icon;
+                                return (
+                                  <button
+                                    key={idx}
+                                    onClick={() => {
+                                      action.action(item);
+                                      setActionMenuId(null);
+                                    }}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-slate-50 transition-colors ${
+                                      action.danger ? "text-rose-600" : "text-slate-700"
+                                    }`}
+                                  >
+                                    <Icon className="w-3.5 h-3.5" />
+                                    {action.label}
+                                  </button>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          ) : (
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Nama Kabupaten/Kota</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Provinsi</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Anggota</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Pengurus</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Ketua</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredKab.map((k) => (
-                  <tr key={k.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm font-semibold text-blue-950">{k.nama}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{k.provinsiNama}</td>
-                    <td className="px-4 py-3 text-sm text-center font-semibold text-blue-600">{k.jumlahAnggota}</td>
-                    <td className="px-4 py-3 text-sm text-center text-slate-600">{k.jumlahPengurus}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{k.ketua}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                        k.status === "Aktif" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                      }`}>
-                        {k.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Lihat"><Eye className="w-4 h-4" /></button>
-                        <button className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded" title="Edit"><Edit className="w-4 h-4" /></button>
-                      </div>
-                    </td>
-                  </tr>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && pageData.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-100">
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span>Rows per page:</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(1); }}
+                className="px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+              >
+                {[10, 25, 50, 100].map((r) => (
+                  <option key={r} value={r}>{r}</option>
                 ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+              </select>
+              <span className="ml-2">
+                Menampilkan {startIdx + 1}-{endIdx} dari {totalData} data
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(1)}
+                disabled={currentPage === 1}
+                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Halaman pertama"
+              >
+                <ChevronsUpDown className="w-4 h-4 rotate-90" />
+              </button>
+              <button
+                onClick={() => setPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Halaman sebelumnya"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs font-medium text-slate-600 px-3 py-1">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Halaman berikutnya"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                title="Halaman terakhir"
+              >
+                <ChevronsUpDown className="w-4 h-4 -rotate-90" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Detail Dialog */}
+      <WilayahDetailDialog
+        detail={detail}
+        type={detailType}
+        onClose={() => setDetail(null)}
+        onEdit={canEdit ? () => { setDetail(null); } : undefined}
+      />
+
+      {/* Backdrop for action menu */}
+      {actionMenuId !== null && (
+        <div
+          className="fixed inset-0 z-[5]"
+          onClick={() => setActionMenuId(null)}
+        />
+      )}
     </div>
+  );
+}
+
+function Th({ children, onClick, icon }: { children: React.ReactNode; onClick: () => void; icon: React.ReactNode }) {
+  return (
+    <th
+      onClick={onClick}
+      className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        {icon}
+      </span>
+    </th>
   );
 }
