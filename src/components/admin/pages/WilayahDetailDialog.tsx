@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   X, MapPin, Building2, Users, UserCog, Info, History, BarChart3,
   Edit, FileText, ExternalLink, Calendar, TrendingUp, Activity,
-  CheckCircle2, XCircle, Mail, Phone,
+  CheckCircle2, XCircle, Mail, Phone, Plus,
 } from "lucide-react";
 import SafeImage from "@/components/ui/safe-image";
 
@@ -25,10 +25,11 @@ interface WilayahDetailProps {
   onEdit?: () => void;
   onViewPengurus?: (id: number) => void;
   onViewAnggota?: (id: number) => void;
+  onAddAnggota?: () => void;
 }
 
 export default function WilayahDetailDialog({
-  wilayahId, type, onClose, onEdit, onViewPengurus, onViewAnggota,
+  wilayahId, type, onClose, onEdit, onViewPengurus, onViewAnggota, onAddAnggota,
 }: WilayahDetailProps) {
   const [activeTab, setActiveTab] = useState("informasi");
   const [data, setData] = useState<any>(null);
@@ -221,7 +222,16 @@ export default function WilayahDetailDialog({
 
                   {/* ANGGOTA */}
                   {activeTab === "anggota" && (
-                    <div className="overflow-x-auto">
+                    <div>
+                      <div className="flex justify-end mb-3">
+                        <button
+                          onClick={() => { setDetailId(null); onAddAnggota?.(); }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Tambah Anggota
+                        </button>
+                      </div>
+                      <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead className="bg-slate-50 border-b border-slate-200">
                           <tr>
@@ -252,6 +262,7 @@ export default function WilayahDetailDialog({
                       {data.anggotaList?.length > 0 && (
                         <p className="text-xs text-slate-400 mt-3 text-center">Menampilkan {data.anggotaList.length} dari {s?.totalAnggota || 0} anggota</p>
                       )}
+                      </div>
                     </div>
                   )}
 

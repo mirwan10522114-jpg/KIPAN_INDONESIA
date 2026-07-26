@@ -62,6 +62,22 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // Auto-create pengurus record for ketua
+      if (body.ketua) {
+        await db.pengurus.create({
+          data: {
+            namaLengkap: body.ketua,
+            jabatan: `Ketua KIPAN Provinsi ${body.nama}`,
+            level: "PROVINSI",
+            provinsiId: provinsi.id,
+            email: `ketua.${body.kode.toLowerCase()}@kipan.id`,
+            status: "Aktif",
+            tanggalMulai: new Date(),
+            nomorSK: `SK-KETUA/${body.kode}/${new Date().getFullYear()}`,
+          },
+        });
+      }
+
       return NextResponse.json({ success: true, data: provinsi, message: "Provinsi berhasil ditambahkan" });
     }
 
@@ -85,6 +101,23 @@ export async function POST(req: NextRequest) {
         },
         include: { provinsi: { select: { nama: true, kode: true } } },
       });
+
+      // Auto-create pengurus record for ketua kabupaten
+      if (body.ketua) {
+        await db.pengurus.create({
+          data: {
+            namaLengkap: body.ketua,
+            jabatan: `Ketua KIPAN Kab. ${body.nama}`,
+            level: "KABUPATEN",
+            provinsiId: parseInt(body.provinsiId),
+            kabupatenId: kabupaten.id,
+            email: `ketua.${body.kode}@kipan.id`,
+            status: "Aktif",
+            tanggalMulai: new Date(),
+            nomorSK: `SK-KETUA/${body.kode}/${new Date().getFullYear()}`,
+          },
+        });
+      }
 
       return NextResponse.json({ success: true, data: kabupaten, message: "Kabupaten/Kota berhasil ditambahkan" });
     }

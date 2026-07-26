@@ -25,6 +25,7 @@ import {
   Trash2,
   ArrowUpDown,
   Inbox,
+  CheckCircle2,
 } from "lucide-react";
 import { PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 import WilayahDetailDialog from "./WilayahDetailDialog";
@@ -287,8 +288,8 @@ export default function WilayahPage({
       });
       setShowFormDialog(true);
     }, show: canEdit },
-    { label: "Kelola Pengurus", icon: UserCog, action: () => onNavigate?.("pengurus"), show: true },
-    { label: "Lihat Anggota", icon: Users, action: () => onNavigate?.("anggota"), show: true },
+    { label: "Kelola Pengurus", icon: UserCog, action: () => { setActionMenuId(null); onNavigate?.("pengurus"); }, show: true },
+    { label: "Lihat Anggota", icon: Users, action: () => { setActionMenuId(null); onNavigate?.("anggota"); }, show: true },
     { label: "Nonaktifkan", icon: Ban, action: (item: any) => {
       // Toggle status
       fetch("/api/wilayah", {
@@ -361,13 +362,20 @@ export default function WilayahPage({
             Kabupaten/Kota ({kabData.length})
           </button>
         </div>
-        {((tab === "provinsi" && canCreateProvinsi) || (tab === "kabupaten" && canCreateKabupaten)) && (
+        {/* Tambah Provinsi disabled — all 38 provinsi already registered */}
+        {tab === "provinsi" && (
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-500 text-sm font-medium rounded-lg border border-slate-200">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            Semua 38 provinsi sudah terdaftar
+          </div>
+        )}
+        {tab === "kabupaten" && canCreateKabupaten && (
           <button
-            onClick={() => { setFormData({ type: tab, kode: "", nama: "", status: "Aktif", ketua: "" }); setShowFormDialog(true); }}
+            onClick={() => { setFormData({ type: "kabupaten", kode: "", nama: "", status: "Aktif", ketua: "" }); setShowFormDialog(true); }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            {tab === "provinsi" ? "Tambah Provinsi" : "Tambah Kabupaten/Kota"}
+            Tambah Kabupaten/Kota
           </button>
         )}
       </div>
@@ -484,13 +492,13 @@ export default function WilayahPage({
                 ? "Tidak ada data yang sesuai dengan filter. Coba ubah filter atau kata kunci pencarian."
                 : `Belum ada ${tab === "provinsi" ? "provinsi" : "kabupaten/kota"} yang terdaftar.`}
             </p>
-            {((tab === "provinsi" && canCreateProvinsi) || (tab === "kabupaten" && canCreateKabupaten)) && !search && statusFilter === "Semua" && provinsiFilter === "Semua" && (
+            {tab === "kabupaten" && canCreateKabupaten && !search && statusFilter === "Semua" && provinsiFilter === "Semua" && (
               <button
-                onClick={() => { setFormData({ type: tab, kode: "", nama: "", status: "Aktif", ketua: "" }); setShowFormDialog(true); }}
+                onClick={() => { setFormData({ type: "kabupaten", kode: "", nama: "", status: "Aktif", ketua: "" }); setShowFormDialog(true); }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700"
               >
                 <Plus className="w-4 h-4" />
-                {tab === "provinsi" ? "Tambah Provinsi" : "Tambah Kabupaten/Kota"}
+                Tambah Kabupaten/Kota
               </button>
             )}
           </div>
@@ -704,6 +712,9 @@ export default function WilayahPage({
           setDetailId(null);
           onNavigate?.("anggota");
         }}
+        onAddAnggota={() => {
+          onNavigate?.("anggota");
+        }}
       />
 
       {/* Form Dialog for Add/Edit */}
@@ -711,6 +722,7 @@ export default function WilayahPage({
         open={showFormDialog}
         data={formData}
         provinsiList={apiProvinsi.map((p: any) => ({ id: p.id, nama: p.nama }))}
+        existingKabupatenKodes={kabData.map((k: any) => k.kode)}
         onClose={() => setShowFormDialog(false)}
         onSave={handleSave}
       />

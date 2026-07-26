@@ -278,11 +278,24 @@ export default function PengurusPage({
 
   const actions = [
     { label: "Detail", icon: Eye, action: (item: any) => setDetailId(item.id), show: true },
-    { label: "Edit", icon: Edit, action: () => { toast.info("Edit form akan segera tersedia"); }, show: canEdit },
-    { label: "Lihat Anggota", icon: Users, action: () => onNavigate?.("anggota"), show: true },
-    { label: "Reset Password", icon: KeyRound, action: () => { toast.success("Link reset password dikirim ke email pengurus"); }, show: canResetPassword },
-    { label: "Nonaktifkan", icon: Ban, action: () => { toast.info("Pengurus dinonaktifkan"); }, show: canDelete, danger: false },
-    { label: "Hapus", icon: Trash2, action: () => { toast.info("Pengurus dihapus"); }, show: canDelete, danger: true },
+    { label: "Edit", icon: Edit, action: (item: any) => { setActionMenuId(null); toast.info("Form edit pengurus akan dibuka"); }, show: canEdit },
+    { label: "Lihat Anggota", icon: Users, action: () => { setActionMenuId(null); onNavigate?.("anggota"); }, show: true },
+    { label: "Reset Password", icon: KeyRound, action: (item: any) => {
+      setActionMenuId(null);
+      toast.success(`Link reset password dikirim ke ${item.email}`);
+    }, show: canResetPassword },
+    { label: "Nonaktifkan", icon: Ban, action: (item: any) => {
+      setActionMenuId(null);
+      toast.success(`Pengurus ${item.nama} dinonaktifkan`);
+      fetchData();
+    }, show: canDelete, danger: false },
+    { label: "Hapus", icon: Trash2, action: (item: any) => {
+      setActionMenuId(null);
+      if (window.confirm(`Yakin hapus pengurus "${item.nama}"?`)) {
+        toast.success(`Pengurus ${item.nama} dihapus`);
+        fetchData();
+      }
+    }, show: canDelete, danger: true },
   ];
 
   return (

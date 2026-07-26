@@ -8,6 +8,7 @@ import {
   MASTER_KABUPATEN,
   getKabupatenByProvinsi,
 } from "@/lib/master-wilayah";
+import { CheckCircle2 } from "lucide-react";
 
 export interface WilayahFormData {
   id?: number;
@@ -25,12 +26,14 @@ export default function WilayahFormDialog({
   open,
   data,
   provinsiList,
+  existingKabupatenKodes = [],
   onClose,
   onSave,
 }: {
   open: boolean;
   data: WilayahFormData | null;
   provinsiList: { id: number; nama: string }[];
+  existingKabupatenKodes?: string[];
   onClose: () => void;
   onSave: (data: WilayahFormData) => Promise<void>;
 }) {
@@ -103,7 +106,10 @@ export default function WilayahFormDialog({
   };
 
   const isProvinsi = form.type === "provinsi";
-  const kabupatenOptions = selectedProvinsiKode ? getKabupatenByProvinsi(selectedProvinsiKode) : [];
+  // Filter out kabupaten that are already registered
+  const allKabupatenOptions = selectedProvinsiKode ? getKabupatenByProvinsi(selectedProvinsiKode) : [];
+  const kabupatenOptions = allKabupatenOptions.filter((k) => !existingKabupatenKodes.includes(k.kode));
+  const registeredCount = allKabupatenOptions.length - kabupatenOptions.length;
 
   return (
     <AnimatePresence>
@@ -230,7 +236,13 @@ export default function WilayahFormDialog({
                       ))}
                     </select>
                     <p className="text-[10px] text-slate-400 mt-1">
-                      {kabupatenOptions.length} kabupaten/kota tersedia untuk provinsi ini
+                      {kabupatenOptions.length} kabupaten/kota tersedia
+                      {registeredCount > 0 && (
+                        <span className="text-emerald-500"> • {registeredCount} sudah terdaftar</span>
+                      )}
+                      {kabupatenOptions.length === 0 && registeredCount > 0 && (
+                        <span className="text-amber-500"> • Semua sudah terdaftar</span>
+                      )}
                     </p>
                   </div>
                 </>
