@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Save, MapPin, Building2 } from "lucide-react";
+import {
+  MASTER_PROVINSI,
+  MASTER_KABUPATEN,
+  getKabupatenByProvinsi,
+} from "@/lib/master-wilayah";
 
 export interface WilayahFormData {
   id?: number;
@@ -12,6 +17,8 @@ export interface WilayahFormData {
   status: string;
   ketua: string;
   provinsiId?: string;
+  masterProvinsiKode?: string; // kode dari master data
+  masterKabupatenKode?: string; // kode dari master data
 }
 
 export default function WilayahFormDialog({
@@ -36,19 +43,47 @@ export default function WilayahFormDialog({
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [selectedProvinsiKode, setSelectedProvinsiKode] = useState("");
+  const [selectedKabupatenKode, setSelectedKabupatenKode] = useState("");
 
   useEffect(() => {
     if (data) {
       setForm(data);
+      setSelectedProvinsiKode(data.masterProvinsiKode || "");
+      setSelectedKabupatenKode(data.masterKabupatenKode || "");
     } else {
       setForm({ type: "provinsi", kode: "", nama: "", status: "Aktif", ketua: "" });
+      setSelectedProvinsiKode("");
+      setSelectedKabupatenKode("");
     }
     setError("");
   }, [data, open]);
 
+  // When selecting from master data, auto-fill kode & nama
+  const handleProvinsiSelect = (kode: string) => {
+    setSelectedProvinsiKode(kode);
+    const provinsi = MASTER_PROVINSI.find((p) => p.kode === kode);
+    if (provinsi) {
+      setForm({ ...form, kode: provinsi.kode, nama: provinsi.nama });
+    }
+  };
+
+  const handleKabupatenSelect = (kode: string) => {
+    setSelectedKabupatenKode(kode);
+    const kabupaten = MASTER_KABUPATEN.find((k) => k.kode === kode);
+    if (kabupaten) {
+      setForm({ ...form, kode: kabupaten.kode, nama: kabupaten.nama });
+      // Also set provinsiId for the API
+      const provinsi = provinsiList.find((p) => p.nama === MASTER_PROVINSI.find((mp) => mp.kode === kabupaten.provinsiKode)?.nama);
+      if (provinsi) {
+        setForm((prev) => ({ ...prev, kode: kabupaten.kode, nama: kabupaten.nama, provinsiId: String(provinsi.id) }));
+      }
+    }
+  };
+
   const handleSave = async () => {
     if (!form.kode || !form.nama) {
-      setError("Kode dan nama wajib diisi");
+      setError("Kode dan nama wajib diisi (pilih dari master data)");
       return;
     }
     if (form.type === "kabupaten" && !form.provinsiId) {
@@ -68,6 +103,7 @@ export default function WilayahFormDialog({
   };
 
   const isProvinsi = form.type === "provinsi";
+  const kabupatenOptions = selectedProvinsiKode ? getKabupatenByProvinsi(selectedProvinsiKode) : [];
 
   return (
     <AnimatePresence>
@@ -99,7 +135,7 @@ export default function WilayahFormDialog({
                   <h2 className="text-lg font-bold">
                     {data?.id ? "Edit" : "Tambah"} {isProvinsi ? "Provinsi" : "Kabupaten/Kota"}
                   </h2>
-                  <p className="text-xs text-blue-100">Isi data wilayah dengan lengkap</p>
+                  <p className="text-xs text-blue-100">Pilih dari master data wilayah Indonesia</p>
                 </div>
               </div>
             </div>
@@ -130,43 +166,99 @@ export default function WilayahFormDialog({
                 </div>
               )}
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kode {isProvinsi ? "Provinsi" : "Kabupaten"} *</label>
-                <input
-                  type="text"
-                  value={form.kode}
-                  onChange={(e) => setForm({ ...form, kode: e.target.value.toUpperCase() })}
-                  placeholder={isProvinsi ? "cth: JBR" : "cth: 3204"}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none uppercase"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nama {isProvinsi ? "Provinsi" : "Kabupaten/Kota"} *</label>
-                <input
-                  type="text"
-                  value={form.nama}
-                  onChange={(e) => setForm({ ...form, nama: e.target.value })}
-                  placeholder={isProvinsi ? "cth: Jawa Barat" : "cth: Bandung Barat"}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
-                />
-              </div>
-
-              {!isProvinsi && (
+              {/* Select from master data — Provinsi */}
+              {isProvinsi ? (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Provinsi *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Pilih Provinsi dari Master Data *
+                  </label>
                   <select
-                    value={form.provinsiId || ""}
-                    onChange={(e) => setForm({ ...form, provinsiId: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    value={selectedProvinsiKode}
+                    onChange={(e) => handleProvinsiSelect(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
                   >
-                    <option value="">Pilih Provinsi...</option>
-                    {provinsiList.map((p) => (
-                      <option key={p.id} value={p.id}>{p.nama}</option>
+                    <option value="">— Pilih Provinsi —</option>
+                    {MASTER_PROVINSI.map((p) => (
+                      <option key={p.kode} value={p.kode}>
+                        {p.kode} — {p.nama}
+                      </option>
                     ))}
                   </select>
+                  <p className="text-[10px] text-slate-400 mt-1">38 provinsi tersedia dari data Kemendagri</p>
                 </div>
+              ) : (
+                <>
+                  {/* Select Provinsi first (for kabupaten) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Pilih Provinsi *
+                    </label>
+                    <select
+                      value={selectedProvinsiKode}
+                      onChange={(e) => {
+                        setSelectedProvinsiKode(e.target.value);
+                        setSelectedKabupatenKode("");
+                        setForm({ ...form, kode: "", nama: "", provinsiId: "" });
+                      }}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                    >
+                      <option value="">— Pilih Provinsi —</option>
+                      {MASTER_PROVINSI.map((p) => (
+                        <option key={p.kode} value={p.kode}>
+                          {p.kode} — {p.nama}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Select Kabupaten from master data */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Pilih Kabupaten/Kota dari Master Data *
+                    </label>
+                    <select
+                      value={selectedKabupatenKode}
+                      onChange={(e) => handleKabupatenSelect(e.target.value)}
+                      disabled={!selectedProvinsiKode}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                    >
+                      <option value="">— Pilih Kabupaten/Kota —</option>
+                      {kabupatenOptions.map((k) => (
+                        <option key={k.kode} value={k.kode}>
+                          {k.kode} — {k.nama} ({k.jenis})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {kabupatenOptions.length} kabupaten/kota tersedia untuk provinsi ini
+                    </p>
+                  </div>
+                </>
               )}
+
+              {/* Auto-filled fields (read-only) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kode (otomatis)</label>
+                  <input
+                    type="text"
+                    value={form.kode}
+                    readOnly
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
+                    placeholder="Terisi otomatis"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nama (otomatis)</label>
+                  <input
+                    type="text"
+                    value={form.nama}
+                    readOnly
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
+                    placeholder="Terisi otomatis"
+                  />
+                </div>
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">Ketua</label>
@@ -201,8 +293,8 @@ export default function WilayahFormDialog({
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                disabled={saving || (!form.kode || !form.nama)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? (
                   <>

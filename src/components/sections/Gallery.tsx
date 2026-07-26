@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, ZoomIn, Upload, ImageOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { GALLERY_ITEMS, GALLERY_CATEGORIES, COMPANY } from "@/lib/data";
@@ -11,8 +11,32 @@ import SafeImage from "@/components/ui/safe-image";
 export default function Gallery() {
   const [filter, setFilter] = useState<string>("Semua");
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
-  const gallery = useContentStore((s) => s.gallery);
+  const storeGallery = useContentStore((s) => s.gallery);
   const company = useContentStore((s) => s.company);
+  const [apiGallery, setApiGallery] = useState<GalleryItem[]>([]);
+  const [useApi, setUseApi] = useState(false);
+
+  // Fetch galeri from API for consistency with admin
+  useEffect(() => {
+    fetch("/api/galeri", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data.length > 0) {
+          const mapped = json.data.map((g: any) => ({
+            id: g.id,
+            title: g.judul,
+            category: g.kategori,
+            image: g.foto,
+            location: g.lokasi || "Indonesia",
+          }));
+          setApiGallery(mapped);
+          setUseApi(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const gallery = useApi ? apiGallery : storeGallery;
 
   const filtered =
     filter === "Semua"

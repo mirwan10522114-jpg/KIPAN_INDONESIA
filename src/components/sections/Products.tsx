@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -17,7 +17,33 @@ import SafeImage from "@/components/ui/safe-image";
 const BERITA_CATEGORIES = ["Semua", "Nasional", "Provinsi", "Kabupaten"] as const;
 
 export default function Products() {
-  const berita = useContentStore((s) => s.berita);
+  const storeBerita = useContentStore((s) => s.berita);
+  const [apiBerita, setApiBerita] = useState<Berita[]>([]);
+  const [useApi, setUseApi] = useState(false);
+
+  // Fetch berita from API for consistency with admin
+  useEffect(() => {
+    fetch("/api/berita?status=Published", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data.length > 0) {
+          const mapped = json.data.map((b: any) => ({
+            id: b.id,
+            title: b.judul,
+            category: b.kategori,
+            image: b.thumbnail || "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80",
+            excerpt: b.excerpt,
+            date: b.publishedAt ? new Date(b.publishedAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : new Date(b.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
+            location: "Indonesia",
+          }));
+          setApiBerita(mapped);
+          setUseApi(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const berita = useApi ? apiBerita : storeBerita;
   const [filter, setFilter] = useState<string>("Semua");
   const [selected, setSelected] = useState<Berita | null>(null);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
@@ -23,9 +23,35 @@ const STATS_ICON_MAP: Record<string, LucideIcon> = {
 const FILTERS = ["Semua", "Nasional", "Provinsi", "Kabupaten"] as const;
 
 export default function Testimonials() {
-  const pengurus = useContentStore((s) => s.pengurus);
+  const storePengurus = useContentStore((s) => s.pengurus);
   const stats = useContentStore((s) => s.testimonialStats);
   const [filter, setFilter] = useState<string>("Semua");
+  const [apiPengurus, setApiPengurus] = useState<any[]>([]);
+  const [useApi, setUseApi] = useState(false);
+
+  // Fetch pengurus from API for consistency with admin
+  useEffect(() => {
+    fetch("/api/pengurus", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data.length > 0) {
+          const mapped = json.data.map((p: any) => ({
+            id: p.id,
+            name: p.namaLengkap,
+            role: p.jabatan,
+            level: p.level === "Nasional" ? "Nasional" : p.level === "Provinsi" ? "Provinsi" : "Kabupaten",
+            wilayah: p.level === "Nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || ""),
+            photo: p.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+            kontak: p.email,
+          }));
+          setApiPengurus(mapped);
+          setUseApi(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const pengurus = useApi ? apiPengurus : storePengurus;
 
   const filtered =
     filter === "Semua"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -22,6 +22,13 @@ import {
   HandHeart,
 } from "lucide-react";
 import { useContentStore } from "@/lib/content-store";
+import {
+  MASTER_PROVINSI,
+  MASTER_KABUPATEN,
+  MASTER_KECAMATAN,
+  getKabupatenByProvinsi,
+  getKecamatanByKabupaten,
+} from "@/lib/master-wilayah";
 
 const PERSYARATAN_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   IdCard,
@@ -432,31 +439,60 @@ export default function PendaftaranAnggota() {
 
                   <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Field label="Provinsi" required>
-                      <input
-                        type="text"
+                      <select
                         value={form.provinsi}
-                        onChange={(e) => update("provinsi", e.target.value)}
+                        onChange={(e) => {
+                          const prov = MASTER_PROVINSI.find((p) => p.nama === e.target.value);
+                          update("provinsi", e.target.value);
+                          update("kabupaten", "");
+                          update("kecamatan", "");
+                        }}
                         className="form-input"
-                        placeholder="Provinsi"
-                      />
+                      >
+                        <option value="">Pilih Provinsi...</option>
+                        {MASTER_PROVINSI.map((p) => (
+                          <option key={p.kode} value={p.nama}>{p.nama}</option>
+                        ))}
+                      </select>
                     </Field>
                     <Field label="Kabupaten/Kota" required>
-                      <input
-                        type="text"
+                      <select
                         value={form.kabupaten}
-                        onChange={(e) => update("kabupaten", e.target.value)}
-                        className="form-input"
-                        placeholder="Kabupaten/Kota"
-                      />
+                        onChange={(e) => {
+                          update("kabupaten", e.target.value);
+                          update("kecamatan", "");
+                        }}
+                        disabled={!form.provinsi}
+                        className="form-input disabled:bg-slate-50 disabled:text-slate-400"
+                      >
+                        <option value="">Pilih Kabupaten...</option>
+                        {form.provinsi && (() => {
+                          const prov = MASTER_PROVINSI.find((p) => p.nama === form.provinsi);
+                          if (!prov) return null;
+                          return getKabupatenByProvinsi(prov.kode).map((k) => (
+                            <option key={k.kode} value={k.nama}>{k.nama} ({k.jenis})</option>
+                          ));
+                        })()}
+                      </select>
                     </Field>
                     <Field label="Kecamatan">
-                      <input
-                        type="text"
+                      <select
                         value={form.kecamatan}
                         onChange={(e) => update("kecamatan", e.target.value)}
-                        className="form-input"
-                        placeholder="Kecamatan"
-                      />
+                        disabled={!form.kabupaten}
+                        className="form-input disabled:bg-slate-50 disabled:text-slate-400"
+                      >
+                        <option value="">Pilih Kecamatan...</option>
+                        {form.kabupaten && (() => {
+                          const prov = MASTER_PROVINSI.find((p) => p.nama === form.provinsi);
+                          if (!prov) return null;
+                          const kab = MASTER_KABUPATEN.find((k) => k.nama === form.kabupaten && k.provinsiKode === prov.kode);
+                          if (!kab) return null;
+                          return getKecamatanByKabupaten(kab.kode).map((kec) => (
+                            <option key={kec.kode} value={kec.nama}>{kec.nama}</option>
+                          ));
+                        })()}
+                      </select>
                     </Field>
                     <Field label="Kode Pos">
                       <input

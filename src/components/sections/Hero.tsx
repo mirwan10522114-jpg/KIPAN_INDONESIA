@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { UserPlus, ChevronDown, Award, MapPin, ShieldCheck } from "lucide-react";
 import { useContentStore } from "@/lib/content-store";
 import SafeImage from "@/components/ui/safe-image";
@@ -8,7 +9,30 @@ import SafeImage from "@/components/ui/safe-image";
 export default function Hero() {
   const hero = useContentStore((s) => s.hero);
   const company = useContentStore((s) => s.company);
-  const stats = useContentStore((s) => s.stats);
+  const storeStats = useContentStore((s) => s.stats);
+  const [apiStats, setApiStats] = useState<any[]>([]);
+  const [useApiStats, setUseApiStats] = useState(false);
+
+  // Fetch real stats from dashboard API for consistency
+  useEffect(() => {
+    fetch("/api/dashboard", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data?.stats) {
+          const s = json.data.stats;
+          setApiStats([
+            { value: String(s.totalProvinsi), label: "Provinsi" },
+            { value: String(s.totalKabupaten), label: "Kabupaten" },
+            { value: s.totalAnggota.toLocaleString("id-ID"), label: "Anggota" },
+            { value: String(s.totalPengurus), label: "Pengurus" },
+          ]);
+          setUseApiStats(true);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const stats = useApiStats ? apiStats : storeStats;
 
   return (
     <section
