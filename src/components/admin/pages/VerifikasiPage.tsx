@@ -121,7 +121,7 @@ export default function VerifikasiPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-blue-950">Verifikasi Anggota</h1>
+        <h1 className="text-2xl font-bold text-blue-950">Verifikasi Pengurus</h1>
         <div className="bg-white rounded-2xl p-12 text-center">
           <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-slate-500">Memuat data...</p>
@@ -134,8 +134,8 @@ export default function VerifikasiPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-blue-950">Verifikasi Anggota</h1>
-          <p className="text-slate-500 text-sm mt-1">Verifikasi berkas dan persyaratan calon anggota</p>
+          <h1 className="text-2xl font-bold text-blue-950">Verifikasi Pengurus</h1>
+          <p className="text-slate-500 text-sm mt-1">Verifikasi berkas dan persyaratan calon pengurus</p>
         </div>
         <button
           onClick={fetchData}
@@ -149,7 +149,7 @@ export default function VerifikasiPage() {
         {/* List */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-4 border-b border-slate-100">
-            <h3 className="font-bold text-blue-950 text-sm">Calon Anggota ({list.length})</h3>
+            <h3 className="font-bold text-blue-950 text-sm">Calon Pengurus ({list.length})</h3>
           </div>
           <ul className="max-h-[600px] overflow-y-auto">
             {list.map((p) => (
@@ -387,7 +387,7 @@ export default function VerifikasiPage() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl p-12 text-center text-slate-500">
-              Pilih calon anggota dari daftar untuk verifikasi
+              Pilih calon pengurus dari daftar untuk verifikasi
             </div>
           )}
         </div>

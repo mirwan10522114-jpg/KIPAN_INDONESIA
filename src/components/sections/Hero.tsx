@@ -23,7 +23,6 @@ export default function Hero() {
           setApiStats([
             { value: String(s.totalProvinsi), label: "Provinsi" },
             { value: String(s.totalKabupaten), label: "Kabupaten" },
-            { value: s.totalAnggota.toLocaleString("id-ID"), label: "Anggota" },
             { value: String(s.totalPengurus), label: "Pengurus" },
           ]);
           setUseApiStats(true);
@@ -106,7 +105,7 @@ export default function Hero() {
               className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-600 text-white font-semibold px-7 py-4 rounded-full shadow-2xl shadow-sky-500/40 hover:shadow-sky-500/60 hover:-translate-y-1 transition-all"
             >
               <UserPlus className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-              Daftar Menjadi Anggota
+              Daftar Menjadi Pengurus
             </a>
             <a
               href="#program"
@@ -122,7 +121,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 max-w-2xl"
+            className="mt-12 grid grid-cols-3 gap-4 sm:gap-6 max-w-2xl"
           >
             {stats.map((stat) => (
               <div key={stat.label} className="text-center sm:text-left">

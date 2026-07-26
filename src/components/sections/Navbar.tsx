@@ -82,7 +82,7 @@ export default function Navbar() {
             className="hidden xl:inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-lg shadow-sky-500/30 hover:shadow-xl hover:shadow-sky-500/40 hover:-translate-y-0.5 transition-all"
           >
             <MessageCircle className="w-4 h-4" />
-            Daftar Anggota
+            Daftar Pengurus
           </a>
 
           {/* Mobile toggle */}
@@ -127,7 +127,7 @@ export default function Navbar() {
                   className="mt-3 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold px-5 py-3 rounded-full shadow-lg"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Daftar Anggota
+                  Daftar Pengurus
                 </a>
               </div>
             </motion.div>

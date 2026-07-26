@@ -27,7 +27,6 @@ export const COMPANY = {
 export const STATS = [
   { value: "38", label: "Provinsi" },
   { value: "514", label: "Kabupaten/Kota" },
-  { value: "20.000+", label: "Anggota" },
   { value: "1.000+", label: "Pengurus" },
 ];
 
@@ -113,7 +112,7 @@ export const STRUKTUR_LEVELS = [
   {
     level: "Kabupaten/Kota",
     title: "Pengurus Kabupaten/Kota",
-    desc: "Pelaksana utama program KIPAN di tingkat daerah, melakukan verifikasi & pembinaan anggota.",
+    desc: "Pelaksana utama program KIPAN di tingkat daerah, melakukan verifikasi & pembinaan pengurus.",
     icon: "Building2",
     color: "from-cyan-600 to-sky-600",
     count: "514 Kab/Kota",
@@ -121,18 +120,18 @@ export const STRUKTUR_LEVELS = [
   {
     level: "Kecamatan",
     title: "Pengurus Kecamatan",
-    desc: "Pengurus lapangan yang melakukan rekrutmen dan pendampingan anggota di komunitas.",
+    desc: "Pengurus lapangan yang melakukan rekrutmen dan pendampingan pengurus di komunitas.",
     icon: "Users",
     color: "from-sky-600 to-blue-600",
     count: "Opsional",
   },
   {
     level: "Anggota",
-    title: "Anggota KIPAN",
-    desc: "Kader pemuda anti narkoba yang menjadi ujung tombak gerakan di masyarakat.",
+    title: "Anggota Divisi",
+    desc: "Jabatan dalam divisi-divisi KIPAN yang menjadi ujung tombak gerakan di masyarakat.",
     icon: "User",
     color: "from-blue-600 to-indigo-600",
-    count: "20.000+ Anggota",
+    count: "Jabatan",
   },
 ];
 
@@ -239,10 +238,10 @@ export const PROGRAMS: Program[] = [
   {
     id: "pembinaan",
     number: "06",
-    title: "Pembinaan Anggota",
+    title: "Pembinaan Pengurus",
     subtitle: "Pengembangan kapasitas berkelanjutan",
     description:
-      "Pembinaan rutin bagi anggota KIPAN untuk terus mengembangkan kapasitas sebagai kader anti narkoba. Termasuk mentoring, kurikulum berkelanjutan, dan pengembangan karier di bidang pencegahan narkoba.",
+      "Pembinaan rutin bagi pengurus KIPAN untuk terus mengembangkan kapasitas sebagai kader anti narkoba. Termasuk mentoring, kurikulum berkelanjutan, dan pengembangan karier di bidang pencegahan narkoba.",
     features: [
       "Mentoring bulanan",
       "Kurikulum pengembangan berkala",
@@ -283,16 +282,16 @@ export const PENDAFTARAN_FLOW = [
   {
     step: 4,
     title: "Penilaian & Kelulusan",
-    desc: "Penilaian akhir pelatihan dan penetapan kelulusan calon anggota.",
+    desc: "Penilaian akhir pelatihan dan penetapan kelulusan calon pengurus.",
     icon: "Award",
     status: "Lulus",
   },
   {
     step: 5,
-    title: "Pengangkatan Anggota",
-    desc: "Penetapan nomor anggota, pembuatan kartu anggota digital dengan QR Code.",
+    title: "Pengangkatan Pengurus",
+    desc: "Penetapan nomor induk pengurus, pembuatan kartu pengurus digital dengan QR Code, dan penempatan jabatan di bidang/divisi.",
     icon: "BadgeCheck",
-    status: "Menjadi Anggota",
+    status: "Menjadi Pengurus",
   },
 ];
 
@@ -669,7 +668,7 @@ export const TESTIMONIALS: Testimonial[] = [
   {
     id: 1,
     clientName: "Ahmad Fauzi",
-    clientRole: "Anggota KIPAN Jawa Barat",
+    clientRole: "Pengurus KIPAN Jawa Barat",
     clientPhoto:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     projectTitle: "Program Sosialisasi 50 Sekolah",
@@ -688,7 +687,7 @@ export const TESTIMONIALS: Testimonial[] = [
     clientRole: "Pengurus KIPAN Kab. Bandung Barat",
     clientPhoto:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
-    projectTitle: "Verifikasi 200 Calon Anggota",
+    projectTitle: "Verifikasi 200 Calon Pengurus",
     projectLocation: "Bandung Barat",
     projectType: "Verifikasi",
     projectImage:
@@ -717,7 +716,7 @@ export const TESTIMONIALS: Testimonial[] = [
   {
     id: 4,
     clientName: "Dewi Lestari",
-    clientRole: "Anggota KIPAN DKI Jakarta",
+    clientRole: "Pengurus KIPAN DKI Jakarta",
     clientPhoto:
       "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
     projectTitle: "Konser Amal Anti Narkoba",
@@ -733,8 +732,8 @@ export const TESTIMONIALS: Testimonial[] = [
 ];
 
 export const TESTIMONIAL_STATS = [
-  { value: "98%", label: "Anggota Aktif", icon: "Users" },
+  { value: "98%", label: "Pengurus Aktif", icon: "Users" },
   { value: "4.9/5", label: "Kepuasan Program", icon: "Star" },
-  { value: "20.000+", label: "Anggota Nasional", icon: "Award" },
+  { value: "1.000+", label: "Pengurus Nasional", icon: "Award" },
   { value: "38", label: "Provinsi Tersebar", icon: "MapPin" },
 ];

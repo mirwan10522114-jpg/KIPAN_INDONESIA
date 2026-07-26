@@ -45,11 +45,11 @@ export default function TargetMarket() {
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-950 leading-tight">
             5 Langkah Menjadi{" "}
-            <span className="text-gradient-water">Anggota KIPAN</span>
+            <span className="text-gradient-water">Pengurus KIPAN</span>
           </h2>
           <p className="mt-5 text-slate-600 text-base lg:text-lg leading-relaxed">
-            Dari pendaftaran online hingga pengangkatan sebagai anggota aktif
-            dengan kartu anggota digital.
+            Dari pendaftaran online hingga pengangkatan sebagai pengurus aktif
+            dengan kartu pengurus digital dan penempatan jabatan di bidang/divisi.
           </p>
         </motion.div>
 

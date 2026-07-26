@@ -225,7 +225,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     ],
     persyaratan: [true, true, true, true, true, true],
     riwayat: [
-      { tanggal: "2025-01-10 14:30", aksi: "Pendaftaran dikirim", oleh: "Calon Anggota" },
+      { tanggal: "2025-01-10 14:30", aksi: "Pendaftaran dikirim", oleh: "Calon Pengurus" },
     ],
   },
   {
@@ -245,7 +245,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     ],
     persyaratan: [true, true, true, true, true, true],
     riwayat: [
-      { tanggal: "2025-01-08 10:15", aksi: "Pendaftaran dikirim", oleh: "Calon Anggota" },
+      { tanggal: "2025-01-08 10:15", aksi: "Pendaftaran dikirim", oleh: "Calon Pengurus" },
       { tanggal: "2025-01-09 09:30", aksi: "Verifikasi berkas dimulai", oleh: "Admin Kabupaten" },
     ],
   },
@@ -266,7 +266,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     ],
     persyaratan: [true, true, true, true, false, true],
     riwayat: [
-      { tanggal: "2025-01-05 11:00", aksi: "Pendaftaran dikirim", oleh: "Calon Anggota" },
+      { tanggal: "2025-01-05 11:00", aksi: "Pendaftaran dikirim", oleh: "Calon Pengurus" },
       { tanggal: "2025-01-07 14:20", aksi: "Diminta perbaikan dokumen", oleh: "Admin Kabupaten" },
     ],
   },
@@ -287,7 +287,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     ],
     persyaratan: [true, true, true, true, true, true],
     riwayat: [
-      { tanggal: "2024-12-20 09:00", aksi: "Pendaftaran dikirim", oleh: "Calon Anggota" },
+      { tanggal: "2024-12-20 09:00", aksi: "Pendaftaran dikirim", oleh: "Calon Pengurus" },
       { tanggal: "2024-12-22 10:30", aksi: "Verifikasi berkas lengkap", oleh: "Admin Kabupaten" },
       { tanggal: "2024-12-25 14:00", aksi: "Disetujui, menunggu jadwal pelatihan", oleh: "Admin Kabupaten" },
     ],
@@ -309,7 +309,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     ],
     persyaratan: [true, false, true, true, true, true],
     riwayat: [
-      { tanggal: "2024-12-15 13:00", aksi: "Pendaftaran dikirim", oleh: "Calon Anggota" },
+      { tanggal: "2024-12-15 13:00", aksi: "Pendaftaran dikirim", oleh: "Calon Pengurus" },
       { tanggal: "2024-12-17 11:00", aksi: "Verifikasi - umur melebihi batas (35 tahun)", oleh: "Admin Kabupaten" },
       { tanggal: "2024-12-18 09:00", aksi: "Pendaftaran ditolak", oleh: "Admin Kabupaten" },
     ],
@@ -347,9 +347,9 @@ export const PROGRAM_KERJA_LIST: ProgramKerja[] = [
 
 export const ROLE_LIST: Role[] = [
   { id: 1, nama: "Super Admin", deskripsi: "Akses penuh ke seluruh sistem dan konfigurasi", jumlahUser: 2, permissions: ["Semua hak akses"] },
-  { id: 2, nama: "Admin Nasional", deskripsi: "Kelola data nasional, provinsi, dan laporan", jumlahUser: 5, permissions: ["Dashboard", "Wilayah", "Pengurus", "Anggota", "Berita", "Galeri", "Program", "Laporan", "Pengaturan (sebagian)"] },
-  { id: 3, nama: "Admin Provinsi", deskripsi: "Kelola kabupaten di provinsinya (read-only wilayah)", jumlahUser: 38, permissions: ["Dashboard", "Pengurus (provinsi)", "Anggota (provinsi)", "Verifikasi", "Berita", "Galeri", "Program", "Laporan (provinsi)"] },
-  { id: 4, nama: "Admin Kabupaten/Kota", deskripsi: "Verifikasi anggota dan kegiatan wilayah sendiri", jumlahUser: 514, permissions: ["Dashboard", "Pengurus (kabupaten)", "Anggota (kabupaten)", "Verifikasi", "Berita", "Galeri", "Program", "Laporan (kabupaten)"] },
+  { id: 2, nama: "Admin Nasional", deskripsi: "Kelola data nasional, provinsi, dan laporan", jumlahUser: 5, permissions: ["Dashboard", "Wilayah", "Pengurus", "Berita", "Galeri", "Program", "Laporan", "Pengaturan (sebagian)"] },
+  { id: 3, nama: "Admin Provinsi", deskripsi: "Kelola kabupaten di provinsinya (read-only wilayah)", jumlahUser: 38, permissions: ["Dashboard", "Pengurus (provinsi)", "Verifikasi", "Berita", "Galeri", "Program", "Laporan (provinsi)"] },
+  { id: 4, nama: "Admin Kabupaten/Kota", deskripsi: "Verifikasi pengurus dan kegiatan wilayah sendiri", jumlahUser: 514, permissions: ["Dashboard", "Pengurus (kabupaten)", "Verifikasi", "Berita", "Galeri", "Program", "Laporan (kabupaten)"] },
 ];
 
 // Statistik untuk Dashboard
@@ -363,8 +363,8 @@ export const DASHBOARD_STATS = {
 };
 
 export const AKTIVITAS_TERBARU = [
-  { id: 1, jenis: "pendaftaran", teks: "Indra Kusuma mendaftar sebagai calon anggota", waktu: "5 menit lalu", icon: "UserPlus" },
-  { id: 2, jenis: "verifikasi", teks: "Putri Maharani diterima sebagai anggota", waktu: "1 jam lalu", icon: "CheckCircle" },
+  { id: 1, jenis: "pendaftaran", teks: "Indra Kusuma mendaftar sebagai calon pengurus", waktu: "5 menit lalu", icon: "UserPlus" },
+  { id: 2, jenis: "verifikasi", teks: "Putri Maharani diterima sebagai pengurus", waktu: "1 jam lalu", icon: "CheckCircle" },
   { id: 3, jenis: "pengurus", teks: "Pengurus baru ditambahkan di Kab. Bogor", waktu: "3 jam lalu", icon: "UserCog" },
   { id: 4, jenis: "berita", teks: "Berita 'Rapat Koordinasi Nasional' dipublikasikan", waktu: "5 jam lalu", icon: "Newspaper" },
   { id: 5, jenis: "pelatihan", teks: "Pelatihan Kader Angkatan XII dimulai di Jawa Barat", waktu: "1 hari lalu", icon: "GraduationCap" },
@@ -382,7 +382,7 @@ export const STATISTIK_BULANAN = [
 ];
 
 export const STATUS_PENDAFTARAN_FLOW = [
-  { status: "Draft", color: "bg-slate-100 text-slate-600", desc: "Calon anggota mengisi form" },
+  { status: "Draft", color: "bg-slate-100 text-slate-600", desc: "Calon pengurus mengisi form" },
   { status: "Diajukan", color: "bg-amber-100 text-amber-700", desc: "Form dikirim, menunggu verifikasi" },
   { status: "Diverifikasi", color: "bg-blue-100 text-blue-700", desc: "Admin memverifikasi berkas" },
   { status: "Disetujui", color: "bg-emerald-100 text-emerald-700", desc: "Lolos, menunggu pelatihan" },

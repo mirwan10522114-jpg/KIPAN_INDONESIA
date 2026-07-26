@@ -48,7 +48,7 @@ export default function PendaftaranPage({ onVerify }: { onVerify: (id: number) =
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-blue-950">Pendaftaran Baru</h1>
-          <p className="text-slate-500 text-sm mt-1">Kelola calon anggota KIPAN yang mendaftar</p>
+          <p className="text-slate-500 text-sm mt-1">Kelola calon pengurus KIPAN yang mendaftar</p>
         </div>
         <button
           onClick={fetchData}
@@ -107,7 +107,7 @@ export default function PendaftaranPage({ onVerify }: { onVerify: (id: number) =
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cari nama calon anggota..."
+          placeholder="Cari nama calon pengurus..."
           className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
         />
       </div>

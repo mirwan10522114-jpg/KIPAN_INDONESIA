@@ -121,7 +121,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
     {
       icon: FileText,
       label: `${data.pendaftaranByStatus.PERBAIKAN || 0} Data Perlu Perbaikan`,
-      desc: "Calon anggota dengan dokumen kurang",
+      desc: "Calon pengurus dengan dokumen kurang",
       action: "Lihat",
       color: "from-blue-500 to-sky-500",
       bgColor: "from-blue-50 to-sky-50",
@@ -133,8 +133,8 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
     },
     {
       icon: UserPlus,
-      label: "Tambah Anggota",
-      desc: "Input anggota baru manual",
+      label: "Tambah Pengurus",
+      desc: "Input pengurus baru manual",
       action: "Tambah",
       color: "from-emerald-500 to-teal-500",
       bgColor: "from-emerald-50 to-teal-50",
@@ -142,7 +142,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
       iconColor: "text-emerald-600",
       count: null,
       priority: "low",
-      targetPage: "anggota",
+      targetPage: "pengurus",
     },
     {
       icon: Newspaper,
@@ -513,7 +513,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-blue-950">Anggota per Provinsi</h3>
+              <h3 className="font-bold text-blue-950">Pengurus per Provinsi</h3>
             </div>
             {allProvinsiWithData.length > 8 && (
               <button
@@ -540,7 +540,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">{p.nama}</span>
-                    <span className="text-xs font-bold text-blue-600 group-hover:underline">{p.jumlah.toLocaleString("id-ID")} anggota →</span>
+                    <span className="text-xs font-bold text-blue-600 group-hover:underline">{p.jumlah.toLocaleString("id-ID")} pengurus →</span>
                   </div>
                   <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div
@@ -554,12 +554,12 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
               </div>
             ))}
             {visibleProvinsi.length === 0 && (
-              <p className="text-sm text-slate-500 text-center py-4">Belum ada data anggota per provinsi</p>
+              <p className="text-sm text-slate-500 text-center py-4">Belum ada data pengurus per provinsi</p>
             )}
           </div>
         </motion.div>
 
-        {/* Distribusi Status Anggota */}
+        {/* Distribusi Status Pengurus */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -568,7 +568,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-blue-950">Distribusi Status Anggota</h3>
+              <h3 className="font-bold text-blue-950">Distribusi Status Pengurus</h3>
             </div>
             <span className="text-xs text-slate-400">Total {stats.totalAnggota}</span>
           </div>
@@ -806,7 +806,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
             <div className="text-3xl font-extrabold text-blue-950">
               {Math.round(stats.totalAnggota / (stats.totalProvinsi || 1))}
             </div>
-            <div className="text-sm text-slate-600 mt-1">Anggota per Provinsi</div>
+            <div className="text-sm text-slate-600 mt-1">Pengurus per Provinsi</div>
             <div className="mt-3 flex items-center gap-2">
               <div className="flex-1 h-2 bg-white rounded-full overflow-hidden">
                 <motion.div
@@ -831,11 +831,11 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-blue-600" />
-            <h3 className="font-bold text-blue-950">Tren Pertumbuhan Anggota (7 Bulan Terakhir)</h3>
+            <h3 className="font-bold text-blue-950">Tren Pertumbuhan Pengurus (7 Bulan Terakhir)</h3>
           </div>
           <div className="flex items-center gap-2 text-xs">
             <span className="inline-flex items-center gap-1 text-blue-600">
-              <span className="w-2 h-2 bg-blue-500 rounded-full" /> Anggota Baru
+              <span className="w-2 h-2 bg-blue-500 rounded-full" /> Pengurus Baru
             </span>
           </div>
         </div>
@@ -868,7 +868,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
                   <MapPin className="w-6 h-6" />
                   <div>
                     <h2 className="text-xl font-bold">{drillDownProv}</h2>
-                    <p className="text-xs text-blue-100">Detail Anggota & Pengurus</p>
+                    <p className="text-xs text-blue-100">Detail Pengurus</p>
                   </div>
                 </div>
               </div>

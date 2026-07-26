@@ -119,7 +119,7 @@ Mohon segera dihubungi. Terima kasih.`;
           </h2>
           <p className="mt-5 text-slate-600 text-base lg:text-lg leading-relaxed">
             Tim pengurus KIPAN siap menjawab pertanyaan Anda seputar
-            pendaftaran anggota, program, atau kerja sama.
+            pendaftaran pengurus, program, atau kerja sama.
           </p>
         </motion.div>
 

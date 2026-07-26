@@ -127,7 +127,7 @@ export default function About() {
                 </div>
               </div>
               <div className="text-xs text-slate-600 font-medium leading-tight">
-                Anggota Aktif Nasional di 38 Provinsi
+                Pengurus Aktif Nasional di 38 Provinsi
               </div>
             </motion.div>
 

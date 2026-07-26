@@ -133,7 +133,7 @@ export default function StrukturOrganisasi() {
           className="max-w-3xl mx-auto mt-12 bg-gradient-to-r from-sky-50 to-cyan-50 border border-sky-200 rounded-2xl p-6 text-center"
         >
           <p className="text-sm text-slate-700 leading-relaxed">
-            <strong className="text-blue-700">Sistem Informasi Manajemen Keanggotaan KIPAN (SIM-KIPAN)</strong> mengelola seluruh siklus hidup anggota—mulai dari pendaftaran, verifikasi berjenjang, pelatihan, hingga pengangkatan sebagai anggota aktif dengan kartu anggota digital.
+            <strong className="text-blue-700">Sistem Informasi Manajemen Kepengurusan KIPAN (SIM-KIPAN)</strong> mengelola seluruh siklus hidup pengurus—mulai dari pendaftaran, verifikasi berjenjang, pelatihan, hingga pengangkatan dengan jabatan di bidang/divisi dan kartu pengurus digital.
           </p>
         </motion.div>
       </div>

@@ -256,11 +256,11 @@ export default function PendaftaranAnggota() {
         >
           <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-blue-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
             <ShieldCheck className="w-3.5 h-3.5" />
-            Pendaftaran Anggota
+            Pendaftaran Pengurus
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-950 leading-tight">
             Bergabung Menjadi{" "}
-            <span className="text-gradient-water">Anggota KIPAN</span>
+            <span className="text-gradient-water">Pengurus KIPAN</span>
           </h2>
           <p className="mt-5 text-slate-600 text-base lg:text-lg leading-relaxed">
             Daftarkan diri Anda sebagai kader pemuda anti narkoba. Ikuti 4
@@ -667,7 +667,7 @@ export default function PendaftaranAnggota() {
                   className="space-y-4"
                 >
                   <h3 className="text-xl font-bold text-blue-950 mb-2">
-                    Persyaratan Keanggotaan
+                    Persyaratan Kepengurusan
                   </h3>
                   <p className="text-sm text-slate-600 mb-4">
                     Centang seluruh persyaratan di bawah ini untuk melanjutkan.

@@ -36,7 +36,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (!body.anggotaId || !body.jabatanId) {
-      return NextResponse.json({ success: false, error: "Anggota dan jabatan wajib diisi" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Pengurus wajib memiliki jabatan. Pilih anggota dan jabatan terlebih dahulu." }, { status: 400 });
+    }
+
+    // Validasi: jabatanId harus ada di database
+    const jabatanExists = await db.jabatan.findUnique({ where: { id: parseInt(body.jabatanId) } });
+    if (!jabatanExists) {
+      return NextResponse.json({ success: false, error: "Jabatan tidak ditemukan. Pilih jabatan yang valid." }, { status: 400 });
     }
 
     // Rule 2: Check if anggota already has active jabatan at same level
@@ -49,7 +55,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingActive) {
-      return NextResponse.json({ success: false, error: "Anggota ini sudah memiliki jabatan aktif di level yang sama" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Pengurus ini sudah memiliki jabatan aktif di level yang sama. Akhiri jabatan lama atau ganti jabatan." }, { status: 400 });
     }
 
     const data: any = {
@@ -69,13 +75,13 @@ export async function POST(req: NextRequest) {
       data,
       include: {
         anggota: { include: { provinsi: { select: { nama: true } }, kabupaten: { select: { nama: true } } } },
-        jabatan: { select: { nama: true, level: true } },
+        jabatan: { select: { nama: true, bidang: true, level: true, urutan: true } },
         provinsi: { select: { nama: true } },
         kabupaten: { select: { nama: true } },
       },
     });
 
-    return NextResponse.json({ success: true, data: pengurus, message: "Pengurus berhasil ditambahkan" });
+    return NextResponse.json({ success: true, data: pengurus, message: `Pengurus berhasil ditambahkan dengan jabatan "${jabatanExists.nama}" di bidang "${jabatanExists.bidang}"` });
   } catch (error) {
     console.error("POST /api/pengurus error:", error);
     return NextResponse.json({ success: false, error: "Gagal menambahkan pengurus" }, { status: 500 });

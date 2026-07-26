@@ -16,8 +16,8 @@ export default function Footer() {
     "Provinsi",
     "Kabupaten/Kota",
     "Kecamatan",
-    "Anggota",
-    "Calon Anggota",
+    "Pengurus Harian",
+    "Anggota Divisi",
   ];
 
   return (

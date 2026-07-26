@@ -8,7 +8,7 @@ export default function StatistikPage() {
     { label: "Total Nasional", value: DASHBOARD_STATS.totalAnggota.toLocaleString("id-ID"), icon: Users, color: "from-blue-500 to-sky-500" },
     { label: "Provinsi Terdaftar", value: DASHBOARD_STATS.totalProvinsi.toString(), icon: MapPin, color: "from-violet-500 to-purple-500" },
     { label: "Kabupaten/Kota Terdaftar", value: DASHBOARD_STATS.totalKabupaten.toString(), icon: Building2, color: "from-cyan-500 to-blue-500" },
-    { label: "Anggota Aktif", value: "11.820", icon: CheckCircle2, color: "from-emerald-500 to-teal-500" },
+    { label: "Pengurus Aktif", value: "11.820", icon: CheckCircle2, color: "from-emerald-500 to-teal-500" },
   ];
 
   const maxBar = Math.max(...STATISTIK_BULANAN.map((s) => s.anggotaBaru));
@@ -17,8 +17,8 @@ export default function StatistikPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-blue-950">Statistik Anggota</h1>
-        <p className="text-slate-500 text-sm mt-1">Ringkasan statistik keanggotaan KIPAN Indonesia</p>
+        <h1 className="text-2xl font-bold text-blue-950">Statistik Pengurus</h1>
+        <p className="text-slate-500 text-sm mt-1">Ringkasan statistik kepengurusan KIPAN Indonesia</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -37,10 +37,10 @@ export default function StatistikPage() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Chart anggota baru */}
+        {/* Chart pengurus baru */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-blue-950">Anggota Baru per Bulan</h3>
+            <h3 className="font-bold text-blue-950">Pengurus Baru per Bulan</h3>
             <TrendingUp className="w-5 h-5 text-emerald-500" />
           </div>
           <div className="flex items-end gap-2 h-48">
@@ -62,7 +62,7 @@ export default function StatistikPage() {
 
         {/* Top provinsi */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h3 className="font-bold text-blue-950 mb-4">Top 5 Provinsi (Anggota Terbanyak)</h3>
+          <h3 className="font-bold text-blue-950 mb-4">Top 5 Provinsi (Pengurus Terbanyak)</h3>
           <div className="space-y-3">
             {[...PROVINSI_LIST]
               .sort((a, b) => b.jumlahAnggota - a.jumlahAnggota)
@@ -90,7 +90,7 @@ export default function StatistikPage() {
 
       {/* Status breakdown */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-        <h3 className="font-bold text-blue-950 mb-4">Distribusi Status Anggota</h3>
+        <h3 className="font-bold text-blue-950 mb-4">Distribusi Status Pengurus</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: "Aktif", value: 11820, color: "bg-emerald-500" },

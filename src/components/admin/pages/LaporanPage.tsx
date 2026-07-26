@@ -6,8 +6,8 @@ export default function LaporanPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-blue-950">Laporan Keanggotaan</h1>
-        <p className="text-slate-500 text-sm mt-1">Generate dan export laporan keanggotaan KIPAN</p>
+        <h1 className="text-2xl font-bold text-blue-950">Laporan Kepengurusan</h1>
+        <p className="text-slate-500 text-sm mt-1">Generate dan export laporan kepengurusan KIPAN</p>
       </div>
 
       {/* Filter */}
@@ -59,8 +59,8 @@ export default function LaporanPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Anggota", value: "12.580" },
-          { label: "Anggota Baru (2025)", value: "595" },
+          { label: "Total Pengurus", value: "12.580" },
+          { label: "Pengurus Baru (2025)", value: "595" },
           { label: "Pendaftaran Pending", value: "45" },
           { label: "Pelatihan Selesai", value: "24" },
         ].map((s, idx) => (
@@ -82,24 +82,22 @@ export default function LaporanPage() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Provinsi</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Kabupaten</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Anggota</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Pengurus</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Baru 2025</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {[
-                { p: "Jawa Barat", k: 27, a: 2450, p: 110, b: 120 },
-                { p: "DKI Jakarta", k: 6, a: 1850, p: 78, b: 95 },
-                { p: "Jawa Timur", k: 38, a: 2150, p: 105, b: 110 },
-                { p: "Jawa Tengah", k: 35, a: 1980, p: 92, b: 88 },
-                { p: "Banten", k: 8, a: 980, p: 42, b: 45 },
+                { p: "Jawa Barat", k: 27, peng: 110, b: 120 },
+                { p: "DKI Jakarta", k: 6, peng: 78, b: 95 },
+                { p: "Jawa Timur", k: 38, peng: 105, b: 110 },
+                { p: "Jawa Tengah", k: 35, peng: 92, b: 88 },
+                { p: "Banten", k: 8, peng: 42, b: 45 },
               ].map((row, idx) => (
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="px-4 py-3 text-sm font-semibold text-blue-950">{row.p}</td>
                   <td className="px-4 py-3 text-sm text-center text-slate-600">{row.k}</td>
-                  <td className="px-4 py-3 text-sm text-center font-semibold text-blue-600">{row.a.toLocaleString("id-ID")}</td>
-                  <td className="px-4 py-3 text-sm text-center text-slate-600">{row.p}</td>
+                  <td className="px-4 py-3 text-sm text-center font-semibold text-blue-600">{row.peng}</td>
                   <td className="px-4 py-3 text-sm text-center text-emerald-600 font-semibold">+{row.b}</td>
                 </tr>
               ))}
