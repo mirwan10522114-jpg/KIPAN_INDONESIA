@@ -738,10 +738,10 @@ export default function WilayahPage({
         }}
         onViewAnggota={(id) => {
           setDetailId(null);
-          onNavigate?.("anggota");
+          onNavigate?.("pengurus");
         }}
         onAddAnggota={() => {
-          onNavigate?.("anggota");
+          onNavigate?.("pengurus");
         }}
       />
 

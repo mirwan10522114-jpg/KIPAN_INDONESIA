@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
             kabupaten: { select: { nama: true, kode: true } },
           },
         },
-        jabatan: { select: { nama: true, level: true, urutan: true } },
+        jabatan: { select: { nama: true, bidang: true, level: true, urutan: true } },
         provinsi: { select: { nama: true, kode: true } },
         kabupaten: { select: { nama: true, kode: true } },
       },

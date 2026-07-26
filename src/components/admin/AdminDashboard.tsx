@@ -21,7 +21,6 @@ import { COMPANY } from "@/lib/kipan-data";
 import DashboardPage from "@/components/admin/pages/DashboardPage";
 import WilayahPage from "@/components/admin/pages/WilayahPage";
 import PengurusPage from "@/components/admin/pages/PengurusPage";
-import AnggotaPage from "@/components/admin/pages/AnggotaPage";
 import PendaftaranPage from "@/components/admin/pages/PendaftaranPage";
 import VerifikasiPage from "@/components/admin/pages/VerifikasiPage";
 import BeritaPage from "@/components/admin/pages/BeritaPage";
@@ -62,7 +61,6 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
       case "dashboard": return <DashboardPage onNavigate={(p) => navigateWithFilter(p)} />;
       case "wilayah": return <WilayahPage onNavigate={(p, f) => navigateWithFilter(p, f)} />;
       case "pengurus": return <PengurusPage onNavigate={(p) => navigateWithFilter(p)} initialFilter={pageFilter} />;
-      case "anggota": return <AnggotaPage initialFilter={pageFilter} onNavigate={(p) => navigateWithFilter(p)} />;
       case "pendaftaran": return <PendaftaranPage onVerify={(id) => setActivePage("verifikasi")} />;
       case "verifikasi": return <VerifikasiPage />;
       case "berita": return <BeritaPage />;

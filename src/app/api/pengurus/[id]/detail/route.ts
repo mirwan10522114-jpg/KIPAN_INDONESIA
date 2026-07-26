@@ -96,6 +96,7 @@ export async function GET(
           suratSehat: a.suratSehat,
           // From jabatan
           jabatanNama: pengurus.jabatan?.nama,
+          jabatanBidang: pengurus.jabatan?.bidang,
           jabatanLevel: pengurus.jabatan?.level,
           jabatanUrutan: pengurus.jabatan?.urutan,
           // Wilayah

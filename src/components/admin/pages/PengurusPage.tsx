@@ -53,6 +53,7 @@ export default function PengurusPage({
   const [kabupatenFilter, setKabupatenFilter] = useState("Semua");
   const [statusFilter, setStatusFilter] = useState("Semua");
   const [masaJabatanFilter, setMasaJabatanFilter] = useState("Semua");
+  const [bidangFilter, setBidangFilter] = useState("Semua");
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
@@ -113,6 +114,8 @@ export default function PengurusPage({
     nama: p.anggota?.namaLengkap || "-",
     foto: p.anggota?.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     jabatan: p.jabatan?.nama || "-",
+    bidang: p.jabatan?.bidang || "-",
+    jabatanId: p.jabatanId,
     level: normalizeLevel(p.level),
     wilayah: normalizeLevel(p.level) === "Nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || p.anggota?.kabupaten?.nama || p.anggota?.provinsi?.nama || ""),
     provinsiNama: p.provinsi?.nama || p.anggota?.provinsi?.nama,
@@ -127,6 +130,13 @@ export default function PengurusPage({
     anggotaId: p.anggotaId,
     nia: p.anggota?.nia,
   })) : PENGURUS_LIST;
+
+  // Get unique bidang names for filter
+  const bidangOptions = useMemo(() => {
+    const set = new Set<string>();
+    pengurusData.forEach((p) => { if (p.bidang && p.bidang !== "-") set.add(p.bidang); });
+    return Array.from(set).sort();
+  }, [pengurusData]);
 
   const totalPengurus = pengurusData.length;
   const pengurusNasional = pengurusData.filter((p) => p.level === "Nasional").length;
@@ -159,8 +169,10 @@ export default function PengurusPage({
     let result = pengurusData.filter((p) => {
       const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
         p.jabatan.toLowerCase().includes(search.toLowerCase()) ||
+        p.bidang.toLowerCase().includes(search.toLowerCase()) ||
         p.nomorSK.toLowerCase().includes(search.toLowerCase());
       const matchLevel = levelFilter === "Semua" || p.level === levelFilter;
+      const matchBidang = bidangFilter === "Semua" || p.bidang === bidangFilter;
       const matchProv = provinsiFilter === "Semua" || p.provinsiNama === provinsiFilter;
       const matchKab = kabupatenFilter === "Semua" || p.kabupatenNama === kabupatenFilter;
       const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
@@ -176,7 +188,7 @@ export default function PengurusPage({
       } else if (masaJabatanFilter === "Berakhir") {
         matchMasa = p.tanggalSelesai ? new Date(p.tanggalSelesai) < new Date() : false;
       }
-      return matchSearch && matchLevel && matchProv && matchKab && matchStatus && matchMasa;
+      return matchSearch && matchLevel && matchBidang && matchProv && matchKab && matchStatus && matchMasa;
     });
     if (sortBy && sortDir) {
       result = [...result].sort((a: any, b: any) => {
@@ -189,7 +201,7 @@ export default function PengurusPage({
       });
     }
     return result;
-  }, [pengurusData, search, levelFilter, provinsiFilter, kabupatenFilter, statusFilter, masaJabatanFilter, sortBy, sortDir]);
+  }, [pengurusData, search, levelFilter, bidangFilter, provinsiFilter, kabupatenFilter, statusFilter, masaJabatanFilter, sortBy, sortDir]);
 
   const totalData = filtered.length;
   const totalPages = Math.ceil(totalData / rowsPerPage) || 1;
@@ -371,6 +383,16 @@ export default function PengurusPage({
           <option value="Kabupaten">Kabupaten</option>
         </select>
         <select
+          value={bidangFilter}
+          onChange={(e) => { setBidangFilter(e.target.value); setPage(1); }}
+          className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Bidang</option>
+          {bidangOptions.map((b) => (
+            <option key={b} value={b}>{b}</option>
+          ))}
+        </select>
+        <select
           value={provinsiFilter}
           onChange={(e) => { setProvinsiFilter(e.target.value); setKabupatenFilter("Semua"); setPage(1); }}
           className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
@@ -521,6 +543,7 @@ export default function PengurusPage({
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Foto</th>
                   <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama</Th>
                   <Th onClick={() => handleSort("jabatan")} icon={getSortIcon("jabatan")}>Jabatan</Th>
+                  <Th onClick={() => handleSort("bidang")} icon={getSortIcon("bidang")}>Bidang</Th>
                   <Th onClick={() => handleSort("level")} icon={getSortIcon("level")}>Level</Th>
                   <Th onClick={() => handleSort("wilayah")} icon={getSortIcon("wilayah")}>Wilayah</Th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Masa Jabatan</th>
@@ -544,6 +567,11 @@ export default function PengurusPage({
                       <div className="text-xs text-slate-500">{item.email}</div>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{item.jabatan}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      <span className="inline-block px-2 py-0.5 bg-violet-50 text-violet-700 rounded-md text-[10px] font-medium">
+                        {item.bidang}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${levelBadge(item.level)}`}>
                         {item.level}

@@ -161,14 +161,14 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
 
   // Stat cards (2 rows)
   const statCardsRow1 = [
-    { label: "Total Anggota", value: stats.totalAnggota, icon: Users, color: "from-blue-500 to-sky-500", change: `${stats.anggotaAktif} aktif`, targetPage: "anggota" },
-    { label: "Anggota Aktif", value: stats.anggotaAktif, icon: CheckCircle2, color: "from-emerald-500 to-teal-500", change: `${Math.round((stats.anggotaAktif / stats.totalAnggota) * 100)}% dari total`, targetPage: "anggota" },
+    { label: "Total Pengurus", value: stats.totalAnggota, icon: Users, color: "from-blue-500 to-sky-500", change: `${stats.anggotaAktif} aktif`, targetPage: "pengurus" },
+    { label: "Pengurus Aktif", value: stats.anggotaAktif, icon: CheckCircle2, color: "from-emerald-500 to-teal-500", change: `${Math.round((stats.anggotaAktif / Math.max(stats.totalAnggota, 1)) * 100)}% dari total`, targetPage: "pengurus" },
     { label: "Menunggu Verifikasi", value: stats.menungguVerifikasi, icon: Clock, color: "from-amber-500 to-orange-500", change: "Perlu tindakan", targetPage: "verifikasi" },
-    { label: "Anggota Baru Bulan Ini", value: stats.anggotaBaru, icon: UserPlus, color: "from-violet-500 to-purple-500", change: "Bulan berjalan", targetPage: "anggota" },
+    { label: "Pengurus Baru Bulan Ini", value: stats.anggotaBaru, icon: UserPlus, color: "from-violet-500 to-purple-500", change: "Bulan berjalan", targetPage: "pengurus" },
   ];
 
   const statCardsRow2 = [
-    { label: "Total Pengurus", value: stats.totalPengurus, icon: UserCog, color: "from-cyan-500 to-blue-500", change: `${stats.totalProvinsi} provinsi`, targetPage: "pengurus" },
+    { label: "Total Penunjukan Jabatan", value: stats.totalPengurus, icon: UserCog, color: "from-cyan-500 to-blue-500", change: `${stats.totalProvinsi} provinsi`, targetPage: "pengurus" },
     { label: "Provinsi Terdaftar", value: stats.totalProvinsi, icon: MapPin, color: "from-sky-500 to-indigo-500", change: "dari 38 provinsi", targetPage: "wilayah" },
     { label: "Kabupaten Terdaftar", value: stats.totalKabupaten, icon: Building2, color: "from-teal-500 to-cyan-500", change: "dari 514 kab/kota", targetPage: "wilayah" },
     { label: "Coverage Wilayah", value: `${Math.round((stats.totalKabupaten / 514) * 100)}%`, icon: Globe, color: "from-indigo-500 to-violet-500", change: "Nasional", targetPage: "wilayah" },

@@ -21,17 +21,33 @@ export default function VerifikasiPage() {
   const [activeTab, setActiveTab] = useState("data-diri");
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
+  const [jabatanList, setJabatanList] = useState<any[]>([]);
+  const [selectedJabatanId, setSelectedJabatanId] = useState<string>("");
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/pendaftaran", { cache: "no-store" });
-      const json = await res.json();
-      if (json.success) {
-        setList(json.data);
-        if (json.data.length > 0 && selectedId === null) {
-          setSelectedId(json.data[0].id);
+      const [pendRes, jabRes] = await Promise.all([
+        fetch("/api/pendaftaran", { cache: "no-store" }),
+        fetch("/api/jabatan?level=Kabupaten", { cache: "no-store" }),
+      ]);
+      const pendJson = await pendRes.json();
+      const jabJson = await jabRes.json();
+      if (pendJson.success) {
+        setList(pendJson.data);
+        if (pendJson.data.length > 0 && selectedId === null) {
+          setSelectedId(pendJson.data[0].id);
         }
+      }
+      if (jabJson.success) {
+        // Filter hanya yang nama "Anggota" atau semua jabatan level Kabupaten
+        setJabatanList(jabJson.data);
+        // Default: pilih "Anggota" di "Divisi Organisasi dan Keanggotaan"
+        const defaultJab = jabJson.data.find(
+          (j: any) => j.nama === "Anggota" && j.bidang === "Divisi Organisasi dan Keanggotaan"
+        ) || jabJson.data.find((j: any) => j.nama === "Anggota");
+        if (defaultJab) setSelectedJabatanId(String(defaultJab.id));
       }
     } catch (e) {
       console.error(e);
@@ -46,18 +62,23 @@ export default function VerifikasiPage() {
 
   const selected = list.find((p) => p.id === selectedId);
 
-  const updateStatus = async (newStatus: string, catatan?: string) => {
+  const updateStatus = async (newStatus: string, catatan?: string, jabatanId?: string) => {
     if (!selectedId) return;
     setActing(true);
     try {
+      const payload: any = { status: newStatus, catatan };
+      if (newStatus === "DISETUJUI" && jabatanId) {
+        payload.jabatanId = parseInt(jabatanId);
+      }
       const res = await fetch(`/api/pendaftaran/${selectedId}/verifikasi`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus, catatan }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (json.success) {
         alert(json.message);
+        setShowApproveDialog(false);
         fetchData();
       } else {
         alert(json.error || "Gagal update status");
@@ -325,12 +346,12 @@ export default function VerifikasiPage() {
               {/* Action buttons */}
               <div className="p-5 border-t border-slate-100 flex flex-wrap gap-2">
                 <button
-                  onClick={() => updateStatus("DISETUJUI")}
+                  onClick={() => setShowApproveDialog(true)}
                   disabled={acting}
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  Setujui
+                  Setujui & Jadikan Pengurus
                 </button>
                 <button
                   onClick={() => {
@@ -371,6 +392,107 @@ export default function VerifikasiPage() {
           )}
         </div>
       </div>
+
+      {/* Approve Dialog — Pilih Bidang & Jabatan */}
+      {showApproveDialog && selected && (
+        <div
+          className="fixed inset-0 z-[300] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setShowApproveDialog(false)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative bg-gradient-to-r from-emerald-600 to-teal-500 p-5 text-white">
+              <button
+                onClick={() => setShowApproveDialog(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold">Setujui & Jadikan Pengurus</h2>
+                  <p className="text-xs text-emerald-100">{selected.namaLengkap}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
+                ℹ️ Saat disetujui, sistem akan otomatis membuat:
+                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                  <li>Record data person (NIA auto-generate)</li>
+                  <li>Record Pengurus dengan jabatan "Anggota" di divisi yang Anda pilih</li>
+                  <li>Level default: <strong>Kabupaten</strong> sesuai wilayah pendaftaran</li>
+                </ul>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Pilih Bidang & Jabatan *
+                </label>
+                <select
+                  value={selectedJabatanId}
+                  onChange={(e) => setSelectedJabatanId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                >
+                  {/* Group by bidang */}
+                  {Object.entries(
+                    jabatanList.reduce((acc: any, j: any) => {
+                      if (!acc[j.bidang]) acc[j.bidang] = [];
+                      acc[j.bidang].push(j);
+                      return acc;
+                    }, {})
+                  ).sort(([a], [b]) => a.localeCompare(b)).map(([bidang, items]: [string, any]) => (
+                    <optgroup key={bidang} label={bidang}>
+                      {items
+                        .sort((a: any, b: any) => a.urutan - b.urutan)
+                        .map((j: any) => (
+                          <option key={j.id} value={j.id}>
+                            {j.nama}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Default: jabatan "Anggota" di "Divisi Organisasi dan Keanggotaan". Anda bisa pilih jabatan lain jika perlu.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
+              <button
+                onClick={() => setShowApproveDialog(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => updateStatus("DISETUJUI", undefined, selectedJabatanId)}
+                disabled={acting || !selectedJabatanId}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {acting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Setujui & Buat Pengurus
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

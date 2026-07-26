@@ -13,7 +13,6 @@ const TABS = [
   { id: "informasi", label: "Informasi", icon: Info },
   { id: "kabupaten", label: "Kabupaten", icon: Building2 },
   { id: "pengurus", label: "Pengurus", icon: UserCog },
-  { id: "anggota", label: "Anggota", icon: Users },
   { id: "statistik", label: "Statistik", icon: BarChart3 },
   { id: "activity", label: "Activity", icon: Activity },
 ];
