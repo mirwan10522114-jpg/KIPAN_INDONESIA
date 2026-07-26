@@ -192,6 +192,22 @@ export default function PengurusPage({
   const endIdx = Math.min(startIdx + rowsPerPage, totalData);
   const pageData = filtered.slice(startIdx, endIdx);
 
+  // Summary stats from filtered data
+  const filterSummary = {
+    total: filtered.length,
+    nasional: filtered.filter((p) => p.level === "Nasional").length,
+    provinsi: filtered.filter((p) => p.level === "Provinsi").length,
+    kabupaten: filtered.filter((p) => p.level === "Kabupaten").length,
+    aktif: filtered.filter((p) => p.status === "Aktif").length,
+    nonaktif: filtered.filter((p) => p.status !== "Aktif").length,
+    akanBerakhir: filtered.filter((p) => {
+      if (!p.tanggalSelesai) return false;
+      const diff = (new Date(p.tanggalSelesai).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
+      return diff > 0 && diff < 365;
+    }).length,
+  };
+  const hasActiveFilters = search !== "" || levelFilter !== "Semua" || provinsiFilter !== "Semua" || statusFilter !== "Semua" || masaJabatanFilter !== "Semua";
+
   const handleSort = (col: string) => {
     if (sortBy === col) {
       if (sortDir === "asc") { setSortDir("desc"); }
@@ -393,6 +409,30 @@ export default function PengurusPage({
         </div>
       </div>
 
+      {/* Filter Summary */}
+      {totalData > 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1 h-4 bg-blue-600 rounded-full" />
+            <h3 className="text-xs font-bold text-blue-950 uppercase tracking-wider">Ringkasan Hasil Filter</h3>
+            {hasActiveFilters && (
+              <span className="text-[10px] text-blue-500 bg-white px-2 py-0.5 rounded-full border border-blue-200">
+                {totalData} dari {pengurusData.length} data
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+            <SumCard label="Total" value={filterSummary.total} color="text-blue-600" bg="bg-blue-50" />
+            <SumCard label="Nasional" value={filterSummary.nasional} color="text-violet-600" bg="bg-violet-50" />
+            <SumCard label="Provinsi" value={filterSummary.provinsi} color="text-blue-600" bg="bg-sky-50" />
+            <SumCard label="Kabupaten" value={filterSummary.kabupaten} color="text-cyan-600" bg="bg-cyan-50" />
+            <SumCard label="Aktif" value={filterSummary.aktif} color="text-emerald-600" bg="bg-emerald-50" />
+            <SumCard label="Nonaktif" value={filterSummary.nonaktif} color="text-slate-600" bg="bg-slate-100" />
+            <SumCard label="Akan Berakhir" value={filterSummary.akanBerakhir} color="text-amber-600" bg="bg-amber-50" />
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         {loading ? (
@@ -590,6 +630,15 @@ export default function PengurusPage({
       {actionMenuId !== null && (
         <div className="fixed inset-0 z-[5]" onClick={() => setActionMenuId(null)} />
       )}
+    </div>
+  );
+}
+
+function SumCard({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
+  return (
+    <div className={`${bg} rounded-xl p-3 text-center`}>
+      <div className={`text-xl font-extrabold ${color}`}>{value}</div>
+      <div className="text-[10px] text-slate-500 mt-0.5">{label}</div>
     </div>
   );
 }

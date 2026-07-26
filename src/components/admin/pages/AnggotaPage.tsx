@@ -53,6 +53,16 @@ export default function AnggotaPage() {
     return matchSearch && matchStatus && matchProv;
   });
 
+  // Summary stats from filtered data
+  const filterSummary = {
+    total: filtered.length,
+    aktif: filtered.filter((a) => a.status === "AKTIF").length,
+    nonaktif: filtered.filter((a) => a.status !== "AKTIF").length,
+    provinsiCount: new Set(filtered.map((a) => a.provinsi?.nama).filter(Boolean)).size,
+    kabupatenCount: new Set(filtered.map((a) => a.kabupaten?.nama).filter(Boolean)).size,
+  };
+  const hasActiveFilters = search !== "" || statusFilter !== "Semua" || provFilter !== "Semua";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -112,6 +122,43 @@ export default function AnggotaPage() {
           ))}
         </select>
       </div>
+
+      {/* Filter Summary */}
+      {filtered.length > 0 && (
+        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1 h-4 bg-emerald-600 rounded-full" />
+            <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">Ringkasan Hasil Filter</h3>
+            {hasActiveFilters && (
+              <span className="text-[10px] text-emerald-600 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
+                {filtered.length} dari {data.length} anggota
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="bg-white rounded-xl p-3 text-center">
+              <div className="text-xl font-extrabold text-blue-600">{filterSummary.total}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Total Anggota</div>
+            </div>
+            <div className="bg-white rounded-xl p-3 text-center">
+              <div className="text-xl font-extrabold text-emerald-600">{filterSummary.aktif}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Aktif</div>
+            </div>
+            <div className="bg-white rounded-xl p-3 text-center">
+              <div className="text-xl font-extrabold text-slate-500">{filterSummary.nonaktif}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Nonaktif</div>
+            </div>
+            <div className="bg-white rounded-xl p-3 text-center">
+              <div className="text-xl font-extrabold text-violet-600">{filterSummary.provinsiCount}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Provinsi</div>
+            </div>
+            <div className="bg-white rounded-xl p-3 text-center">
+              <div className="text-xl font-extrabold text-cyan-600">{filterSummary.kabupatenCount}</div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Kabupaten</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
         {loading ? (

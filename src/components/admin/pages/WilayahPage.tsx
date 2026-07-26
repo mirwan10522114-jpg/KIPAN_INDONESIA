@@ -173,6 +173,26 @@ export default function WilayahPage({
   const endIdx = Math.min(startIdx + rowsPerPage, totalData);
   const pageData = currentData.slice(startIdx, endIdx);
 
+  // Summary stats from filtered data
+  const filterSummary = tab === "provinsi" ? {
+    total: filteredProv.length,
+    aktif: filteredProv.filter((p: any) => p.status === "Aktif").length,
+    pembentukan: filteredProv.filter((p: any) => p.status === "Pembentukan").length,
+    nonaktif: filteredProv.filter((p: any) => p.status === "Nonaktif").length,
+    totalAnggota: filteredProv.reduce((a: number, b: any) => a + (b.jumlahAnggota || 0), 0),
+    totalPengurus: filteredProv.reduce((a: number, b: any) => a + (b.jumlahPengurus || 0), 0),
+    totalKabupaten: filteredProv.reduce((a: number, b: any) => a + (b.jumlahKabupaten || 0), 0),
+  } : {
+    total: filteredKab.length,
+    aktif: filteredKab.filter((k: any) => k.status === "Aktif").length,
+    pembentukan: filteredKab.filter((k: any) => k.status === "Pembentukan").length,
+    nonaktif: filteredKab.filter((k: any) => k.status === "Nonaktif").length,
+    totalAnggota: filteredKab.reduce((a: number, b: any) => a + (b.jumlahAnggota || 0), 0),
+    totalPengurus: filteredKab.reduce((a: number, b: any) => a + (b.jumlahPengurus || 0), 0),
+    totalKabupaten: 0,
+  };
+  const hasActiveFilters = search !== "" || statusFilter !== "Semua" || provinsiFilter !== "Semua";
+
   const handleSort = (col: string) => {
     if (sortBy === col) {
       setSortDir(sortDir === "asc" ? "desc" : sortDir === "desc" ? null : "asc");
@@ -409,6 +429,31 @@ export default function WilayahPage({
           </button>
         </div>
       </div>
+
+      {/* Filter Summary */}
+      {totalData > 0 && (
+        <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1 h-4 bg-blue-600 rounded-full" />
+            <h3 className="text-xs font-bold text-blue-950 uppercase tracking-wider">
+              Ringkasan Hasil Filter
+            </h3>
+            {hasActiveFilters && (
+              <span className="text-[10px] text-blue-500 bg-white px-2 py-0.5 rounded-full border border-blue-200">
+                {totalData} dari {tab === "provinsi" ? provData.length : kabData.length} data
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+            <SummaryCard label={`Total ${tab === "provinsi" ? "Provinsi" : "Kabupaten"}`} value={filterSummary.total} color="text-blue-600" bg="bg-blue-50" />
+            <SummaryCard label="Aktif" value={filterSummary.aktif} color="text-emerald-600" bg="bg-emerald-50" />
+            <SummaryCard label="Pembentukan" value={filterSummary.pembentukan} color="text-amber-600" bg="bg-amber-50" />
+            <SummaryCard label="Nonaktif" value={filterSummary.nonaktif} color="text-slate-600" bg="bg-slate-100" />
+            <SummaryCard label="Total Anggota" value={filterSummary.totalAnggota} color="text-violet-600" bg="bg-violet-50" />
+            <SummaryCard label="Total Pengurus" value={filterSummary.totalPengurus} color="text-cyan-600" bg="bg-cyan-50" />
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -677,6 +722,15 @@ export default function WilayahPage({
           onClick={() => setActionMenuId(null)}
         />
       )}
+    </div>
+  );
+}
+
+function SummaryCard({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
+  return (
+    <div className={`${bg} rounded-xl p-3 text-center`}>
+      <div className={`text-xl font-extrabold ${color}`}>{value.toLocaleString("id-ID")}</div>
+      <div className="text-[10px] text-slate-500 mt-0.5">{label}</div>
     </div>
   );
 }
