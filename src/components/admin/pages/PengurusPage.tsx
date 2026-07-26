@@ -109,23 +109,22 @@ export default function PengurusPage({
 
   const pengurusData: any[] = useApiData ? apiData.map((p: any) => ({
     id: p.id,
-    nama: p.namaLengkap,
-    foto: p.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
-    jabatan: p.jabatan,
+    nama: p.anggota?.namaLengkap || "-",
+    foto: p.anggota?.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+    jabatan: p.jabatan?.nama || "-",
     level: normalizeLevel(p.level),
-    wilayah: normalizeLevel(p.level) === "Nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || ""),
-    provinsiNama: p.provinsi?.nama,
-    kabupatenNama: p.kabupaten?.nama,
-    email: p.email,
-    hp: p.hp || "",
+    wilayah: normalizeLevel(p.level) === "Nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || p.anggota?.kabupaten?.nama || p.anggota?.provinsi?.nama || ""),
+    provinsiNama: p.provinsi?.nama || p.anggota?.provinsi?.nama,
+    kabupatenNama: p.kabupaten?.nama || p.anggota?.kabupaten?.nama,
+    email: p.anggota?.email || "",
+    hp: p.anggota?.hp || "",
     status: p.status,
     tanggalMulai: p.tanggalMulai,
     tanggalSelesai: p.tanggalSelesai,
     nomorSK: p.nomorSK || "",
-    fileSK: p.foto,
-    tempatLahir: p.tempatLahir,
-    tanggalLahir: p.tanggalLahir,
-    alamat: p.alamat,
+    fileSK: p.fileSK,
+    anggotaId: p.anggotaId,
+    nia: p.anggota?.nia,
   })) : PENGURUS_LIST;
 
   const totalPengurus = pengurusData.length;
@@ -512,7 +511,7 @@ export default function PengurusPage({
                     onClick={() => setDetailId(item.id)}
                   >
                     <td className="px-4 py-3">
-                      <img src={item.foto} alt={item.nama} className="w-9 h-9 rounded-full object-cover border-2 border-blue-100" />
+                      <img src={item.foto} alt={item.nama} className="w-9 h-9 rounded-full object-cover border-2 border-blue-100" onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80"; }} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-sm font-semibold text-blue-950">{item.nama}</div>

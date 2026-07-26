@@ -11,10 +11,17 @@ export async function GET(req: NextRequest) {
     const pengurus = await db.pengurus.findMany({
       where,
       include: {
+        anggota: {
+          include: {
+            provinsi: { select: { nama: true, kode: true } },
+            kabupaten: { select: { nama: true, kode: true } },
+          },
+        },
+        jabatan: { select: { nama: true, level: true, urutan: true } },
         provinsi: { select: { nama: true, kode: true } },
         kabupaten: { select: { nama: true, kode: true } },
       },
-      orderBy: [{ level: "asc" }, { namaLengkap: "asc" }],
+      orderBy: [{ level: "asc" }, { jabatan: { urutan: "asc" } }],
     });
 
     return NextResponse.json({ success: true, data: pengurus, total: pengurus.length });
@@ -28,21 +35,32 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    if (!body.namaLengkap || !body.jabatan || !body.level || !body.email) {
-      return NextResponse.json({ success: false, error: "Nama, jabatan, level, dan email wajib diisi" }, { status: 400 });
+    if (!body.anggotaId || !body.jabatanId) {
+      return NextResponse.json({ success: false, error: "Anggota dan jabatan wajib diisi" }, { status: 400 });
+    }
+
+    // Rule 2: Check if anggota already has active jabatan at same level
+    const existingActive = await db.pengurus.findFirst({
+      where: {
+        anggotaId: parseInt(body.anggotaId),
+        status: "Aktif",
+        level: body.level,
+      },
+    });
+
+    if (existingActive) {
+      return NextResponse.json({ success: false, error: "Anggota ini sudah memiliki jabatan aktif di level yang sama" }, { status: 400 });
     }
 
     const data: any = {
-      namaLengkap: body.namaLengkap,
-      jabatan: body.jabatan,
+      anggotaId: parseInt(body.anggotaId),
+      jabatanId: parseInt(body.jabatanId),
       level: body.level,
-      foto: body.foto || null,
-      email: body.email,
-      hp: body.hp || null,
       status: body.status || "Aktif",
       tanggalMulai: body.tanggalMulai ? new Date(body.tanggalMulai) : new Date(),
       tanggalSelesai: body.tanggalSelesai ? new Date(body.tanggalSelesai) : null,
       nomorSK: body.nomorSK || "",
+      fileSK: body.fileSK || null,
     };
     if (body.provinsiId) data.provinsiId = parseInt(body.provinsiId);
     if (body.kabupatenId) data.kabupatenId = parseInt(body.kabupatenId);
@@ -50,8 +68,10 @@ export async function POST(req: NextRequest) {
     const pengurus = await db.pengurus.create({
       data,
       include: {
-        provinsi: { select: { nama: true, kode: true } },
-        kabupaten: { select: { nama: true, kode: true } },
+        anggota: { include: { provinsi: { select: { nama: true } }, kabupaten: { select: { nama: true } } } },
+        jabatan: { select: { nama: true, level: true } },
+        provinsi: { select: { nama: true } },
+        kabupaten: { select: { nama: true } },
       },
     });
 

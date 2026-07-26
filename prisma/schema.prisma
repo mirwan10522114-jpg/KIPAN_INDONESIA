@@ -179,36 +179,50 @@ model Anggota {
 
   provinsi      Provinsi  @relation(fields: [provinsiId], references: [id])
   kabupaten     Kabupaten @relation(fields: [kabupatenId], references: [id])
+  pengurus      Pengurus[]
 
   @@map("anggota")
 }
 
 // ============================================================
-// PENGURUS
+// JABATAN (Master Data)
+// ============================================================
+
+model Jabatan {
+  id            Int      @id @default(autoincrement())
+  nama          String   @unique
+  level         String   // Nasional | Provinsi | Kabupaten
+  urutan        Int      @default(0)
+  status        String   @default("Aktif")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pengurus      Pengurus[]
+
+  @@map("jabatan")
+}
+
+// ============================================================
+// PENGURUS (Anggota + Jabatan + Wilayah + Periode)
 // ============================================================
 
 model Pengurus {
   id            Int      @id @default(autoincrement())
-  namaLengkap   String
-  jabatan       String
-  // NASIONAL | PROVINSI | KABUPATEN | KECAMATAN
-  level         String
+  anggotaId     Int
+  jabatanId     Int
+  level         String   // NASIONAL | PROVINSI | KABUPATEN
   provinsiId    Int?
   kabupatenId   Int?
-  foto          String?
-  email         String
-  hp            String?
-  status        String   @default("Aktif") // Aktif | Nonaktif | Dibekukan
+  status        String   @default("Aktif") // Aktif | Selesai | Diberhentikan
   tanggalMulai  DateTime @default(now())
   tanggalSelesai DateTime?
   nomorSK       String   @default("")
   fileSK        String?
-  tempatLahir   String?
-  tanggalLahir  DateTime?
-  alamat        String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  anggota       Anggota   @relation(fields: [anggotaId], references: [id])
+  jabatan       Jabatan   @relation(fields: [jabatanId], references: [id])
   provinsi      Provinsi?  @relation(fields: [provinsiId], references: [id])
   kabupaten     Kabupaten? @relation(fields: [kabupatenId], references: [id])
 

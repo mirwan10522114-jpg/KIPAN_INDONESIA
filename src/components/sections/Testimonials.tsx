@@ -37,12 +37,12 @@ export default function Testimonials() {
         if (json.success && json.data.length > 0) {
           const mapped = json.data.map((p: any) => ({
             id: p.id,
-            name: p.namaLengkap,
-            role: p.jabatan,
+            name: p.anggota?.namaLengkap || "-",
+            role: p.jabatan?.nama || "-",
             level: (p.level || "").toLowerCase() === "nasional" ? "Nasional" : (p.level || "").toLowerCase() === "provinsi" ? "Provinsi" : "Kabupaten",
-            wilayah: (p.level || "").toLowerCase() === "nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || ""),
-            photo: p.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
-            kontak: p.email,
+            wilayah: (p.level || "").toLowerCase() === "nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || p.anggota?.kabupaten?.nama || p.anggota?.provinsi?.nama || ""),
+            photo: p.anggota?.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+            kontak: p.anggota?.email || "",
           }));
           setApiPengurus(mapped);
           setUseApi(true);
