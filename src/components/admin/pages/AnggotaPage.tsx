@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Eye, Download, X, QrCode, CreditCard, RefreshCw, Plus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import AnggotaDetailDialog from "./AnggotaDetailDialog";
 
 export default function AnggotaPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
   const [provFilter, setProvFilter] = useState("Semua");
-  const [selected, setSelected] = useState<any>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [provinsiList, setProvinsiList] = useState<any[]>([]);
@@ -132,7 +133,7 @@ export default function AnggotaPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.map((a) => (
-                <tr key={a.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSelected(a)}>
+                <tr key={a.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSelectedId(a.id)}>
                   <td className="px-4 py-3 text-sm font-mono text-blue-600">{a.nia}</td>
                   <td className="px-4 py-3">
                     <div className="text-sm font-semibold text-blue-950">{a.namaLengkap}</div>
@@ -164,108 +165,12 @@ export default function AnggotaPage() {
         )}
       </div>
 
-      <AnimatePresence>
-        {selected && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelected(null)}
-            className="fixed inset-0 z-[300] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
-            >
-              <div className="relative bg-gradient-to-br from-blue-600 to-sky-500 p-6 text-white">
-                <button
-                  onClick={() => setSelected(null)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-bold">
-                    {selected.namaLengkap.charAt(0)}
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">{selected.namaLengkap}</h2>
-                    <p className="text-blue-100 text-sm">NIA: {selected.nia}</p>
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-white/20 rounded-full text-xs">{selected.status}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Biodata</h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <InfoRow label="Tempat Lahir" value={selected.tempatLahir} />
-                    <InfoRow label="Tanggal Lahir" value={new Date(selected.tanggalLahir).toLocaleDateString("id-ID")} />
-                    <InfoRow label="Jenis Kelamin" value={selected.jenisKelamin === "L" ? "Laki-laki" : "Perempuan"} />
-                    <InfoRow label="Pendidikan" value={selected.pendidikan || "-"} />
-                    <InfoRow label="Pekerjaan" value={selected.pekerjaan || "-"} />
-                    <InfoRow label="Angkatan" value={selected.angkatan || "-"} />
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Alamat</h3>
-                  <div className="text-sm text-slate-600 space-y-1">
-                    <p>{selected.alamat}</p>
-                    <p>Kec. {selected.kecamatan || "-"}, {selected.kabupaten?.nama}</p>
-                    <p>Prov. {selected.provinsi?.nama}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Kontak</h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <InfoRow label="Email" value={selected.email} />
-                    <InfoRow label="HP" value={selected.hp} />
-                    <InfoRow label="WhatsApp" value={selected.whatsapp || "-"} />
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Riwayat Keanggotaan</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                      <span>Daftar: {new Date(selected.tanggalDaftar).toLocaleDateString("id-ID")}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-600">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                      <span>Diangkat: {selected.tanggalAngkat ? new Date(selected.tanggalAngkat).toLocaleDateString("id-ID") : "-"}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-200 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CreditCard className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-sm font-bold text-blue-950">Kartu Anggota Digital</h3>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 flex items-center justify-between">
-                    <div>
-                      <div className="text-xs text-slate-500">Nomor Anggota</div>
-                      <div className="font-mono font-bold text-blue-950">{selected.nia}</div>
-                      <div className="text-xs text-slate-500 mt-2">Masa Berlaku</div>
-                      <div className="text-sm font-semibold">Seumur hidup</div>
-                    </div>
-                    <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
-                      <QrCode className="w-10 h-10 text-slate-700" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Detail Dialog */}
+      <AnggotaDetailDialog
+        anggotaId={selectedId}
+        onClose={() => setSelectedId(null)}
+        onEdit={() => setSelectedId(null)}
+      />
 
       {/* Add Anggota Dialog */}
       <AnimatePresence>

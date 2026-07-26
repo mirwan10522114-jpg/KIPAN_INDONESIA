@@ -55,7 +55,7 @@ export default function PengurusPage({
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [detail, setDetail] = useState<Pengurus | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [apiData, setApiData] = useState<any[]>([]);
@@ -251,7 +251,7 @@ export default function PengurusPage({
   };
 
   const actions = [
-    { label: "Detail", icon: Eye, action: (item: Pengurus) => setDetail(item), show: true },
+    { label: "Detail", icon: Eye, action: (item: any) => setDetailId(item.id), show: true },
     { label: "Edit", icon: Edit, action: () => { toast.info("Edit form akan segera tersedia"); }, show: canEdit },
     { label: "Lihat Anggota", icon: Users, action: () => onNavigate?.("anggota"), show: true },
     { label: "Reset Password", icon: KeyRound, action: () => { toast.success("Link reset password dikirim ke email pengurus"); }, show: canResetPassword },
@@ -440,7 +440,7 @@ export default function PengurusPage({
                   <tr
                     key={item.id}
                     className="hover:bg-slate-50 cursor-pointer transition-colors"
-                    onClick={() => setDetail(item)}
+                    onClick={() => setDetailId(item.id)}
                   >
                     <td className="px-4 py-3">
                       <img src={item.foto} alt={item.nama} className="w-9 h-9 rounded-full object-cover border-2 border-blue-100" />
@@ -563,9 +563,10 @@ export default function PengurusPage({
 
       {/* Detail Dialog */}
       <PengurusDetailDialog
-        detail={detail}
-        onClose={() => setDetail(null)}
-        onEdit={canEdit ? () => { setDetail(null); } : undefined}
+        pengurusId={detailId}
+        onClose={() => setDetailId(null)}
+        onEdit={canEdit ? () => { setDetailId(null); } : undefined}
+        onViewAnggota={(id) => { setDetailId(null); onNavigate?.("anggota"); }}
       />
 
       {/* Form Dialog */}

@@ -27,7 +27,7 @@ import {
   Inbox,
 } from "lucide-react";
 import { PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
-import WilayahDetailDialog, { type WilayahDetail } from "./WilayahDetailDialog";
+import WilayahDetailDialog from "./WilayahDetailDialog";
 import WilayahFormDialog, { type WilayahFormData } from "./WilayahFormDialog";
 import { toast } from "sonner";
 
@@ -49,7 +49,7 @@ export default function WilayahPage({
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [detail, setDetail] = useState<WilayahDetail | null>(null);
+  const [detailId, setDetailId] = useState<number | null>(null);
   const [detailType, setDetailType] = useState<"provinsi" | "kabupaten">("provinsi");
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
   const [showFormDialog, setShowFormDialog] = useState(false);
@@ -224,19 +224,7 @@ export default function WilayahPage({
 
   const showDetail = (item: any, type: "provinsi" | "kabupaten") => {
     setDetailType(type);
-    setDetail({
-      id: item.id,
-      kode: item.kode,
-      nama: item.nama,
-      status: item.status,
-      ketua: item.ketua || "",
-      jumlahKabupaten: type === "provinsi" ? item.jumlahKabupaten : undefined,
-      jumlahAnggota: item.jumlahAnggota,
-      jumlahPengurus: item.jumlahPengurus,
-      provinsiNama: type === "kabupaten" ? item.provinsiNama : undefined,
-      createdAt: "2024-01-15",
-      updatedAt: "2024-06-10",
-    });
+    setDetailId(item.id);
     setActionMenuId(null);
   };
 
@@ -656,23 +644,21 @@ export default function WilayahPage({
 
       {/* Detail Dialog */}
       <WilayahDetailDialog
-        detail={detail}
+        wilayahId={detailId}
         type={detailType}
-        onClose={() => setDetail(null)}
+        onClose={() => setDetailId(null)}
         onEdit={canEdit ? () => {
-          if (detail) {
-            setFormData({
-              id: detail.id,
-              type: detailType,
-              kode: detail.kode,
-              nama: detail.nama,
-              status: detail.status,
-              ketua: detail.ketua || "",
-            });
-            setDetail(null);
-            setShowFormDialog(true);
-          }
+          setDetailId(null);
+          // Will need to open form with existing data
         } : undefined}
+        onViewPengurus={(id) => {
+          setDetailId(null);
+          onNavigate?.("pengurus");
+        }}
+        onViewAnggota={(id) => {
+          setDetailId(null);
+          onNavigate?.("anggota");
+        }}
       />
 
       {/* Form Dialog for Add/Edit */}
