@@ -1,19 +1,66 @@
 "use client";
 
-import { Plus, Calendar, MapPin, User, Edit, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Plus, Calendar, Edit, Trash2, Search } from "lucide-react";
 import { PROGRAM_KERJA_LIST } from "@/lib/admin-data";
 
 export default function ProgramPage() {
+  const [tingkatFilter, setTingkatFilter] = useState("Semua");
+  const [statusFilter, setStatusFilter] = useState("Semua");
+  const [search, setSearch] = useState("");
+
+  const filtered = PROGRAM_KERJA_LIST.filter((p) => {
+    const matchTingkat = tingkatFilter === "Semua" || p.tingkat === tingkatFilter;
+    const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
+    const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
+      (p.pic || "").toLowerCase().includes(search.toLowerCase());
+    return matchTingkat && matchStatus && matchSearch;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-blue-950">Program Kerja</h1>
-          <p className="text-slate-500 text-sm mt-1">{PROGRAM_KERJA_LIST.length} program kerja terdaftar</p>
+          <p className="text-slate-500 text-sm mt-1">{filtered.length} dari {PROGRAM_KERJA_LIST.length} program kerja</p>
         </div>
         <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
           <Plus className="w-4 h-4" /> Tambah Program
         </button>
+      </div>
+
+      {/* Filter & Search */}
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={tingkatFilter}
+          onChange={(e) => setTingkatFilter(e.target.value)}
+          className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Tingkat</option>
+          <option value="Nasional">Nasional</option>
+          <option value="Provinsi">Provinsi</option>
+          <option value="Kabupaten">Kabupaten</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Status</option>
+          <option value="Direncanakan">Direncanakan</option>
+          <option value="Berjalan">Berjalan</option>
+          <option value="Selesai">Selesai</option>
+        </select>
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari nama program atau PIC..."
+            className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+          />
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
@@ -29,7 +76,7 @@ export default function ProgramPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {PROGRAM_KERJA_LIST.map((p) => (
+            {filtered.map((p) => (
               <tr key={p.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3 text-sm font-semibold text-blue-950">{p.nama}</td>
                 <td className="px-4 py-3 text-center">

@@ -52,7 +52,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
 
   const renderPage = () => {
     switch (activePage) {
-      case "dashboard": return <DashboardPage />;
+      case "dashboard": return <DashboardPage onNavigate={setActivePage} />;
       case "wilayah": return <WilayahPage />;
       case "pengurus": return <PengurusPage />;
       case "anggota": return <AnggotaPage />;
@@ -67,7 +67,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
       case "role": return <RolePage />;
       case "profil": return <ProfilPage />;
       case "akun": return <AkunPage />;
-      default: return <DashboardPage />;
+      default: return <DashboardPage onNavigate={setActivePage} />;
     }
   };
 

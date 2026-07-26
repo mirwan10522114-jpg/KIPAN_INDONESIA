@@ -7,10 +7,16 @@ import { BERITA_ADMIN_LIST } from "@/lib/admin-data";
 export default function BeritaPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [filter, setFilter] = useState("Semua");
+  const [statusFilter, setStatusFilter] = useState("Semua");
+  const [search, setSearch] = useState("");
 
-  const filtered = BERITA_ADMIN_LIST.filter((b) =>
-    filter === "Semua" || b.kategori === filter
-  );
+  const filtered = BERITA_ADMIN_LIST.filter((b) => {
+    const matchKategori = filter === "Semua" || b.kategori === filter;
+    const matchStatus = statusFilter === "Semua" || b.status === statusFilter;
+    const matchSearch = b.judul.toLowerCase().includes(search.toLowerCase()) ||
+      b.penulis.toLowerCase().includes(search.toLowerCase());
+    return matchKategori && matchStatus && matchSearch;
+  });
 
   return (
     <div className="space-y-6">
@@ -27,18 +33,40 @@ export default function BeritaPage() {
         </button>
       </div>
 
-      <div className="flex gap-2">
-        {["Semua", "Nasional", "Provinsi", "Kabupaten"].map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-              filter === f ? "bg-blue-600 text-white" : "bg-white text-slate-600 border border-slate-200"
-            }`}
-          >
-            {f}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex gap-2">
+          {["Semua", "Nasional", "Provinsi", "Kabupaten"].map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
+                filter === f ? "bg-blue-600 text-white" : "bg-white text-slate-600 border border-slate-200"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Status</option>
+          <option value="Published">Published</option>
+          <option value="Draft">Draft</option>
+        </select>
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari judul atau penulis..."
+            className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+          />
+        </div>
+        <span className="text-xs text-slate-500">{filtered.length} dari {BERITA_ADMIN_LIST.length} berita</span>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">

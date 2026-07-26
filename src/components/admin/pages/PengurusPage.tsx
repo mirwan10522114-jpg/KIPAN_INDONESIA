@@ -6,13 +6,15 @@ import { PENGURUS_LIST } from "@/lib/admin-data";
 
 export default function PengurusPage() {
   const [filter, setFilter] = useState("Semua");
+  const [statusFilter, setStatusFilter] = useState("Semua");
   const [search, setSearch] = useState("");
 
   const filtered = PENGURUS_LIST.filter((p) => {
     const matchLevel = filter === "Semua" || p.level === filter;
+    const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
     const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
       p.jabatan.toLowerCase().includes(search.toLowerCase());
-    return matchLevel && matchSearch;
+    return matchLevel && matchStatus && matchSearch;
   });
 
   return (
@@ -41,6 +43,15 @@ export default function PengurusPage() {
             </button>
           ))}
         </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Status</option>
+          <option value="Aktif">Aktif</option>
+          <option value="Nonaktif">Nonaktif</option>
+        </select>
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -51,6 +62,7 @@ export default function PengurusPage() {
             className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
           />
         </div>
+        <span className="text-xs text-slate-500">{filtered.length} dari {PENGURUS_LIST.length} pengurus</span>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">

@@ -48,7 +48,7 @@ interface DashboardData {
   }[];
 }
 
-export default function DashboardPage() {
+export default function DashboardPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -111,6 +111,7 @@ export default function DashboardPage() {
       iconColor: "text-amber-600",
       count: data.pendaftaranByStatus.DIAJUKAN || 0,
       priority: "high",
+      targetPage: "verifikasi",
     },
     {
       icon: FileText,
@@ -123,6 +124,7 @@ export default function DashboardPage() {
       iconColor: "text-blue-600",
       count: data.pendaftaranByStatus.PERBAIKAN || 0,
       priority: "medium",
+      targetPage: "pendaftaran",
     },
     {
       icon: UserPlus,
@@ -135,6 +137,7 @@ export default function DashboardPage() {
       iconColor: "text-emerald-600",
       count: null,
       priority: "low",
+      targetPage: "anggota",
     },
     {
       icon: Newspaper,
@@ -147,22 +150,23 @@ export default function DashboardPage() {
       iconColor: "text-violet-600",
       count: null,
       priority: "low",
+      targetPage: "berita",
     },
   ];
 
   // Stat cards (2 rows)
   const statCardsRow1 = [
-    { label: "Total Anggota", value: stats.totalAnggota, icon: Users, color: "from-blue-500 to-sky-500", change: `${stats.anggotaAktif} aktif` },
-    { label: "Anggota Aktif", value: stats.anggotaAktif, icon: CheckCircle2, color: "from-emerald-500 to-teal-500", change: `${Math.round((stats.anggotaAktif / stats.totalAnggota) * 100)}% dari total` },
-    { label: "Menunggu Verifikasi", value: stats.menungguVerifikasi, icon: Clock, color: "from-amber-500 to-orange-500", change: "Perlu tindakan" },
-    { label: "Anggota Baru Bulan Ini", value: stats.anggotaBaru, icon: UserPlus, color: "from-violet-500 to-purple-500", change: "Bulan berjalan" },
+    { label: "Total Anggota", value: stats.totalAnggota, icon: Users, color: "from-blue-500 to-sky-500", change: `${stats.anggotaAktif} aktif`, targetPage: "anggota" },
+    { label: "Anggota Aktif", value: stats.anggotaAktif, icon: CheckCircle2, color: "from-emerald-500 to-teal-500", change: `${Math.round((stats.anggotaAktif / stats.totalAnggota) * 100)}% dari total`, targetPage: "anggota" },
+    { label: "Menunggu Verifikasi", value: stats.menungguVerifikasi, icon: Clock, color: "from-amber-500 to-orange-500", change: "Perlu tindakan", targetPage: "verifikasi" },
+    { label: "Anggota Baru Bulan Ini", value: stats.anggotaBaru, icon: UserPlus, color: "from-violet-500 to-purple-500", change: "Bulan berjalan", targetPage: "anggota" },
   ];
 
   const statCardsRow2 = [
-    { label: "Total Pengurus", value: stats.totalPengurus, icon: UserCog, color: "from-cyan-500 to-blue-500", change: `${stats.totalProvinsi} provinsi` },
-    { label: "Provinsi Terdaftar", value: stats.totalProvinsi, icon: MapPin, color: "from-sky-500 to-indigo-500", change: "dari 38 provinsi" },
-    { label: "Kabupaten Terdaftar", value: stats.totalKabupaten, icon: Building2, color: "from-teal-500 to-cyan-500", change: "dari 514 kab/kota" },
-    { label: "Coverage Wilayah", value: `${Math.round((stats.totalKabupaten / 514) * 100)}%`, icon: Globe, color: "from-indigo-500 to-violet-500", change: "Nasional" },
+    { label: "Total Pengurus", value: stats.totalPengurus, icon: UserCog, color: "from-cyan-500 to-blue-500", change: `${stats.totalProvinsi} provinsi`, targetPage: "pengurus" },
+    { label: "Provinsi Terdaftar", value: stats.totalProvinsi, icon: MapPin, color: "from-sky-500 to-indigo-500", change: "dari 38 provinsi", targetPage: "wilayah" },
+    { label: "Kabupaten Terdaftar", value: stats.totalKabupaten, icon: Building2, color: "from-teal-500 to-cyan-500", change: "dari 514 kab/kota", targetPage: "wilayah" },
+    { label: "Coverage Wilayah", value: `${Math.round((stats.totalKabupaten / 514) * 100)}%`, icon: Globe, color: "from-indigo-500 to-violet-500", change: "Nasional", targetPage: "wilayah" },
   ];
 
   // Format waktu relatif
@@ -209,9 +213,9 @@ export default function DashboardPage() {
 
   // Perlu tindakan
   const perluTindakan = [
-    { icon: AlertCircle, text: `${data.pendaftaranByStatus.DIAJUKAN || 0} Pendaftaran Baru`, color: "text-amber-600", bg: "bg-amber-50" },
-    { icon: FileText, text: `${data.pendaftaranByStatus.PERBAIKAN || 0} Dokumen Kurang`, color: "text-blue-600", bg: "bg-blue-50" },
-    { icon: UserCog, text: `${stats.totalPengurus} Profil Pengurus`, color: "text-violet-600", bg: "bg-violet-50" },
+    { icon: AlertCircle, text: `${data.pendaftaranByStatus.DIAJUKAN || 0} Pendaftaran Baru`, color: "text-amber-600", bg: "bg-amber-50", targetPage: "verifikasi" },
+    { icon: FileText, text: `${data.pendaftaranByStatus.PERBAIKAN || 0} Dokumen Kurang`, color: "text-blue-600", bg: "bg-blue-50", targetPage: "pendaftaran" },
+    { icon: UserCog, text: `${stats.totalPengurus} Profil Pengurus`, color: "text-violet-600", bg: "bg-violet-50", targetPage: "pengurus" },
   ];
 
   return (
@@ -282,7 +286,10 @@ export default function DashboardPage() {
                     <div className="text-[11px] text-slate-500 mt-0.5">{action.desc}</div>
                   </div>
                 </div>
-                <button className={`mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white text-slate-700 hover:bg-slate-50 rounded-lg transition-colors border border-slate-200`}>
+                <button
+                  onClick={() => onNavigate?.(action.targetPage)}
+                  className={`mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white text-slate-700 hover:bg-slate-50 rounded-lg transition-colors border border-slate-200`}
+                >
                   {action.action}
                   <ChevronRight className="w-3 h-3" />
                 </button>
@@ -309,7 +316,8 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.08 }}
                 whileHover={{ y: -3 }}
-                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100"
+                onClick={() => onNavigate?.(stat.targetPage)}
+                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 cursor-pointer hover:border-blue-200 transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-md`}>
@@ -335,7 +343,8 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 + idx * 0.08 }}
                 whileHover={{ y: -3 }}
-                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100"
+                onClick={() => onNavigate?.(stat.targetPage)}
+                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 cursor-pointer hover:border-blue-200 transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-md`}>
@@ -364,11 +373,20 @@ export default function DashboardPage() {
               <UserPlus className="w-5 h-5 text-blue-600" />
               <h3 className="font-bold text-blue-950">Pendaftaran Terbaru</h3>
             </div>
-            <button className="text-xs font-semibold text-blue-600 hover:text-blue-700">Lihat semua →</button>
+            <button
+              onClick={() => onNavigate?.("pendaftaran")}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+            >
+              Lihat semua →
+            </button>
           </div>
           <ul className="divide-y divide-slate-50">
             {data.recentPendaftaran.map((p, idx) => (
-              <li key={p.id} className="p-4 hover:bg-slate-50 flex items-center gap-3">
+              <li
+                key={p.id}
+                onClick={() => onNavigate?.("verifikasi")}
+                className="p-4 hover:bg-slate-50 flex items-center gap-3 cursor-pointer"
+              >
                 <div className="flex flex-col items-center shrink-0">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-sky-500 flex items-center justify-center text-white text-sm font-bold">
                     {p.nama.charAt(0)}
@@ -417,7 +435,12 @@ export default function DashboardPage() {
               <Activity className="w-5 h-5 text-blue-600" />
               <h3 className="font-bold text-blue-950">Aktivitas Terbaru</h3>
             </div>
-            <button className="text-xs font-semibold text-blue-600 hover:text-blue-700">Lihat semua →</button>
+            <button
+              onClick={() => onNavigate?.("pendaftaran")}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+            >
+              Lihat semua →
+            </button>
           </div>
           <ul className="p-5 space-y-4">
             {data.recentPendaftaran.slice(0, 5).map((p, idx) => (
@@ -431,7 +454,12 @@ export default function DashboardPage() {
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">{formatRelativeTime(p.waktu)} • Status: {p.status}</p>
                 </div>
-                <button className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 shrink-0">Detail →</button>
+                <button
+                  onClick={() => onNavigate?.("verifikasi")}
+                  className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 shrink-0"
+                >
+                  Detail →
+                </button>
               </li>
             ))}
             {data.recentPendaftaran.length === 0 && (
@@ -635,7 +663,11 @@ export default function DashboardPage() {
             {perluTindakan.map((item, idx) => {
               const Icon = item.icon;
               return (
-                <li key={idx} className="flex items-center gap-3 bg-white rounded-xl p-3 border border-amber-100">
+                <li
+                  key={idx}
+                  onClick={() => onNavigate?.(item.targetPage)}
+                  className="flex items-center gap-3 bg-white rounded-xl p-3 border border-amber-100 cursor-pointer hover:border-amber-300 hover:shadow-sm transition-all"
+                >
                   <div className={`w-8 h-8 rounded-lg ${item.bg} flex items-center justify-center shrink-0`}>
                     <Icon className={`w-4 h-4 ${item.color}`} />
                   </div>

@@ -8,13 +8,18 @@ import { PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 export default function WilayahPage() {
   const [tab, setTab] = useState<"provinsi" | "kabupaten">("provinsi");
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("Semua");
 
-  const filteredProv = PROVINSI_LIST.filter((p) =>
-    p.nama.toLowerCase().includes(search.toLowerCase())
-  );
-  const filteredKab = KABUPATEN_LIST.filter((k) =>
-    k.nama.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredProv = PROVINSI_LIST.filter((p) => {
+    const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+  const filteredKab = KABUPATEN_LIST.filter((k) => {
+    const matchSearch = k.nama.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = statusFilter === "Semua" || k.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   return (
     <div className="space-y-6">
@@ -57,16 +62,30 @@ export default function WilayahPage() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cari wilayah..."
-          className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
-        />
+      {/* Search & Filter */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari wilayah..."
+            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Status</option>
+          <option value="Aktif">Aktif</option>
+          <option value="Pembentukan">Pembentukan</option>
+        </select>
+        <span className="text-xs text-slate-500">
+          {tab === "provinsi" ? `${filteredProv.length} dari ${PROVINSI_LIST.length}` : `${filteredKab.length} dari ${KABUPATEN_LIST.length}`} wilayah
+        </span>
       </div>
 
       {/* Table */}
