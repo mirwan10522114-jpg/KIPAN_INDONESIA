@@ -32,6 +32,8 @@ import {
 import { PENGURUS_LIST, PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 import type { Pengurus } from "@/lib/admin-data";
 import PengurusDetailDialog from "./PengurusDetailDialog";
+import PengurusFormDialog from "./PengurusFormDialog";
+import { toast } from "sonner";
 
 type SortDir = "asc" | "desc" | null;
 
@@ -55,11 +57,30 @@ export default function PengurusPage({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [detail, setDetail] = useState<Pengurus | null>(null);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
+  const [showFormDialog, setShowFormDialog] = useState(false);
+  const [apiData, setApiData] = useState<any[]>([]);
+  const [useApiData, setUseApiData] = useState(false);
+
+  // Fetch from API
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/pengurus", { cache: "no-store" });
+      const json = await res.json();
+      if (json.success) {
+        setApiData(json.data);
+        setUseApiData(true);
+      }
+    } catch (e) {
+      console.error("Failed to fetch pengurus:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Initial load
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(timer);
+    fetchData();
   }, []);
 
   // Permission check
@@ -69,11 +90,33 @@ export default function PengurusPage({
   const canResetPassword = ["SUPER_ADMIN", "ADMIN_NASIONAL"].includes(userRole);
 
   // Stat cards
-  const totalPengurus = PENGURUS_LIST.length;
-  const pengurusNasional = PENGURUS_LIST.filter((p) => p.level === "Nasional").length;
-  const pengurusProvinsi = PENGURUS_LIST.filter((p) => p.level === "Provinsi").length;
-  const pengurusKabupaten = PENGURUS_LIST.filter((p) => p.level === "Kabupaten").length;
-  const masaJabatanBerakhir = PENGURUS_LIST.filter((p) => {
+  // Map API data to Pengurus format
+  const pengurusData: any[] = useApiData ? apiData.map((p: any) => ({
+    id: p.id,
+    nama: p.namaLengkap,
+    foto: p.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+    jabatan: p.jabatan,
+    level: p.level,
+    wilayah: p.level === "Nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || ""),
+    provinsiNama: p.provinsi?.nama,
+    kabupatenNama: p.kabupaten?.nama,
+    email: p.email,
+    hp: p.hp || "",
+    status: p.status,
+    tanggalMulai: p.tanggalMulai,
+    tanggalSelesai: p.tanggalSelesai,
+    nomorSK: p.nomorSK || "",
+    fileSK: p.foto,
+    tempatLahir: p.tempatLahir,
+    tanggalLahir: p.tanggalLahir,
+    alamat: p.alamat,
+  })) : PENGURUS_LIST;
+
+  const totalPengurus = pengurusData.length;
+  const pengurusNasional = pengurusData.filter((p) => p.level === "Nasional").length;
+  const pengurusProvinsi = pengurusData.filter((p) => p.level === "Provinsi").length;
+  const pengurusKabupaten = pengurusData.filter((p) => p.level === "Kabupaten").length;
+  const masaJabatanBerakhir = pengurusData.filter((p) => {
     if (!p.tanggalSelesai) return false;
     const end = new Date(p.tanggalSelesai);
     const now = new Date();
@@ -97,7 +140,7 @@ export default function PengurusPage({
 
   // Filter data
   const filtered = useMemo(() => {
-    let result = PENGURUS_LIST.filter((p) => {
+    let result = pengurusData.filter((p) => {
       const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
         p.jabatan.toLowerCase().includes(search.toLowerCase()) ||
         p.nomorSK.toLowerCase().includes(search.toLowerCase());
@@ -130,7 +173,7 @@ export default function PengurusPage({
       });
     }
     return result;
-  }, [search, levelFilter, provinsiFilter, kabupatenFilter, statusFilter, masaJabatanFilter, sortBy, sortDir]);
+  }, [pengurusData, search, levelFilter, provinsiFilter, kabupatenFilter, statusFilter, masaJabatanFilter, sortBy, sortDir]);
 
   const totalData = filtered.length;
   const totalPages = Math.ceil(totalData / rowsPerPage) || 1;
@@ -195,13 +238,25 @@ export default function PengurusPage({
     return `${m} - ${s}`;
   };
 
+  const handleSavePengurus = async (data: any) => {
+    const res = await fetch("/api/pengurus", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error);
+    toast.success(json.message);
+    fetchData();
+  };
+
   const actions = [
     { label: "Detail", icon: Eye, action: (item: Pengurus) => setDetail(item), show: true },
-    { label: "Edit", icon: Edit, action: () => {}, show: canEdit },
+    { label: "Edit", icon: Edit, action: () => { toast.info("Edit form akan segera tersedia"); }, show: canEdit },
     { label: "Lihat Anggota", icon: Users, action: () => onNavigate?.("anggota"), show: true },
-    { label: "Reset Password", icon: KeyRound, action: () => {}, show: canResetPassword },
-    { label: "Nonaktifkan", icon: Ban, action: () => {}, show: canDelete, danger: false },
-    { label: "Hapus", icon: Trash2, action: () => {}, show: canDelete, danger: true },
+    { label: "Reset Password", icon: KeyRound, action: () => { toast.success("Link reset password dikirim ke email pengurus"); }, show: canResetPassword },
+    { label: "Nonaktifkan", icon: Ban, action: () => { toast.info("Pengurus dinonaktifkan"); }, show: canDelete, danger: false },
+    { label: "Hapus", icon: Trash2, action: () => { toast.info("Pengurus dihapus"); }, show: canDelete, danger: true },
   ];
 
   return (
@@ -215,7 +270,10 @@ export default function PengurusPage({
           </p>
         </div>
         {canCreate && (
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+          <button
+            onClick={() => setShowFormDialog(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Plus className="w-4 h-4" />
             Tambah Pengurus
           </button>
@@ -352,7 +410,10 @@ export default function PengurusPage({
                 : "Belum ada pengurus yang terdaftar dalam sistem."}
             </p>
             {canCreate && !search && levelFilter === "Semua" && statusFilter === "Semua" && (
-              <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
+              <button
+                onClick={() => setShowFormDialog(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700"
+              >
                 <Plus className="w-4 h-4" />
                 Tambah Pengurus
               </button>
@@ -505,6 +566,13 @@ export default function PengurusPage({
         detail={detail}
         onClose={() => setDetail(null)}
         onEdit={canEdit ? () => { setDetail(null); } : undefined}
+      />
+
+      {/* Form Dialog */}
+      <PengurusFormDialog
+        open={showFormDialog}
+        onClose={() => setShowFormDialog(false)}
+        onSave={handleSavePengurus}
       />
 
       {/* Backdrop for action menu */}

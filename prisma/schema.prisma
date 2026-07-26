@@ -198,9 +198,14 @@ model Pengurus {
   foto          String?
   email         String
   hp            String?
-  status        String   @default("Aktif") // Aktif | Nonaktif
+  status        String   @default("Aktif") // Aktif | Nonaktif | Dibekukan
   tanggalMulai  DateTime @default(now())
   tanggalSelesai DateTime?
+  nomorSK       String   @default("")
+  fileSK        String?
+  tempatLahir   String?
+  tanggalLahir  DateTime?
+  alamat        String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

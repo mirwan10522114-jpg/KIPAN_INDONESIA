@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 import WilayahDetailDialog, { type WilayahDetail } from "./WilayahDetailDialog";
+import WilayahFormDialog, { type WilayahFormData } from "./WilayahFormDialog";
+import { toast } from "sonner";
 
 type SortDir = "asc" | "desc" | null;
 
@@ -50,11 +52,33 @@ export default function WilayahPage({
   const [detail, setDetail] = useState<WilayahDetail | null>(null);
   const [detailType, setDetailType] = useState<"provinsi" | "kabupaten">("provinsi");
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
+  const [showFormDialog, setShowFormDialog] = useState(false);
+  const [formData, setFormData] = useState<WilayahFormData | null>(null);
+  const [apiProvinsi, setApiProvinsi] = useState<any[]>([]);
+  const [apiKabupaten, setApiKabupaten] = useState<any[]>([]);
+  const [useApiData, setUseApiData] = useState(false);
+
+  // Fetch from API
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/wilayah", { cache: "no-store" });
+      const json = await res.json();
+      if (json.success) {
+        setApiProvinsi(json.data.provinsi || []);
+        setApiKabupaten(json.data.kabupaten || []);
+        setUseApiData(true);
+      }
+    } catch (e) {
+      console.error("Failed to fetch wilayah:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Initial load
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(timer);
+    fetchData();
   }, []);
 
   // Permission check
@@ -63,17 +87,44 @@ export default function WilayahPage({
   const canDelete = userRole === "SUPER_ADMIN";
   const canEdit = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
 
-  // Stat cards
+  // Use API data if available, fallback to mock data
+  const provData = useApiData ? apiProvinsi.map((p: any) => ({
+    id: p.id,
+    kode: p.kode,
+    nama: p.nama,
+    status: p.status,
+    ketua: p.ketua || "",
+    jumlahKabupaten: p._count?.kabupaten || 0,
+    jumlahAnggota: p._count?.anggota || 0,
+    jumlahPengurus: p._count?.pengurus || 0,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+  })) : PROVINSI_LIST;
+
+  const kabData = useApiData ? apiKabupaten.map((k: any) => ({
+    id: k.id,
+    kode: k.kode,
+    nama: k.nama,
+    provinsiNama: k.provinsi?.nama || "",
+    status: k.status,
+    ketua: k.ketua || "",
+    jumlahAnggota: k._count?.anggota || 0,
+    jumlahPengurus: k._count?.pengurus || 0,
+    createdAt: k.createdAt,
+    updatedAt: k.updatedAt,
+  })) : KABUPATEN_LIST;
+
+  // Stat cards — use API data for consistency with dashboard
   const statCards = [
-    { label: "Total Provinsi", value: PROVINSI_LIST.length, total: 38, icon: MapPin, color: "from-blue-500 to-sky-500", targetPage: null },
-    { label: "Total Kabupaten/Kota", value: KABUPATEN_LIST.length, total: 514, icon: Building2, color: "from-sky-500 to-cyan-500", targetPage: null },
-    { label: "Total Anggota", value: PROVINSI_LIST.reduce((a, b) => a + b.jumlahAnggota, 0), total: null, icon: Users, color: "from-emerald-500 to-teal-500", targetPage: "anggota" },
-    { label: "Total Pengurus", value: PROVINSI_LIST.reduce((a, b) => a + b.jumlahPengurus, 0), total: null, icon: UserCog, color: "from-violet-500 to-purple-500", targetPage: "pengurus" },
+    { label: "Total Provinsi", value: provData.length, total: 38, icon: MapPin, color: "from-blue-500 to-sky-500", targetPage: null },
+    { label: "Total Kabupaten/Kota", value: kabData.length, total: 514, icon: Building2, color: "from-sky-500 to-cyan-500", targetPage: null },
+    { label: "Total Anggota", value: provData.reduce((a: number, b: any) => a + (b.jumlahAnggota || 0), 0), total: null, icon: Users, color: "from-emerald-500 to-teal-500", targetPage: "anggota" },
+    { label: "Total Pengurus", value: provData.reduce((a: number, b: any) => a + (b.jumlahPengurus || 0), 0), total: null, icon: UserCog, color: "from-violet-500 to-purple-500", targetPage: "pengurus" },
   ];
 
   // Filter data
   const filteredProv = useMemo(() => {
-    let result = PROVINSI_LIST.filter((p) => {
+    let result = provData.filter((p: any) => {
       const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
         p.kode.toLowerCase().includes(search.toLowerCase()) ||
         (p.ketua || "").toLowerCase().includes(search.toLowerCase());
@@ -91,10 +142,10 @@ export default function WilayahPage({
       });
     }
     return result;
-  }, [search, statusFilter, sortBy, sortDir]);
+  }, [provData, search, statusFilter, sortBy, sortDir]);
 
   const filteredKab = useMemo(() => {
-    let result = KABUPATEN_LIST.filter((k) => {
+    let result = kabData.filter((k: any) => {
       const matchSearch = k.nama.toLowerCase().includes(search.toLowerCase()) ||
         k.kode.toLowerCase().includes(search.toLowerCase());
       const matchStatus = statusFilter === "Semua" || k.status === statusFilter;
@@ -112,7 +163,7 @@ export default function WilayahPage({
       });
     }
     return result;
-  }, [search, statusFilter, provinsiFilter, sortBy, sortDir]);
+  }, [kabData, search, statusFilter, provinsiFilter, sortBy, sortDir]);
 
   const currentData = tab === "provinsi" ? filteredProv : filteredKab;
   const totalData = currentData.length;
@@ -189,13 +240,56 @@ export default function WilayahPage({
     setActionMenuId(null);
   };
 
+  const handleSave = async (data: WilayahFormData) => {
+    const method = data.id ? "PUT" : "POST";
+    const res = await fetch("/api/wilayah", {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error);
+    toast.success(json.message);
+    fetchData();
+  };
+
+  const handleDelete = async (item: any) => {
+    if (!window.confirm(`Yakin hapus ${item.nama}?`)) return;
+    const res = await fetch(`/api/wilayah?type=${tab}&id=${item.id}`, { method: "DELETE" });
+    const json = await res.json();
+    if (json.success) {
+      toast.success(json.message);
+      fetchData();
+    } else {
+      toast.error(json.error || "Gagal menghapus");
+    }
+  };
+
   const actions = [
     { label: "Detail", icon: Eye, action: (item: any) => showDetail(item, tab), show: true },
-    { label: "Edit", icon: Edit, action: () => {}, show: canEdit },
+    { label: "Edit", icon: Edit, action: (item: any) => {
+      setFormData({
+        id: item.id,
+        type: tab,
+        kode: item.kode,
+        nama: item.nama,
+        status: item.status,
+        ketua: item.ketua || "",
+        provinsiId: tab === "kabupaten" ? String(apiProvinsi.find((p: any) => p.nama === item.provinsiNama)?.id || "") : undefined,
+      });
+      setShowFormDialog(true);
+    }, show: canEdit },
     { label: "Kelola Pengurus", icon: UserCog, action: () => onNavigate?.("pengurus"), show: true },
     { label: "Lihat Anggota", icon: Users, action: () => onNavigate?.("anggota"), show: true },
-    { label: "Nonaktifkan", icon: Ban, action: () => {}, show: canDelete, danger: false },
-    { label: "Hapus", icon: Trash2, action: () => {}, show: canDelete, danger: true },
+    { label: "Nonaktifkan", icon: Ban, action: (item: any) => {
+      // Toggle status
+      fetch("/api/wilayah", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, type: tab, nama: item.nama, status: "Nonaktif", ketua: item.ketua }),
+      }).then(() => { toast.success("Status diubah menjadi Nonaktif"); fetchData(); });
+    }, show: canDelete, danger: false },
+    { label: "Hapus", icon: Trash2, action: (item: any) => handleDelete(item), show: canDelete, danger: true },
   ];
 
   return (
@@ -247,7 +341,7 @@ export default function WilayahPage({
             }`}
           >
             <MapPin className="w-4 h-4 inline mr-1.5" />
-            Provinsi ({PROVINSI_LIST.length})
+            Provinsi ({provData.length})
           </button>
           <button
             onClick={() => switchTab("kabupaten")}
@@ -256,11 +350,14 @@ export default function WilayahPage({
             }`}
           >
             <Building2 className="w-4 h-4 inline mr-1.5" />
-            Kabupaten/Kota ({KABUPATEN_LIST.length})
+            Kabupaten/Kota ({kabData.length})
           </button>
         </div>
         {((tab === "provinsi" && canCreateProvinsi) || (tab === "kabupaten" && canCreateKabupaten)) && (
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+          <button
+            onClick={() => { setFormData({ type: tab, kode: "", nama: "", status: "Aktif", ketua: "" }); setShowFormDialog(true); }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Plus className="w-4 h-4" />
             {tab === "provinsi" ? "Tambah Provinsi" : "Tambah Kabupaten/Kota"}
           </button>
@@ -286,7 +383,7 @@ export default function WilayahPage({
             className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
           >
             <option value="Semua">Semua Provinsi</option>
-            {[...new Set(KABUPATEN_LIST.map((k) => k.provinsiNama))].map((p) => (
+            {[...new Set(kabData.map((k: any) => k.provinsiNama))].map((p) => (
               <option key={p}>{p}</option>
             ))}
           </select>
@@ -355,7 +452,10 @@ export default function WilayahPage({
                 : `Belum ada ${tab === "provinsi" ? "provinsi" : "kabupaten/kota"} yang terdaftar.`}
             </p>
             {((tab === "provinsi" && canCreateProvinsi) || (tab === "kabupaten" && canCreateKabupaten)) && !search && statusFilter === "Semua" && provinsiFilter === "Semua" && (
-              <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
+              <button
+                onClick={() => { setFormData({ type: tab, kode: "", nama: "", status: "Aktif", ketua: "" }); setShowFormDialog(true); }}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700"
+              >
                 <Plus className="w-4 h-4" />
                 {tab === "provinsi" ? "Tambah Provinsi" : "Tambah Kabupaten/Kota"}
               </button>
@@ -559,7 +659,29 @@ export default function WilayahPage({
         detail={detail}
         type={detailType}
         onClose={() => setDetail(null)}
-        onEdit={canEdit ? () => { setDetail(null); } : undefined}
+        onEdit={canEdit ? () => {
+          if (detail) {
+            setFormData({
+              id: detail.id,
+              type: detailType,
+              kode: detail.kode,
+              nama: detail.nama,
+              status: detail.status,
+              ketua: detail.ketua || "",
+            });
+            setDetail(null);
+            setShowFormDialog(true);
+          }
+        } : undefined}
+      />
+
+      {/* Form Dialog for Add/Edit */}
+      <WilayahFormDialog
+        open={showFormDialog}
+        data={formData}
+        provinsiList={apiProvinsi.map((p: any) => ({ id: p.id, nama: p.nama }))}
+        onClose={() => setShowFormDialog(false)}
+        onSave={handleSave}
       />
 
       {/* Backdrop for action menu */}

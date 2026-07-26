@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Eye, Download, X, QrCode, CreditCard, RefreshCw } from "lucide-react";
+import { Search, Eye, Download, X, QrCode, CreditCard, RefreshCw, Plus, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AnggotaPage() {
   const [search, setSearch] = useState("");
@@ -12,6 +13,14 @@ export default function AnggotaPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [provinsiList, setProvinsiList] = useState<any[]>([]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [addForm, setAddForm] = useState({
+    namaLengkap: "", nik: "", tempatLahir: "", tanggalLahir: "",
+    jenisKelamin: "L", alamat: "", provinsiId: "", kabupatenId: "",
+    email: "", hp: "", pekerjaan: "",
+  });
+  const [kabupatenList, setKabupatenList] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -56,6 +65,12 @@ export default function AnggotaPage() {
             className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </button>
+          <button
+            onClick={() => setShowAddDialog(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700"
+          >
+            <Plus className="w-4 h-4" /> Tambah Anggota
           </button>
           <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
             <Download className="w-4 h-4" /> Export
@@ -246,6 +261,158 @@ export default function AnggotaPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Anggota Dialog */}
+      <AnimatePresence>
+        {showAddDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowAddDialog(false)}
+            className="fixed inset-0 z-[300] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="relative bg-gradient-to-r from-emerald-600 to-teal-500 p-5 text-white">
+                <button onClick={() => setShowAddDialog(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <UserPlus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Tambah Anggota</h2>
+                    <p className="text-xs text-emerald-100">NIA akan dibuat otomatis</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nama Lengkap *</label>
+                    <input type="text" value={addForm.namaLengkap} onChange={(e) => setAddForm({ ...addForm, namaLengkap: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">NIK (16 digit) *</label>
+                    <input type="text" maxLength={16} value={addForm.nik} onChange={(e) => setAddForm({ ...addForm, nik: e.target.value.replace(/\D/g, "") })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tempat Lahir</label>
+                    <input type="text" value={addForm.tempatLahir} onChange={(e) => setAddForm({ ...addForm, tempatLahir: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tanggal Lahir</label>
+                    <input type="date" value={addForm.tanggalLahir} onChange={(e) => setAddForm({ ...addForm, tanggalLahir: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Jenis Kelamin</label>
+                    <select value={addForm.jenisKelamin} onChange={(e) => setAddForm({ ...addForm, jenisKelamin: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none">
+                      <option value="L">Laki-laki</option>
+                      <option value="P">Perempuan</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Pekerjaan</label>
+                    <input type="text" value={addForm.pekerjaan} onChange={(e) => setAddForm({ ...addForm, pekerjaan: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Alamat</label>
+                  <input type="text" value={addForm.alamat} onChange={(e) => setAddForm({ ...addForm, alamat: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Provinsi *</label>
+                    <select
+                      value={addForm.provinsiId}
+                      onChange={async (e) => {
+                        setAddForm({ ...addForm, provinsiId: e.target.value, kabupatenId: "" });
+                        const res = await fetch(`/api/wilayah?type=kabupaten`, { cache: "no-store" });
+                        const json = await res.json();
+                        if (json.success) setKabupatenList(json.data.filter((k: any) => k.provinsiId === parseInt(e.target.value)));
+                      }}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    >
+                      <option value="">Pilih...</option>
+                      {provinsiList.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kabupaten *</label>
+                    <select value={addForm.kabupatenId} onChange={(e) => setAddForm({ ...addForm, kabupatenId: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" disabled={!addForm.provinsiId}>
+                      <option value="">Pilih...</option>
+                      {kabupatenList.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Email</label>
+                    <input type="email" value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">No. HP</label>
+                    <input type="tel" value={addForm.hp} onChange={(e) => setAddForm({ ...addForm, hp: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
+                <button onClick={() => setShowAddDialog(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+                <button
+                  onClick={async () => {
+                    if (!addForm.namaLengkap || !addForm.nik || !addForm.provinsiId || !addForm.kabupatenId) {
+                      toast.error("Nama, NIK, provinsi, dan kabupaten wajib diisi");
+                      return;
+                    }
+                    setSaving(true);
+                    try {
+                      const res = await fetch("/api/anggota", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(addForm),
+                      });
+                      const json = await res.json();
+                      if (json.success) {
+                        toast.success(json.message);
+                        setShowAddDialog(false);
+                        fetchData();
+                        setAddForm({ namaLengkap: "", nik: "", tempatLahir: "", tanggalLahir: "", jenisKelamin: "L", alamat: "", provinsiId: "", kabupatenId: "", email: "", hp: "", pekerjaan: "" });
+                      } else {
+                        toast.error(json.error);
+                      }
+                    } catch (e) {
+                      toast.error("Gagal menambahkan anggota");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  disabled={saving}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {saving ? (
+                    <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+                  ) : (
+                    <><UserPlus className="w-4 h-4" /> Tambah Anggota</>
+                  )}
+                </button>
               </div>
             </motion.div>
           </motion.div>
