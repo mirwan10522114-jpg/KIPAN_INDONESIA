@@ -226,10 +226,12 @@ export default function PengurusDetailDialog({
                   {activeTab === "dokumen" && (
                     <div className="space-y-2">
                       {[
-                        { nama: "Surat Keputusan (SK)", uploaded: !!p?.nomorSK, icon: FileText, url: p?.fileSK || "#" },
-                        { nama: "KTP", uploaded: false, icon: FileText, url: "#" },
-                        { nama: "CV/Resume", uploaded: false, icon: FileText, url: "#" },
-                        { nama: "Pas Foto", uploaded: !!p?.foto, icon: FileText, url: p?.foto || "#" },
+                        { nama: "Surat Keputusan (SK)", uploaded: !!p?.fileSK, icon: FileText, url: p?.fileSK },
+                        { nama: "KTP", uploaded: !!p?.ktp, icon: FileText, url: p?.ktp },
+                        { nama: "Pas Foto", uploaded: !!p?.foto, icon: FileText, url: p?.foto },
+                        { nama: "CV/Resume", uploaded: !!p?.cv, icon: FileText, url: p?.cv },
+                        { nama: "Surat Pernyataan", uploaded: !!p?.suratPernyataan, icon: FileText, url: p?.suratPernyataan },
+                        { nama: "Surat Sehat", uploaded: !!p?.suratSehat, icon: FileText, url: p?.suratSehat },
                       ].map((d, idx) => {
                         const Icon = d.icon;
                         return (
@@ -238,12 +240,32 @@ export default function PengurusDetailDialog({
                               <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${d.uploaded ? "bg-emerald-100" : "bg-rose-100"}`}>
                                 <Icon className={`w-5 h-5 ${d.uploaded ? "text-emerald-600" : "text-rose-600"}`} />
                               </div>
-                              <span className="text-sm font-medium text-slate-800">{d.nama}</span>
+                              <div>
+                                <div className="text-sm font-medium text-slate-800">{d.nama}</div>
+                                <div className="text-[10px] text-slate-500">{d.uploaded ? "Tersedia" : "Belum diupload"}</div>
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              {d.uploaded && (
+                              {d.uploaded && d.url && (
                                 <button
-                                  onClick={() => window.open(d.url, "_blank")}
+                                  onClick={() => {
+                                    const url = d.url!;
+                                    if (url.startsWith("data:")) {
+                                      const w = window.open();
+                                      if (w) {
+                                        if (url.startsWith("data:image/")) {
+                                          w.document.write(`<html><head><title>${d.nama}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
+                                        } else if (url.startsWith("data:application/pdf")) {
+                                          w.document.write(`<html><head><title>${d.nama}</title></head><body style="margin:0"><iframe src="${url}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
+                                        } else {
+                                          w.document.write(`<html><head><title>${d.nama}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh"><a href="${url}" download="${d.nama}" style="padding:12px 24px;background:#0ea5e9;color:white;text-decoration:none;border-radius:8px">Download ${d.nama}</a></body></html>`);
+                                        }
+                                        w.document.close();
+                                      }
+                                    } else {
+                                      window.open(url, "_blank");
+                                    }
+                                  }}
                                   className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-white px-2 py-1 rounded border border-blue-200"
                                 >
                                   <ExternalLink className="w-3 h-3" /> Lihat

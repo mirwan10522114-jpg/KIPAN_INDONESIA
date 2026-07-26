@@ -166,6 +166,12 @@ model Anggota {
   whatsapp      String?
   foto          String?
 
+  // Dokumen pendukung (base64 data URL atau URL file)
+  ktp           String?
+  cv            String?
+  suratPernyataan String?
+  suratSehat    String?
+
   // AKTIF | NONAKTIF | MENGUNDURKAN_DIRI | DIBERHENTIKAN | MENINGGAL
   status        String   @default("AKTIF")
   angkatan      String?

@@ -89,6 +89,11 @@ export async function GET(
           hp: a.hp,
           whatsapp: a.whatsapp,
           foto: a.foto,
+          // Dokumen anggota
+          ktp: a.ktp,
+          cv: a.cv,
+          suratPernyataan: a.suratPernyataan,
+          suratSehat: a.suratSehat,
           // From jabatan
           jabatanNama: pengurus.jabatan?.nama,
           jabatanLevel: pengurus.jabatan?.level,

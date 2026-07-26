@@ -384,6 +384,7 @@ export default function AnggotaPage({
                       { key: "ktp", label: "KTP" },
                       { key: "cv", label: "CV/Resume" },
                       { key: "suratPernyataan", label: "Surat Pernyataan" },
+                      { key: "suratSehat", label: "Surat Sehat" },
                     ].map((doc) => (
                       <div key={doc.key}>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">{doc.label}</label>
@@ -407,7 +408,36 @@ export default function AnggotaPage({
                           className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                         />
                         {(addForm as any)[doc.key] && (
-                          <span className="text-[10px] text-emerald-600 mt-0.5 block">✓ {doc.label} terupload</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-emerald-600">✓ {doc.label} terupload</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url = (addForm as any)[doc.key];
+                                const w = window.open();
+                                if (w) {
+                                  if (url.startsWith("data:image/")) {
+                                    w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
+                                  } else if (url.startsWith("data:application/pdf")) {
+                                    w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0"><iframe src="${url}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
+                                  } else {
+                                    w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh"><a href="${url}" download="${doc.label}" style="padding:12px 24px;background:#0ea5e9;color:white;text-decoration:none;border-radius:8px">Download ${doc.label}</a></body></html>`);
+                                  }
+                                  w.document.close();
+                                }
+                              }}
+                              className="text-[10px] text-blue-600 hover:text-blue-700 underline"
+                            >
+                              Lihat
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setAddForm((prev) => ({ ...prev, [doc.key]: undefined }))}
+                              className="text-[10px] text-rose-500 hover:text-rose-700 underline"
+                            >
+                              Hapus
+                            </button>
+                          </div>
                         )}
                       </div>
                     ))}

@@ -64,6 +64,12 @@ interface FormData {
   persyaratan: boolean[];
   // Motivasi
   motivasi: string;
+  // Dokumen upload (base64 data URL)
+  foto?: string;
+  ktp?: string;
+  cv?: string;
+  suratPernyataan?: string;
+  suratSehat?: string;
 }
 
 const STEPS = [
@@ -135,6 +141,12 @@ export default function PendaftaranAnggota() {
         whatsapp: form.whatsapp,
         motivasi: form.motivasi,
         persyaratan: form.persyaratan,
+        // Dokumen upload (base64 data URL)
+        foto: form.foto || null,
+        ktp: form.ktp || null,
+        cv: form.cv || null,
+        suratPernyataan: form.suratPernyataan || null,
+        suratSehat: form.suratSehat || null,
       };
 
       const res = await fetch("/api/pendaftaran", {
@@ -562,20 +574,84 @@ export default function PendaftaranAnggota() {
                     />
                   </Field>
 
-                  {/* Upload dokumen placeholder */}
+                  {/* Upload dokumen — 5 dokumen wajib */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-2">
-                      Upload Dokumen (KTP, Pas Foto, CV, Surat Pernyataan)
+                      Upload Dokumen Persyaratan
                     </label>
-                    <div className="border-2 border-dashed border-sky-200 rounded-2xl p-6 text-center hover:border-sky-400 transition-colors cursor-pointer bg-sky-50/30">
-                      <Upload className="w-8 h-8 text-sky-400 mx-auto mb-2" />
-                      <p className="text-sm text-slate-600">
-                        Klik untuk upload atau drag &amp; drop file di sini
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Format: JPG, PNG, PDF (max 2MB per file)
-                      </p>
-                      <input type="file" multiple className="hidden" />
+                    <p className="text-xs text-slate-500 mb-3">
+                      Format: JPG, PNG, PDF (max 2MB per file)
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {[
+                        { key: "ktp", label: "KTP", icon: IdCard },
+                        { key: "foto", label: "Pas Foto", icon: User },
+                        { key: "cv", label: "CV/Resume", icon: FileText },
+                        { key: "suratPernyataan", label: "Surat Pernyataan", icon: ScrollText },
+                        { key: "suratSehat", label: "Surat Sehat", icon: HeartPulse },
+                      ].map((doc) => {
+                        const Icon = doc.icon;
+                        const value = (form as any)[doc.key] as string | undefined;
+                        return (
+                          <div key={doc.key} className={`p-3 rounded-xl border-2 transition-all ${value ? "border-emerald-300 bg-emerald-50/50" : "border-slate-200 bg-white"}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${value ? "bg-emerald-100" : "bg-sky-100"}`}>
+                                <Icon className={`w-4 h-4 ${value ? "text-emerald-600" : "text-sky-600"}`} />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-700">{doc.label}</span>
+                              {value && <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />}
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (file.size > 1024 * 1024 * 2) {
+                                  alert("File maksimal 2MB");
+                                  return;
+                                }
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  setForm((prev) => ({ ...prev, [doc.key]: reader.result as string }));
+                                };
+                                reader.readAsDataURL(file);
+                              }}
+                              className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
+                            />
+                            {value && (
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const w = window.open();
+                                    if (w) {
+                                      if (value.startsWith("data:image/")) {
+                                        w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${value}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
+                                      } else if (value.startsWith("data:application/pdf")) {
+                                        w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0"><iframe src="${value}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
+                                      } else {
+                                        w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh"><a href="${value}" download="${doc.label}" style="padding:12px 24px;background:#0ea5e9;color:white;text-decoration:none;border-radius:8px">Download ${doc.label}</a></body></html>`);
+                                      }
+                                      w.document.close();
+                                    }
+                                  }}
+                                  className="text-[10px] text-blue-600 hover:text-blue-700 underline"
+                                >
+                                  Lihat
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setForm((prev) => ({ ...prev, [doc.key]: undefined }))}
+                                  className="text-[10px] text-rose-500 hover:text-rose-700 underline"
+                                >
+                                  Hapus
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </motion.div>

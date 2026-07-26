@@ -11,6 +11,7 @@ import {
   X,
   History,
   RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import { PERSYARATAN } from "@/lib/kipan-data";
 
@@ -70,12 +71,31 @@ export default function VerifikasiPage() {
 
   const persyaratanList = selected?.persyaratan ? JSON.parse(selected.persyaratan) : [];
   const dokumenList = selected ? [
-    { nama: "KTP", uploaded: !!selected.ktp },
-    { nama: "Pas Foto", uploaded: !!selected.foto },
-    { nama: "CV", uploaded: !!selected.cv },
-    { nama: "Surat Pernyataan", uploaded: !!selected.suratPernyataan },
-    { nama: "Surat Sehat", uploaded: !!selected.suratSehat },
+    { nama: "KTP", uploaded: !!selected.ktp, url: selected.ktp },
+    { nama: "Pas Foto", uploaded: !!selected.foto, url: selected.foto },
+    { nama: "CV/Resume", uploaded: !!selected.cv, url: selected.cv },
+    { nama: "Surat Pernyataan", uploaded: !!selected.suratPernyataan, url: selected.suratPernyataan },
+    { nama: "Surat Sehat", uploaded: !!selected.suratSehat, url: selected.suratSehat },
   ] : [];
+
+  const openDoc = (url: string, nama: string) => {
+    if (!url) return;
+    if (url.startsWith("data:")) {
+      const w = window.open();
+      if (w) {
+        if (url.startsWith("data:image/")) {
+          w.document.write(`<html><head><title>${nama}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
+        } else if (url.startsWith("data:application/pdf")) {
+          w.document.write(`<html><head><title>${nama}</title></head><body style="margin:0"><iframe src="${url}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
+        } else {
+          w.document.write(`<html><head><title>${nama}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh"><a href="${url}" download="${nama}" style="padding:12px 24px;background:#0ea5e9;color:white;text-decoration:none;border-radius:8px">Download ${nama}</a></body></html>`);
+        }
+        w.document.close();
+      }
+    } else {
+      window.open(url, "_blank");
+    }
+  };
 
   if (loading) {
     return (
@@ -234,11 +254,21 @@ export default function VerifikasiPage() {
                             </div>
                           </div>
                         </div>
-                        {d.uploaded ? (
-                          <Check className="w-5 h-5 text-emerald-600" />
-                        ) : (
-                          <X className="w-5 h-5 text-rose-600" />
-                        )}
+                        <div className="flex items-center gap-2">
+                          {d.uploaded && (
+                            <button
+                              onClick={() => openDoc(d.url, d.nama)}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-white px-2 py-1 rounded border border-blue-200"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Lihat
+                            </button>
+                          )}
+                          {d.uploaded ? (
+                            <Check className="w-5 h-5 text-emerald-600" />
+                          ) : (
+                            <X className="w-5 h-5 text-rose-600" />
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
