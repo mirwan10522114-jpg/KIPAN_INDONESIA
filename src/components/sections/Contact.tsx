@@ -66,8 +66,8 @@ Mohon segera dihubungi. Terima kasih.`;
       label: "Telepon / WhatsApp",
       value: company.phone,
       href: directWa,
-      color: "text-emerald-500",
-      bg: "bg-emerald-50",
+      color: "text-sky-500",
+      bg: "bg-sky-50",
     },
     {
       icon: Mail,
@@ -90,8 +90,8 @@ Mohon segera dihubungi. Terima kasih.`;
       label: "Website",
       value: company.website,
       href: company.websiteUrl,
-      color: "text-emerald-500",
-      bg: "bg-emerald-50",
+      color: "text-sky-500",
+      bg: "bg-sky-50",
     },
   ];
 
@@ -100,7 +100,7 @@ Mohon segera dihubungi. Terima kasih.`;
       id="kontak"
       className="relative py-20 lg:py-28 bg-white overflow-hidden"
     >
-      <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-0 w-96 h-96 bg-sky-100/40 rounded-full blur-3xl" />
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -110,10 +110,10 @@ Mohon segera dihubungi. Terima kasih.`;
           transition={{ duration: 0.6 }}
           className="max-w-3xl mb-14"
         >
-          <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
+          <span className="inline-block px-4 py-1.5 bg-sky-100 text-blue-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
             Hubungi Kami
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-emerald-950 leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-950 leading-tight">
             Butuh Informasi?{" "}
             <span className="text-gradient-water">Hubungi KIPAN</span>
           </h2>
@@ -163,9 +163,9 @@ Mohon segera dihubungi. Terima kasih.`;
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7 }}
-            className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-6 lg:p-10 shadow-xl border border-emerald-100"
+            className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-3xl p-6 lg:p-10 shadow-xl border border-sky-100"
           >
-            <h3 className="text-2xl lg:text-3xl font-bold text-emerald-950 mb-2">
+            <h3 className="text-2xl lg:text-3xl font-bold text-blue-950 mb-2">
               Kirim Pesan
             </h3>
             <p className="text-slate-600 text-sm mb-6">
@@ -185,7 +185,7 @@ Mohon segera dihubungi. Terima kasih.`;
                   onChange={handleChange}
                   required
                   placeholder="Nama Anda"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all"
                 />
               </div>
               <div>
@@ -199,7 +199,7 @@ Mohon segera dihubungi. Terima kasih.`;
                   onChange={handleChange}
                   required
                   placeholder="0812xxxxxxx"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all"
                 />
               </div>
               <div>
@@ -213,7 +213,7 @@ Mohon segera dihubungi. Terima kasih.`;
                   onChange={handleChange}
                   required
                   placeholder="email@domain.com"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all"
                 />
               </div>
               <div>
@@ -227,12 +227,12 @@ Mohon segera dihubungi. Terima kasih.`;
                   required
                   rows={4}
                   placeholder="Saya ingin bertanya tentang..."
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all resize-none"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 outline-none transition-all resize-none"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 rounded-xl font-semibold hover:shadow-xl hover:shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 group"
+                className="w-full bg-gradient-to-r from-sky-500 to-blue-600 text-white py-4 rounded-xl font-semibold hover:shadow-xl hover:shadow-sky-500/30 transition-all flex items-center justify-center gap-2 group"
               >
                 <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 Kirim Pesan via WhatsApp
@@ -243,7 +243,7 @@ Mohon segera dihubungi. Terima kasih.`;
                 rel="noopener noreferrer"
                 className="w-full bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-medium hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
               >
-                <MessageCircle className="w-4 h-4 text-emerald-500" />
+                <MessageCircle className="w-4 h-4 text-sky-500" />
                 Atau Chat Langsung
               </a>
             </form>

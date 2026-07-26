@@ -41,10 +41,10 @@ export default function Gallery() {
   return (
     <section
       id="galeri"
-      className="relative py-20 lg:py-28 bg-gradient-to-b from-white via-emerald-50/40 to-white overflow-hidden"
+      className="relative py-20 lg:py-28 bg-gradient-to-b from-white via-sky-50/40 to-white overflow-hidden"
     >
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-100/40 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-100/40 rounded-full blur-3xl" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-sky-100/40 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-100/40 rounded-full blur-3xl" />
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -56,11 +56,11 @@ export default function Gallery() {
           className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12"
         >
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-blue-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
               <ImageOff className="w-3.5 h-3.5" />
               Galeri Kegiatan
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-emerald-950 leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-950 leading-tight">
               Dokumentasi Kegiatan{" "}
               <span className="text-gradient-water">KIPAN</span>
             </h2>
@@ -76,14 +76,14 @@ export default function Gallery() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="bg-white rounded-2xl p-4 border border-emerald-100 shadow-sm max-w-xs"
+            className="bg-white rounded-2xl p-4 border border-sky-100 shadow-sm max-w-xs"
           >
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-lg">
                 <Upload className="w-6 h-6 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-extrabold text-emerald-950">
+                <div className="text-2xl font-extrabold text-blue-950">
                   {filtered.length}
                 </div>
                 <div className="text-xs text-slate-500">
@@ -157,7 +157,7 @@ export default function Gallery() {
                 </div>
 
                 {/* Category tag */}
-                <span className="absolute top-3 left-3 bg-gradient-to-r from-500 to-emerald-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-md">
+                <span className="absolute top-3 left-3 bg-gradient-to-r from-500 to-blue-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-md">
                   {item.category}
                 </span>
 
@@ -202,7 +202,7 @@ export default function Gallery() {
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-500 to-emerald-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-500 to-blue-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
           >
             Lihat Portfolio Lengkap via WhatsApp
           </a>
@@ -264,7 +264,7 @@ export default function Gallery() {
                   loading="eager"
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-950/95 via-950/80 to-transparent">
-                  <span className="inline-block bg-gradient-to-r from-500 to-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">
+                  <span className="inline-block bg-gradient-to-r from-500 to-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">
                     {filtered[lightboxIdx].category}
                   </span>
                   <h3 className="text-2xl font-bold text-white">
@@ -277,7 +277,7 @@ export default function Gallery() {
                         {filtered[lightboxIdx].location}
                       </span>
                     </div>
-                    <span className="text-xs text-emerald-300">
+                    <span className="text-xs text-sky-300">
                       {lightboxIdx + 1} / {filtered.length}
                     </span>
                   </div>

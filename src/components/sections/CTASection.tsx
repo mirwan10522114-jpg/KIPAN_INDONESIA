@@ -11,18 +11,18 @@ export default function CTASection() {
   )}`;
 
   return (
-    <section className="relative py-16 lg:py-20 overflow-hidden bg-emerald-950">
+    <section className="relative py-16 lg:py-20 overflow-hidden bg-blue-950">
       <div className="absolute inset-0">
         <img
           src="https://images.unsplash.com/photo-1530026405186-ed1f139313f8?auto=format&fit=crop&w=1920&q=80"
           alt="Kegiatan KIPAN"
           className="w-full h-full object-cover opacity-30"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-950 via-emerald-950/90 to-emerald-900/70" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-950 via-blue-950/90 to-blue-900/70" />
       </div>
 
-      <div className="absolute -top-10 -left-10 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl animate-wave" />
-      <div className="absolute -bottom-10 -right-10 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl" />
+      <div className="absolute -top-10 -left-10 w-80 h-80 bg-sky-500/20 rounded-full blur-3xl animate-wave" />
+      <div className="absolute -bottom-10 -right-10 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl" />
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -32,21 +32,21 @@ export default function CTASection() {
           transition={{ duration: 0.6 }}
           className="max-w-3xl mx-auto text-center"
         >
-          <div className="inline-flex items-center gap-2 bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 rounded-full px-4 py-1.5 mb-6">
-            <Sparkles className="w-4 h-4 text-emerald-300" />
-            <span className="text-emerald-200 text-xs font-semibold tracking-wider uppercase">
+          <div className="inline-flex items-center gap-2 bg-sky-500/20 backdrop-blur-sm border border-sky-400/30 rounded-full px-4 py-1.5 mb-6">
+            <Sparkles className="w-4 h-4 text-sky-300" />
+            <span className="text-sky-200 text-xs font-semibold tracking-wider uppercase">
               Bergabung Sekarang
             </span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl lg:text-6xl font-extrabold text-white leading-tight">
             Jadilah Bagian dari{" "}
-            <span className="bg-gradient-to-r from-emerald-300 to-teal-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-sky-300 to-cyan-500 bg-clip-text text-transparent">
               Gerakan Nasional
             </span>
           </h2>
 
-          <p className="mt-6 text-emerald-100 text-base lg:text-lg leading-relaxed">
+          <p className="mt-6 text-sky-100 text-base lg:text-lg leading-relaxed">
             KIPAN Indonesia membuka pendaftaran anggota baru di seluruh{" "}
             <span className="font-semibold text-white">38 provinsi</span> dan{" "}
             <span className="font-semibold text-white">514 kabupaten/kota</span>.
@@ -56,7 +56,7 @@ export default function CTASection() {
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="#pendaftaran"
-              className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-400 to-emerald-600 text-white font-semibold px-8 py-4 rounded-full shadow-2xl shadow-emerald-500/40 hover:shadow-emerald-500/60 hover:-translate-y-1 transition-all"
+              className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-600 text-white font-semibold px-8 py-4 rounded-full shadow-2xl shadow-sky-500/40 hover:shadow-sky-500/60 hover:-translate-y-1 transition-all"
             >
               <UserPlus className="w-5 h-5 group-hover:rotate-12 transition-transform" />
               Daftar Menjadi Anggota

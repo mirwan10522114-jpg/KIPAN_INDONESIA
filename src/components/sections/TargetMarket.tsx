@@ -25,10 +25,10 @@ export default function TargetMarket() {
   return (
     <section
       id="alur-pendaftaran"
-      className="relative py-20 lg:py-28 bg-gradient-to-br from-emerald-50 to-teal-50 overflow-hidden"
+      className="relative py-20 lg:py-28 bg-gradient-to-br from-sky-50 to-cyan-50 overflow-hidden"
     >
-      <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/50 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-teal-100/50 rounded-full blur-3xl" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-sky-100/50 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-100/50 rounded-full blur-3xl" />
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -39,11 +39,11 @@ export default function TargetMarket() {
           transition={{ duration: 0.6 }}
           className="max-w-3xl mx-auto text-center mb-14"
         >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-blue-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
             <FileText className="w-3.5 h-3.5" />
             Alur Pendaftaran
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-emerald-950 leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-950 leading-tight">
             5 Langkah Menjadi{" "}
             <span className="text-gradient-water">Anggota KIPAN</span>
           </h2>
@@ -71,32 +71,32 @@ export default function TargetMarket() {
                 <div className="relative flex flex-col items-center">
                   <motion.div
                     whileHover={{ scale: 1.1, rotate: 5 }}
-                    className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl shadow-emerald-500/30 shrink-0"
+                    className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-xl shadow-sky-500/30 shrink-0"
                   >
                     <Icon className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
                   </motion.div>
                   {/* Connector */}
                   {!isLast && (
-                    <div className="w-0.5 flex-1 bg-gradient-to-b from-emerald-400 to-emerald-200 mt-2 min-h-[40px]" />
+                    <div className="w-0.5 flex-1 bg-gradient-to-b from-sky-400 to-sky-200 mt-2 min-h-[40px]" />
                   )}
                 </div>
 
                 {/* Content card */}
                 <motion.div
                   whileHover={{ y: -3 }}
-                  className="flex-1 bg-white rounded-2xl shadow-lg border border-emerald-100 p-5 lg:p-6 mb-2"
+                  className="flex-1 bg-white rounded-2xl shadow-lg border border-sky-100 p-5 lg:p-6 mb-2"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">
+                      <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                         Step {step.step}
                       </span>
-                      <span className="hidden sm:inline text-emerald-300">•</span>
+                      <span className="hidden sm:inline text-sky-300">•</span>
                     </div>
-                    <h3 className="text-lg lg:text-xl font-bold text-emerald-950 flex-1">
+                    <h3 className="text-lg lg:text-xl font-bold text-blue-950 flex-1">
                       {step.title}
                     </h3>
-                    <span className="self-start sm:self-auto inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="self-start sm:self-auto inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-sky-50 text-blue-700 border border-sky-200">
                       {step.status}
                     </span>
                   </div>
@@ -119,7 +119,7 @@ export default function TargetMarket() {
         >
           <a
             href="#pendaftaran"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-sky-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
           >
             Mulai Pendaftaran Sekarang
             <ArrowRight className="w-5 h-5" />

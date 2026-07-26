@@ -28,8 +28,8 @@ export default function StrukturOrganisasi() {
       id="struktur"
       className="relative py-20 lg:py-28 bg-white overflow-hidden"
     >
-      <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-teal-100/40 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-0 w-96 h-96 bg-sky-100/40 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-100/40 rounded-full blur-3xl" />
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -40,11 +40,11 @@ export default function StrukturOrganisasi() {
           transition={{ duration: 0.6 }}
           className="max-w-3xl mx-auto text-center mb-14"
         >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-blue-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
             <Network className="w-3.5 h-3.5" />
             Struktur Organisasi
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-emerald-950 leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-950 leading-tight">
             Hierarki{" "}
             <span className="text-gradient-water">KIPAN Indonesia</span>
           </h2>
@@ -72,8 +72,8 @@ export default function StrukturOrganisasi() {
                 {!isLast && (
                   <div className="flex justify-center mb-2">
                     <div className="flex flex-col items-center">
-                      <div className="w-0.5 h-8 bg-gradient-to-b from-emerald-400 to-emerald-300" />
-                      <ChevronDown className="w-5 h-5 text-emerald-400 -mt-2" />
+                      <div className="w-0.5 h-8 bg-gradient-to-b from-sky-400 to-sky-300" />
+                      <ChevronDown className="w-5 h-5 text-sky-400 -mt-2" />
                     </div>
                   </div>
                 )}
@@ -81,8 +81,8 @@ export default function StrukturOrganisasi() {
                 {/* Card */}
                 <motion.div
                   whileHover={{ scale: 1.02, y: -3 }}
-                  className={`relative bg-white rounded-3xl shadow-xl border-2 border-emerald-100 p-6 lg:p-8 max-w-3xl mx-auto transition-all hover:border-emerald-300 hover:shadow-2xl ${
-                    idx === 0 ? "ring-4 ring-emerald-100" : ""
+                  className={`relative bg-white rounded-3xl shadow-xl border-2 border-sky-100 p-6 lg:p-8 max-w-3xl mx-auto transition-all hover:border-sky-300 hover:shadow-2xl ${
+                    idx === 0 ? "ring-4 ring-sky-100" : ""
                   }`}
                 >
                   <div className="grid sm:grid-cols-[auto_1fr_auto] gap-4 sm:gap-6 items-center">
@@ -96,11 +96,11 @@ export default function StrukturOrganisasi() {
                     {/* Content */}
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">
+                        <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                           Level {idx + 1}: {level.level}
                         </span>
                       </div>
-                      <h3 className="text-lg lg:text-xl font-bold text-emerald-950 mb-1">
+                      <h3 className="text-lg lg:text-xl font-bold text-blue-950 mb-1">
                         {level.title}
                       </h3>
                       <p className="text-sm text-slate-600 leading-relaxed">
@@ -109,11 +109,11 @@ export default function StrukturOrganisasi() {
                     </div>
 
                     {/* Count badge */}
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 text-center shrink-0">
-                      <div className="text-xs text-emerald-600 uppercase tracking-wider font-semibold">
+                    <div className="bg-sky-50 border border-sky-200 rounded-2xl px-4 py-3 text-center shrink-0">
+                      <div className="text-xs text-blue-600 uppercase tracking-wider font-semibold">
                         Cakupan
                       </div>
-                      <div className="text-lg font-extrabold text-emerald-700">
+                      <div className="text-lg font-extrabold text-blue-700">
                         {level.count}
                       </div>
                     </div>
@@ -130,10 +130,10 @@ export default function StrukturOrganisasi() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto mt-12 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6 text-center"
+          className="max-w-3xl mx-auto mt-12 bg-gradient-to-r from-sky-50 to-cyan-50 border border-sky-200 rounded-2xl p-6 text-center"
         >
           <p className="text-sm text-slate-700 leading-relaxed">
-            <strong className="text-emerald-700">Sistem Informasi Manajemen Keanggotaan KIPAN (SIM-KIPAN)</strong> mengelola seluruh siklus hidup anggota—mulai dari pendaftaran, verifikasi berjenjang, pelatihan, hingga pengangkatan sebagai anggota aktif dengan kartu anggota digital.
+            <strong className="text-blue-700">Sistem Informasi Manajemen Keanggotaan KIPAN (SIM-KIPAN)</strong> mengelola seluruh siklus hidup anggota—mulai dari pendaftaran, verifikasi berjenjang, pelatihan, hingga pengangkatan sebagai anggota aktif dengan kartu anggota digital.
           </p>
         </motion.div>
       </div>

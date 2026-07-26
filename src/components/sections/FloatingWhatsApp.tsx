@@ -41,15 +41,15 @@ export default function FloatingWhatsApp() {
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
                       <MessageCircle className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <div className="text-sm font-bold text-sky-950">
                         Tim Dunia Pool
                       </div>
-                      <div className="text-xs text-emerald-500 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                      <div className="text-xs text-sky-500 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-sky-500 rounded-full" />
                         Online sekarang
                       </div>
                     </div>
@@ -69,7 +69,7 @@ export default function FloatingWhatsApp() {
                   href={waLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full text-center bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:shadow-lg transition-shadow"
+                  className="block w-full text-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:shadow-lg transition-shadow"
                 >
                   Mulai Chat
                 </a>
@@ -80,10 +80,10 @@ export default function FloatingWhatsApp() {
           {/* Floating button */}
           <button
             onClick={() => setOpen(!open)}
-            className="relative w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-2xl shadow-emerald-500/40 flex items-center justify-center hover:scale-110 transition-transform"
+            className="relative w-14 h-14 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 shadow-2xl shadow-sky-500/40 flex items-center justify-center hover:scale-110 transition-transform"
             aria-label="WhatsApp"
           >
-            <span className="absolute inset-0 rounded-full bg-emerald-400 animate-slow-ping" />
+            <span className="absolute inset-0 rounded-full bg-sky-400 animate-slow-ping" />
             {open ? (
               <X className="w-6 h-6 text-white relative" />
             ) : (

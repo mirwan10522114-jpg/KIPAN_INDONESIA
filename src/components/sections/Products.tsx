@@ -29,10 +29,10 @@ export default function Products() {
   return (
     <section
       id="berita"
-      className="relative py-20 lg:py-28 bg-gradient-to-b from-white to-emerald-50/30 overflow-hidden"
+      className="relative py-20 lg:py-28 bg-gradient-to-b from-white to-sky-50/30 overflow-hidden"
     >
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-emerald-100/40 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-teal-100/40 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-sky-100/40 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-cyan-100/40 rounded-full blur-3xl" />
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -43,11 +43,11 @@ export default function Products() {
           transition={{ duration: 0.6 }}
           className="max-w-3xl mx-auto text-center mb-12"
         >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-blue-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
             <Newspaper className="w-3.5 h-3.5" />
             Berita & Kegiatan
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-emerald-950 leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-blue-950 leading-tight">
             Kabar Terbaru{" "}
             <span className="text-gradient-water">KIPAN</span>
           </h2>
@@ -75,8 +75,8 @@ export default function Products() {
               onClick={() => setFilter(cat)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                 filter === cat
-                  ? "bg-gradient-to-r from-emerald-700 to-teal-600 text-white shadow-md shadow-emerald-500/30"
-                  : "bg-white text-slate-600 hover:bg-emerald-50 border border-slate-200"
+                  ? "bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-md shadow-sky-500/30"
+                  : "bg-white text-slate-600 hover:bg-sky-50 border border-slate-200"
               }`}
             >
               {cat}
@@ -109,9 +109,9 @@ export default function Products() {
                     alt={b.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-blue-950/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                  <span className="absolute top-3 left-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-md">
+                  <span className="absolute top-3 left-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-md">
                     {b.category}
                   </span>
                 </div>
@@ -120,21 +120,21 @@ export default function Products() {
                 <div className="p-5">
                   <div className="flex items-center gap-3 text-[11px] text-slate-500 mb-2">
                     <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-emerald-500" />
+                      <Calendar className="w-3 h-3 text-sky-500" />
                       {b.date}
                     </span>
                     <span className="inline-flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-emerald-500" />
+                      <MapPin className="w-3 h-3 text-sky-500" />
                       {b.location}
                     </span>
                   </div>
-                  <h3 className="font-bold text-emerald-950 text-base leading-tight mb-2 line-clamp-2 group-hover:text-emerald-700 transition-colors">
+                  <h3 className="font-bold text-blue-950 text-base leading-tight mb-2 line-clamp-2 group-hover:text-blue-700 transition-colors">
                     {b.title}
                   </h3>
                   <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed mb-3">
                     {b.excerpt}
                   </p>
-                  <div className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 group-hover:gap-2 transition-all">
+                  <div className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 group-hover:gap-2 transition-all">
                     Baca selengkapnya
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </div>
@@ -153,9 +153,9 @@ export default function Products() {
           className="text-center mt-10 text-sm text-slate-500"
         >
           Menampilkan{" "}
-          <span className="font-semibold text-emerald-700">{filtered.length}</span>{" "}
+          <span className="font-semibold text-blue-700">{filtered.length}</span>{" "}
           dari{" "}
-          <span className="font-semibold text-emerald-700">{berita.length}</span>{" "}
+          <span className="font-semibold text-blue-700">{berita.length}</span>{" "}
           berita
         </motion.div>
       </div>
@@ -168,7 +168,7 @@ export default function Products() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelected(null)}
-            className="fixed inset-0 z-[100] bg-emerald-950/90 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 z-[100] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
@@ -194,10 +194,10 @@ export default function Products() {
                     className="w-full h-full object-cover"
                     loading="eager"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/80 via-emerald-950/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-blue-950/80 via-blue-950/30 to-transparent" />
 
                   <div className="absolute top-4 left-4">
-                    <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg">
+                    <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg">
                       <Newspaper className="w-3 h-3" />
                       {selected.category}
                     </span>
@@ -207,13 +207,13 @@ export default function Products() {
                     <h2 className="text-2xl lg:text-3xl font-bold leading-tight">
                       {selected.title}
                     </h2>
-                    <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-emerald-100">
+                    <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-sky-100">
                       <span className="inline-flex items-center gap-1">
-                        <Calendar className="w-4 h-4 text-emerald-300" />
+                        <Calendar className="w-4 h-4 text-sky-300" />
                         {selected.date}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <MapPin className="w-4 h-4 text-emerald-300" />
+                        <MapPin className="w-4 h-4 text-sky-300" />
                         {selected.location}
                       </span>
                     </div>

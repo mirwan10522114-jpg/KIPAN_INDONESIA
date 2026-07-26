@@ -99,7 +99,7 @@ export const STRUKTUR_LEVELS = [
     title: "Pengurus Pusat",
     desc: "Kepemimpinan nasional KIPAN Indonesia yang mengkoordinir seluruh kegiatan di 38 provinsi.",
     icon: "Landmark",
-    color: "from-emerald-600 to-teal-600",
+    color: "from-blue-600 to-blue-600",
     count: "1 Pusat",
   },
   {
@@ -107,7 +107,7 @@ export const STRUKTUR_LEVELS = [
     title: "Pengurus Provinsi",
     desc: "Koordinator wilayah provinsi yang mengelola kabupaten/kota di bawahnya.",
     icon: "Map",
-    color: "from-teal-600 to-cyan-600",
+    color: "from-blue-600 to-cyan-600",
     count: "38 Provinsi",
   },
   {

@@ -21,25 +21,25 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="relative bg-emerald-950 text-slate-300 overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-400" />
+    <footer className="relative bg-blue-950 text-slate-300 overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-cyan-500 to-sky-400" />
 
-      <div className="absolute -top-20 -right-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
-      <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl" />
+      <div className="absolute -top-20 -right-20 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
         <div className="grid lg:grid-cols-12 gap-10">
           {/* Brand */}
           <div className="lg:col-span-4">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-500 flex items-center justify-center shadow-lg">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg">
                 <Shield className="w-6 h-6 text-white" strokeWidth={2.5} />
               </div>
               <div>
                 <div className="font-bold text-lg text-white">
-                  {company.name} <span className="text-emerald-400">Indonesia</span>
+                  {company.name} <span className="text-sky-400">Indonesia</span>
                 </div>
-                <div className="text-[10px] text-emerald-300">
+                <div className="text-[10px] text-sky-300">
                   {company.fullName}
                 </div>
               </div>
@@ -57,7 +57,7 @@ export default function Footer() {
                 <div className="text-sm font-semibold text-white">
                   {company.partner}
                 </div>
-                <div className="text-[10px] text-emerald-300">
+                <div className="text-[10px] text-sky-300">
                   {company.partnerOrigin}
                 </div>
               </div>
@@ -74,7 +74,7 @@ export default function Footer() {
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="text-sm text-slate-400 hover:text-emerald-300 transition-colors"
+                    className="text-sm text-slate-400 hover:text-sky-300 transition-colors"
                   >
                     {link.label}
                   </a>
@@ -94,7 +94,7 @@ export default function Footer() {
                   key={u}
                   className="text-sm text-slate-400 flex items-center gap-2"
                 >
-                  <span className="w-1 h-1 bg-emerald-400 rounded-full" />
+                  <span className="w-1 h-1 bg-sky-400 rounded-full" />
                   {u}
                 </li>
               ))}
@@ -108,7 +108,7 @@ export default function Footer() {
             </h4>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                <MapPin className="w-4 h-4 text-sky-400 mt-0.5 shrink-0" />
                 <span className="text-sm text-slate-400">
                   {company.currentAddress}
                 </span>
@@ -118,18 +118,18 @@ export default function Footer() {
                   href={waLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-slate-400 hover:text-emerald-300 transition-colors"
+                  className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-300 transition-colors"
                 >
-                  <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <Phone className="w-4 h-4 text-sky-400 shrink-0" />
                   {company.phone}
                 </a>
               </li>
               <li>
                 <a
                   href={`mailto:${company.email}`}
-                  className="flex items-center gap-3 text-sm text-slate-400 hover:text-emerald-300 transition-colors"
+                  className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-300 transition-colors"
                 >
-                  <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <Mail className="w-4 h-4 text-sky-400 shrink-0" />
                   {company.email}
                 </a>
               </li>
@@ -138,9 +138,9 @@ export default function Footer() {
                   href={company.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-slate-400 hover:text-emerald-300 transition-colors"
+                  className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-300 transition-colors"
                 >
-                  <Instagram className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <Instagram className="w-4 h-4 text-sky-400 shrink-0" />
                   {company.instagram}
                 </a>
               </li>
@@ -149,9 +149,9 @@ export default function Footer() {
                   href={company.websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-sm text-slate-400 hover:text-emerald-300 transition-colors"
+                  className="flex items-center gap-3 text-sm text-slate-400 hover:text-sky-300 transition-colors"
                 >
-                  <Globe className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <Globe className="w-4 h-4 text-sky-400 shrink-0" />
                   {company.website}
                 </a>
               </li>
@@ -166,7 +166,7 @@ export default function Footer() {
             Rights Reserved.
           </p>
           <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+            <span className="w-2 h-2 bg-sky-400 rounded-full animate-pulse" />
             Melayani 38 provinsi &amp; 514 kabupaten/kota
           </div>
         </div>
