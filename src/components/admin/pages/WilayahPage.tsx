@@ -30,6 +30,7 @@ import {
 import { PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 import WilayahDetailDialog from "./WilayahDetailDialog";
 import WilayahFormDialog, { type WilayahFormData } from "./WilayahFormDialog";
+import { exportWilayahPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
 
 type SortDir = "asc" | "desc" | null;
@@ -436,12 +437,27 @@ export default function WilayahPage({
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           <button
+            onClick={() => toast.info("Export Excel akan segera hadir")}
             className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-            title="Export Excel"
+            title="Export Excel (segera hadir)"
           >
             <Download className="w-4 h-4" />
           </button>
           <button
+            onClick={() => {
+              const dataToExport = tab === "provinsi" ? filteredProv : filteredKab;
+              if (dataToExport.length === 0) {
+                toast.error("Tidak ada data untuk di-export");
+                return;
+              }
+              try {
+                exportWilayahPdf(dataToExport, tab, { search, status: statusFilter, provinsi: provinsiFilter });
+                toast.success(`PDF berhasil di-export (${dataToExport.length} data)`);
+              } catch (e: any) {
+                console.error(e);
+                toast.error("Gagal export PDF: " + e.message);
+              }
+            }}
             className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
             title="Export PDF"
           >

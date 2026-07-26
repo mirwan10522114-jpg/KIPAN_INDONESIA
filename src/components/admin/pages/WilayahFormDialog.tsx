@@ -48,19 +48,41 @@ export default function WilayahFormDialog({
   const [error, setError] = useState("");
   const [selectedProvinsiKode, setSelectedProvinsiKode] = useState("");
   const [selectedKabupatenKode, setSelectedKabupatenKode] = useState("");
+  const [pengurusList, setPengurusList] = useState<any[]>([]);
+  const [loadingPengurus, setLoadingPengurus] = useState(false);
 
   useEffect(() => {
     if (data) {
       setForm(data);
       setSelectedProvinsiKode(data.masterProvinsiKode || "");
       setSelectedKabupatenKode(data.masterKabupatenKode || "");
+      // Fetch pengurus for this wilayah
+      if (data.id) {
+        fetchPengurus(data.id, data.type);
+      } else {
+        setPengurusList([]);
+      }
     } else {
       setForm({ type: "provinsi", kode: "", nama: "", status: "Aktif", ketua: "" });
       setSelectedProvinsiKode("");
       setSelectedKabupatenKode("");
+      setPengurusList([]);
     }
     setError("");
   }, [data, open]);
+
+  const fetchPengurus = async (wilayahId: number, type: "provinsi" | "kabupaten") => {
+    setLoadingPengurus(true);
+    try {
+      const res = await fetch(`/api/wilayah/${wilayahId}/pengurus?type=${type}&all=true`, { cache: "no-store" });
+      const json = await res.json();
+      if (json.success) setPengurusList(json.data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingPengurus(false);
+    }
+  };
 
   // When selecting from master data, auto-fill kode & nama
   const handleProvinsiSelect = (kode: string) => {
@@ -273,14 +295,53 @@ export default function WilayahFormDialog({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Ketua</label>
-                <input
-                  type="text"
-                  value={form.ketua}
-                  onChange={(e) => setForm({ ...form, ketua: e.target.value })}
-                  placeholder="Nama ketua wilayah"
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
-                />
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Ketua {isProvinsi ? "Provinsi" : "Kabupaten/Kota"}
+                  {!data?.id && <span className="text-slate-400 font-normal"> (akan tersedia setelah wilayah disimpan & punya pengurus)</span>}
+                </label>
+                {data?.id ? (
+                  loadingPengurus ? (
+                    <div className="w-full px-3 py-2 text-sm text-slate-400 bg-slate-50 border border-slate-200 rounded-lg">
+                      Memuat daftar pengurus...
+                    </div>
+                  ) : pengurusList.length === 0 ? (
+                    <div className="w-full px-3 py-2 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg">
+                      Belum ada pengurus di {isProvinsi ? "provinsi" : "kabupaten"} ini. Tambah pengurus dahulu di menu Pengurus.
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        value={form.ketua}
+                        onChange={(e) => setForm({ ...form, ketua: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                      >
+                        <option value="">— Pilih Ketua dari Pengurus —</option>
+                        {pengurusList.map((p) => (
+                          <option key={p.id} value={p.namaLengkap}>
+                            {p.namaLengkap} {p.jabatan ? `(${p.jabatan}${p.bidang && p.bidang !== "Pengurus Harian" ? ` - ${p.bidang}` : ""})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        {pengurusList.length} pengurus tersedia di wilayah ini
+                      </p>
+                    </>
+                  )
+                ) : (
+                  <input
+                    type="text"
+                    value={form.ketua}
+                    readOnly
+                    placeholder="Simpan wilayah dulu, lalu edit untuk pilih ketua dari pengurus"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
+                  />
+                )}
+                {form.ketua && data?.id && (
+                  <div className="mt-1.5 flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-100 rounded-md">
+                    <CheckCircle2 className="w-3 h-3 text-blue-600 shrink-0" />
+                    <span className="text-[11px] text-blue-700">Ketua terpilih: <strong>{form.ketua}</strong></span>
+                  </div>
+                )}
               </div>
 
               <div>

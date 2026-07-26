@@ -33,6 +33,7 @@ import RolePage from "@/components/admin/pages/RolePage";
 import ProfilPage from "@/components/admin/pages/ProfilPage";
 import AkunPage from "@/components/admin/pages/AkunPage";
 import DatabasePage from "@/components/admin/pages/DatabasePage";
+import JabatanPage from "@/components/admin/pages/JabatanPage";
 
 export default function AdminDashboard({ onClose }: { onClose: () => void }) {
   const [activePage, setActivePage] = useState("dashboard");
@@ -70,6 +71,7 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
       case "statistik": return <StatistikPage />;
       case "laporan": return <LaporanPage />;
       case "database": return <DatabasePage />;
+      case "jabatan": return <JabatanPage />;
       case "role": return <RolePage />;
       case "profil": return <ProfilPage />;
       case "akun": return <AkunPage />;

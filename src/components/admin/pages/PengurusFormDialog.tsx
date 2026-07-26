@@ -64,6 +64,14 @@ export default function PengurusFormDialog({
     return true;
   });
 
+  // Group jabatan by bidang for the dropdown
+  const jabatanGrouped: Record<string, any[]> = {};
+  for (const j of filteredJabatan) {
+    if (!jabatanGrouped[j.bidang]) jabatanGrouped[j.bidang] = [];
+    jabatanGrouped[j.bidang].push(j);
+  }
+  const bidangNames = Object.keys(jabatanGrouped).sort();
+
   const handleSave = async () => {
     if (!form.anggotaId || !form.jabatanId) {
       setError("Anggota dan jabatan wajib dipilih");
@@ -170,19 +178,38 @@ export default function PengurusFormDialog({
                 </select>
               </div>
 
-              {/* Pilih Jabatan */}
+              {/* Pilih Jabatan — Grouped by Bidang */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Jabatan *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Bidang & Jabatan *</label>
                 <select
                   value={form.jabatanId}
                   onChange={(e) => setForm({ ...form, jabatanId: e.target.value })}
                   className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
                 >
-                  <option value="">— Pilih Jabatan —</option>
-                  {filteredJabatan.map((j) => (
-                    <option key={j.id} value={j.id}>{j.nama}</option>
+                  <option value="">— Pilih Bidang & Jabatan —</option>
+                  {bidangNames.map((bidang) => (
+                    <optgroup key={bidang} label={bidang}>
+                      {jabatanGrouped[bidang]
+                        .sort((a, b) => a.urutan - b.urutan)
+                        .map((j) => (
+                          <option key={j.id} value={j.id}>{j.nama}</option>
+                        ))}
+                    </optgroup>
                   ))}
                 </select>
+                {bidangNames.length === 0 && (
+                  <p className="text-[10px] text-amber-600 mt-1">
+                    Belum ada jabatan untuk level {form.level}. Tambahkan jabatan di halaman master data.
+                  </p>
+                )}
+                {form.jabatanId && (
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    {(() => {
+                      const sel = filteredJabatan.find((j) => j.id === parseInt(form.jabatanId));
+                      return sel ? `Bidang: ${sel.bidang} • Level: ${sel.level}` : "";
+                    })()}
+                  </p>
+                )}
               </div>
 
               {/* Status & Periode */}

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Eye, Download, X, QrCode, CreditCard, RefreshCw, Plus, UserPlus } from "lucide-react";
+import { Search, Eye, Download, X, QrCode, CreditCard, RefreshCw, Plus, UserPlus, FileText } from "lucide-react";
 import { toast } from "sonner";
 import AnggotaDetailDialog from "./AnggotaDetailDialog";
+import { exportAnggotaPdf } from "@/lib/pdf-export";
 
 export default function AnggotaPage({
   initialFilter,
@@ -97,8 +98,33 @@ export default function AnggotaPage({
           >
             <Plus className="w-4 h-4" /> Tambah Anggota
           </button>
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
-            <Download className="w-4 h-4" /> Export
+          <button
+            onClick={() => {
+              if (filtered.length === 0) {
+                toast.error("Tidak ada data untuk di-export");
+                return;
+              }
+              try {
+                exportAnggotaPdf(filtered, {
+                  search,
+                  status: statusFilter,
+                  provinsi: provFilter,
+                });
+                toast.success(`PDF berhasil di-export (${filtered.length} anggota)`);
+              } catch (e: any) {
+                console.error(e);
+                toast.error("Gagal export PDF: " + e.message);
+              }
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 text-white text-sm font-semibold rounded-lg hover:bg-rose-700"
+          >
+            <FileText className="w-4 h-4" /> Export PDF
+          </button>
+          <button
+            onClick={() => toast.info("Export Excel akan segera hadir")}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700"
+          >
+            <Download className="w-4 h-4" /> Excel
           </button>
         </div>
       </div>

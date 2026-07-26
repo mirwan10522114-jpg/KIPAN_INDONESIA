@@ -33,6 +33,7 @@ import { PENGURUS_LIST, PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 import type { Pengurus } from "@/lib/admin-data";
 import PengurusDetailDialog from "./PengurusDetailDialog";
 import PengurusFormDialog from "./PengurusFormDialog";
+import { exportPengurusPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
 
 type SortDir = "asc" | "desc" | null;
@@ -418,10 +419,35 @@ export default function PengurusPage({
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
-          <button className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Export Excel">
+          <button
+            onClick={() => toast.info("Export Excel akan segera hadir")}
+            className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+            title="Export Excel (segera hadir)"
+          >
             <Download className="w-4 h-4" />
           </button>
-          <button className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Export PDF">
+          <button
+            onClick={() => {
+              if (filtered.length === 0) {
+                toast.error("Tidak ada data untuk di-export");
+                return;
+              }
+              try {
+                exportPengurusPdf(filtered, {
+                  search,
+                  level: levelFilter,
+                  status: statusFilter,
+                  provinsi: provinsiFilter,
+                });
+                toast.success(`PDF berhasil di-export (${filtered.length} data)`);
+              } catch (e: any) {
+                console.error(e);
+                toast.error("Gagal export PDF: " + e.message);
+              }
+            }}
+            className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+            title="Export PDF"
+          >
             <FileText className="w-4 h-4" />
           </button>
         </div>

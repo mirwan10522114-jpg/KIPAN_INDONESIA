@@ -18,6 +18,7 @@ import {
   Building2,
   UserCog,
   Database,
+  Award,
   type LucideIcon,
 } from "lucide-react";
 
@@ -46,6 +47,7 @@ export const MENU_GROUPS: MenuGroup[] = [
       { id: "wilayah", label: "Wilayah", icon: MapPin },
       { id: "pengurus", label: "Pengurus", icon: UserCog },
       { id: "anggota", label: "Anggota", icon: Users },
+      { id: "jabatan", label: "Bidang & Jabatan", icon: Award },
     ],
   },
   {
@@ -97,4 +99,5 @@ export const PAGE_TITLES: Record<string, string> = {
   role: "Role & Permission",
   profil: "Profil Organisasi",
   akun: "Akun Saya",
+  jabatan: "Bidang & Jabatan",
 };

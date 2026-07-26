@@ -191,14 +191,17 @@ model Anggota {
 }
 
 // ============================================================
-// JABATAN (Master Data)
+// JABATAN (Master Data) — Terstruktur per BIDANG
+// Contoh bidang: "Pengurus Harian", "Divisi Organisasi dan Keanggotaan", dst.
+// Setiap bidang punya beberapa jabatan (Ketua Divisi, Sekretaris Divisi, Anggota)
 // ============================================================
 
 model Jabatan {
   id            Int      @id @default(autoincrement())
-  nama          String   @unique
+  nama          String   // Contoh: "Ketua Umum", "Ketua Divisi", "Anggota"
+  bidang        String   @default("Pengurus Harian") // Pengurus Harian | Divisi Organisasi dan Keanggotaan | dst.
   level         String   // Nasional | Provinsi | Kabupaten
-  urutan        Int      @default(0)
+  urutan        Int      @default(0) // urutan tampil dalam bidang
   status        String   @default("Aktif")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
