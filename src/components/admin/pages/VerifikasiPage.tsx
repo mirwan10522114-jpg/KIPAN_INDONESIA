@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -10,32 +10,108 @@ import {
   Check,
   X,
   History,
+  RefreshCw,
 } from "lucide-react";
-import { PENDAFTARAN_LIST } from "@/lib/admin-data";
+import { PERSYARATAN } from "@/lib/kipan-data";
 
 export default function VerifikasiPage() {
-  const [selectedId, setSelectedId] = useState(PENDAFTARAN_LIST[0].id);
+  const [list, setList] = useState<any[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("data-diri");
+  const [loading, setLoading] = useState(true);
+  const [acting, setActing] = useState(false);
 
-  const selected = PENDAFTARAN_LIST.find((p) => p.id === selectedId) || PENDAFTARAN_LIST[0];
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/pendaftaran", { cache: "no-store" });
+      const json = await res.json();
+      if (json.success) {
+        setList(json.data);
+        if (json.data.length > 0 && selectedId === null) {
+          setSelectedId(json.data[0].id);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const selected = list.find((p) => p.id === selectedId);
+
+  const updateStatus = async (newStatus: string, catatan?: string) => {
+    if (!selectedId) return;
+    setActing(true);
+    try {
+      const res = await fetch(`/api/pendaftaran/${selectedId}/verifikasi`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus, catatan }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        alert(json.message);
+        fetchData();
+      } else {
+        alert(json.error || "Gagal update status");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const persyaratanList = selected?.persyaratan ? JSON.parse(selected.persyaratan) : [];
+  const dokumenList = selected ? [
+    { nama: "KTP", uploaded: !!selected.ktp },
+    { nama: "Pas Foto", uploaded: !!selected.foto },
+    { nama: "CV", uploaded: !!selected.cv },
+    { nama: "Surat Pernyataan", uploaded: !!selected.suratPernyataan },
+    { nama: "Surat Sehat", uploaded: !!selected.suratSehat },
+  ] : [];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-blue-950">Verifikasi Anggota</h1>
+        <div className="bg-white rounded-2xl p-12 text-center">
+          <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-slate-500">Memuat data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-blue-950">Verifikasi Anggota</h1>
-        <p className="text-slate-500 text-sm mt-1">Verifikasi berkas dan persyaratan calon anggota</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-blue-950">Verifikasi Anggota</h1>
+          <p className="text-slate-500 text-sm mt-1">Verifikasi berkas dan persyaratan calon anggota</p>
+        </div>
+        <button
+          onClick={fetchData}
+          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg"
+        >
+          <RefreshCw className="w-4 h-4" /> Refresh
+        </button>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* List */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-4 border-b border-slate-100">
-            <h3 className="font-bold text-blue-950 text-sm">
-              Calon Anggota ({PENDAFTARAN_LIST.length})
-            </h3>
+            <h3 className="font-bold text-blue-950 text-sm">Calon Anggota ({list.length})</h3>
           </div>
           <ul className="max-h-[600px] overflow-y-auto">
-            {PENDAFTARAN_LIST.map((p) => (
+            {list.map((p) => (
               <li key={p.id}>
                 <button
                   onClick={() => setSelectedId(p.id)}
@@ -43,185 +119,226 @@ export default function VerifikasiPage() {
                     selectedId === p.id ? "bg-blue-50 border-l-4 border-l-blue-600" : ""
                   }`}
                 >
-                  <img src={p.foto} alt={p.nama} className="w-9 h-9 rounded-full object-cover" />
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-sky-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    {p.namaLengkap.charAt(0)}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-blue-950 truncate">{p.nama}</div>
-                    <div className="text-xs text-slate-500 truncate">{p.kabupaten}</div>
+                    <div className="text-sm font-semibold text-blue-950 truncate">{p.namaLengkap}</div>
+                    <div className="text-xs text-slate-500 truncate">{p.kabupaten?.nama || "-"}</div>
                   </div>
                   <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold shrink-0 ${
-                    p.status === "Disetujui" ? "bg-emerald-100 text-emerald-700" :
-                    p.status === "Ditolak" ? "bg-rose-100 text-rose-700" :
-                    p.status === "Diverifikasi" ? "bg-blue-100 text-blue-700" :
-                    p.status === "Perbaikan" ? "bg-amber-100 text-amber-700" :
+                    p.status === "DISETUJUI" ? "bg-emerald-100 text-emerald-700" :
+                    p.status === "DITOLAK" ? "bg-rose-100 text-rose-700" :
+                    p.status === "DIVERIFIKASI" ? "bg-blue-100 text-blue-700" :
+                    p.status === "PERBAIKAN" ? "bg-amber-100 text-amber-700" :
                     "bg-slate-100 text-slate-600"
                   }`}>
-                    {p.status}
+                    {p.status === "DIAJUKAN" ? "Diajukan" :
+                     p.status === "DIVERIFIKASI" ? "Diverifikasi" :
+                     p.status === "DISETUJUI" ? "Disetujui" :
+                     p.status === "DITOLAK" ? "Ditolak" :
+                     p.status === "PERBAIKAN" ? "Perbaikan" : "Draft"}
                   </span>
                 </button>
               </li>
             ))}
+            {list.length === 0 && (
+              <li className="p-8 text-center text-sm text-slate-500">Belum ada pendaftaran</li>
+            )}
           </ul>
         </div>
 
         {/* Detail */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Header */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-sky-500 p-5 text-white">
-              <div className="flex items-center gap-4">
-                <img src={selected.foto} alt={selected.nama} className="w-16 h-16 rounded-2xl object-cover border-4 border-white/30" />
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold">{selected.nama}</h2>
-                  <p className="text-blue-100 text-sm">{selected.kabupaten}, {selected.provinsi}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-white/20 rounded-full text-xs font-semibold">
-                    Status: {selected.status}
-                  </span>
+          {selected ? (
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-sky-500 p-5 text-white">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-white text-2xl font-bold">
+                    {selected.namaLengkap.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold">{selected.namaLengkap}</h2>
+                    <p className="text-blue-100 text-sm">
+                      {selected.kabupaten?.nama}, {selected.provinsi?.nama}
+                    </p>
+                    <span className="inline-block mt-1 px-2 py-0.5 bg-white/20 rounded-full text-xs font-semibold">
+                      Status: {selected.status}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-slate-100">
-              {[
-                { id: "data-diri", label: "Data Diri" },
-                { id: "dokumen", label: "Dokumen" },
-                { id: "persyaratan", label: "Persyaratan" },
-                { id: "riwayat", label: "Riwayat" },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id)}
-                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    activeTab === t.id
-                      ? "text-blue-600 border-blue-600"
-                      : "text-slate-500 border-transparent hover:text-blue-600"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
+              <div className="flex border-b border-slate-100">
+                {[
+                  { id: "data-diri", label: "Data Diri" },
+                  { id: "dokumen", label: "Dokumen" },
+                  { id: "persyaratan", label: "Persyaratan" },
+                  { id: "riwayat", label: "Riwayat" },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id)}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      activeTab === t.id
+                        ? "text-blue-600 border-blue-600"
+                        : "text-slate-500 border-transparent hover:text-blue-600"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
 
-            {/* Tab content */}
-            <div className="p-5">
-              {activeTab === "data-diri" && (
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <Info label="NIK" value={selected.nik} />
-                  <Info label="Tempat Lahir" value={selected.tempatLahir} />
-                  <Info label="Tanggal Lahir" value={selected.tanggalLahir} />
-                  <Info label="Jenis Kelamin" value={selected.jenisKelamin === "L" ? "Laki-laki" : "Perempuan"} />
-                  <Info label="Agama" value={selected.agama} />
-                  <Info label="Pendidikan" value={selected.pendidikan} />
-                  <Info label="Pekerjaan" value={selected.pekerjaan} />
-                  <Info label="Email" value={selected.email} />
-                  <Info label="HP" value={selected.hp} />
-                  <Info label="WhatsApp" value={selected.whatsapp} />
-                  <div className="col-span-2">
-                    <Info label="Alamat" value={`${selected.alamat}, Kec. ${selected.kecamatan}, ${selected.kabupaten}, ${selected.provinsi}`} />
-                  </div>
-                  <div className="col-span-2">
-                    <Info label="Motivasi" value={selected.motivasi} />
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "dokumen" && (
-                <div className="space-y-2">
-                  {selected.dokumen.map((d, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        d.uploaded ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                          d.uploaded ? "bg-emerald-100" : "bg-rose-100"
-                        }`}>
-                          <FileText className={`w-5 h-5 ${d.uploaded ? "text-emerald-600" : "text-rose-600"}`} />
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-slate-800">{d.nama}</div>
-                          <div className="text-xs text-slate-500">
-                            {d.uploaded ? "Sudah diupload" : "Belum diupload"}
-                          </div>
-                        </div>
-                      </div>
-                      {d.uploaded ? (
-                        <Check className="w-5 h-5 text-emerald-600" />
-                      ) : (
-                        <X className="w-5 h-5 text-rose-600" />
-                      )}
+              <div className="p-5">
+                {activeTab === "data-diri" && (
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <Info label="NIK" value={selected.nik} />
+                    <Info label="Tempat Lahir" value={selected.tempatLahir} />
+                    <Info label="Tanggal Lahir" value={new Date(selected.tanggalLahir).toLocaleDateString("id-ID")} />
+                    <Info label="Jenis Kelamin" value={selected.jenisKelamin === "L" ? "Laki-laki" : "Perempuan"} />
+                    <Info label="Agama" value={selected.agama || "-"} />
+                    <Info label="Pendidikan" value={selected.pendidikan || "-"} />
+                    <Info label="Pekerjaan" value={selected.pekerjaan || "-"} />
+                    <Info label="Email" value={selected.email} />
+                    <Info label="HP" value={selected.hp} />
+                    <Info label="WhatsApp" value={selected.whatsapp || "-"} />
+                    <div className="col-span-2">
+                      <Info label="Alamat" value={`${selected.alamat}, Kec. ${selected.kecamatan || "-"}, ${selected.kabupaten?.nama}, ${selected.provinsi?.nama}`} />
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="col-span-2">
+                      <Info label="Motivasi" value={selected.motivasi || "-"} />
+                    </div>
+                  </div>
+                )}
 
-              {activeTab === "persyaratan" && (
-                <div className="space-y-2">
-                  {[
-                    "Warga Negara Indonesia",
-                    "Usia 16-30 tahun",
-                    "Sehat Jasmani & Rohani",
-                    "Bersedia Mengikuti Pelatihan",
-                    "Mematuhi AD/ART",
-                    "Menjadi Relawan Aktif",
-                  ].map((req, idx) => {
-                    const checked = selected.persyaratan[idx];
-                    return (
+                {activeTab === "dokumen" && (
+                  <div className="space-y-2">
+                    {dokumenList.map((d, idx) => (
                       <div
                         key={idx}
-                        className={`flex items-center gap-3 p-3 rounded-lg border ${
-                          checked ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"
+                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                          d.uploaded ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"
                         }`}
                       >
-                        <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
-                          checked ? "bg-emerald-500" : "bg-rose-500"
-                        }`}>
-                          {checked ? <Check className="w-4 h-4 text-white" /> : <X className="w-4 h-4 text-white" />}
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                            d.uploaded ? "bg-emerald-100" : "bg-rose-100"
+                          }`}>
+                            <FileText className={`w-5 h-5 ${d.uploaded ? "text-emerald-600" : "text-rose-600"}`} />
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-slate-800">{d.nama}</div>
+                            <div className="text-xs text-slate-500">
+                              {d.uploaded ? "Sudah diupload" : "Belum diupload"}
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-sm text-slate-800">{req}</span>
+                        {d.uploaded ? (
+                          <Check className="w-5 h-5 text-emerald-600" />
+                        ) : (
+                          <X className="w-5 h-5 text-rose-600" />
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
 
-              {activeTab === "riwayat" && (
-                <div className="space-y-3">
-                  {selected.riwayat.map((r, idx) => (
-                    <div key={idx} className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <History className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-slate-800">{r.aksi}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          {r.tanggal} • oleh {r.oleh}
+                {activeTab === "persyaratan" && (
+                  <div className="space-y-2">
+                    {PERSYARATAN.map((req, idx) => {
+                      const checked = persyaratanList[idx];
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center gap-3 p-3 rounded-lg border ${
+                            checked ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"
+                          }`}
+                        >
+                          <div className={`w-6 h-6 rounded-md flex items-center justify-center ${
+                            checked ? "bg-emerald-500" : "bg-rose-500"
+                          }`}>
+                            {checked ? <Check className="w-4 h-4 text-white" /> : <X className="w-4 h-4 text-white" />}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-slate-800">{req.title}</div>
+                            <div className="text-xs text-slate-500">{req.desc}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {activeTab === "riwayat" && (
+                  <div className="space-y-3">
+                    {selected.riwayat?.map((r: any, idx: number) => (
+                      <div key={idx} className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                          <History className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-slate-800">{r.aksi}</div>
+                          <div className="text-xs text-slate-500 mt-0.5">
+                            {new Date(r.createdAt).toLocaleString("id-ID")} • oleh {r.oleh}
+                          </div>
+                          {r.catatan && (
+                            <div className="text-xs text-slate-600 mt-1 italic">"{r.catatan}"</div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-            {/* Action buttons */}
-            <div className="p-5 border-t border-slate-100 flex flex-wrap gap-2">
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">
-                <CheckCircle2 className="w-4 h-4" />
-                Setujui
-              </button>
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600">
-                <AlertCircle className="w-4 h-4" />
-                Minta Perbaikan
-              </button>
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 text-white text-sm font-semibold rounded-lg hover:bg-rose-700">
-                <XCircle className="w-4 h-4" />
-                Tolak
-              </button>
+              {/* Action buttons */}
+              <div className="p-5 border-t border-slate-100 flex flex-wrap gap-2">
+                <button
+                  onClick={() => updateStatus("DISETUJUI")}
+                  disabled={acting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Setujui
+                </button>
+                <button
+                  onClick={() => {
+                    const catatan = prompt("Masukkan catatan perbaikan:");
+                    if (catatan) updateStatus("PERBAIKAN", catatan);
+                  }}
+                  disabled={acting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 disabled:opacity-50"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  Minta Perbaikan
+                </button>
+                <button
+                  onClick={() => {
+                    const catatan = prompt("Masukkan alasan penolakan:");
+                    if (catatan) updateStatus("DITOLAK", catatan);
+                  }}
+                  disabled={acting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 text-white text-sm font-semibold rounded-lg hover:bg-rose-700 disabled:opacity-50"
+                >
+                  <XCircle className="w-4 h-4" />
+                  Tolak
+                </button>
+                <button
+                  onClick={() => updateStatus("DIVERIFIKASI")}
+                  disabled={acting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  <Check className="w-4 h-4" />
+                  Mulai Verifikasi
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-12 text-center text-slate-500">
+              Pilih calon anggota dari daftar untuk verifikasi
+            </div>
+          )}
         </div>
       </div>
     </div>

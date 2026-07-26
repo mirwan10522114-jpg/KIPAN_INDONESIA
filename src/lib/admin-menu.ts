@@ -17,6 +17,7 @@ import {
   Shield,
   Building2,
   UserCog,
+  Database,
   type LucideIcon,
 } from "lucide-react";
 
@@ -70,8 +71,9 @@ export const MENU_GROUPS: MenuGroup[] = [
     ],
   },
   {
-    label: "Pengaturan",
+    label: "Sistem",
     items: [
+      { id: "database", label: "Struktur Database", icon: Database },
       { id: "role", label: "Role & Permission", icon: Shield },
       { id: "profil", label: "Profil Organisasi", icon: Building2 },
       { id: "akun", label: "Akun Saya", icon: UserCheck },
@@ -91,6 +93,7 @@ export const PAGE_TITLES: Record<string, string> = {
   program: "Program Kerja",
   statistik: "Statistik Anggota",
   laporan: "Laporan Keanggotaan",
+  database: "Struktur Database",
   role: "Role & Permission",
   profil: "Profil Organisasi",
   akun: "Akun Saya",

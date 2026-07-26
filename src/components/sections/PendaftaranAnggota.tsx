@@ -100,10 +100,52 @@ export default function PendaftaranAnggota() {
   const nextStep = () => setStep((s) => Math.min(s + 1, STEPS.length));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    // In production: send to API endpoint /api/pendaftaran
-    console.log("Form submitted:", form);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      const payload = {
+        namaLengkap: form.namaLengkap,
+        nik: form.nik,
+        tempatLahir: form.tempatLahir,
+        tanggalLahir: form.tanggalLahir,
+        jenisKelamin: form.jenisKelamin,
+        agama: form.agama,
+        pendidikan: form.pendidikan,
+        pekerjaan: form.pekerjaan,
+        statusPribadi: form.status,
+        alamat: form.alamat,
+        provinsiId: form.provinsi, // akan di-map ke id di API jika perlu
+        kabupatenId: form.kabupaten,
+        kecamatan: form.kecamatan,
+        desa: form.desa,
+        kodePos: form.kodePos,
+        email: form.email,
+        hp: form.nomorHP,
+        whatsapp: form.whatsapp,
+        motivasi: form.motivasi,
+        persyaratan: form.persyaratan,
+      };
+
+      const res = await fetch("/api/pendaftaran", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || "Gagal submit pendaftaran");
+      }
+      setSubmitted(true);
+    } catch (e: any) {
+      setSubmitError(e.message || "Terjadi kesalahan");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const allPersyaratanChecked = form.persyaratan.every(Boolean);
@@ -640,13 +682,30 @@ export default function PendaftaranAnggota() {
                   <ChevronRight className="w-4 h-4" />
                 </button>
               ) : (
-                <button
-                  onClick={handleSubmit}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold rounded-full shadow-lg shadow-sky-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
-                >
-                  <Send className="w-4 h-4" />
-                  Kirim Pendaftaran
-                </button>
+                <div className="flex flex-col items-end gap-2">
+                  {submitError && (
+                    <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 max-w-xs">
+                      ⚠️ {submitError}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold rounded-full shadow-lg shadow-sky-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  >
+                    {submitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Mengirim...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Kirim Pendaftaran
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
             </div>
           </motion.div>

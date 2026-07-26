@@ -1,8 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// ============================================================
+// SIM-KIPAN — Sistem Informasi Keanggotaan KIPAN Indonesia
+// Prisma Schema
+// Database: SQLite (development) — bisa di-migrate ke PostgreSQL/MySQL production
+// Lihat struktur database di prisma/schema.prisma ini
+// ============================================================
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +14,278 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================================
+// AUTH & USERS
+// ============================================================
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("CALON_ANGGOTA") // SUPER_ADMIN | ADMIN_NASIONAL | ADMIN_PROVINSI | ADMIN_KABUPATEN | ANGGOTA | CALON_ANGGOTA
+  avatar       String?
+
+  anggota      Anggota?
+
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ============================================================
+// WILAYAH (PROVINSI & KABUPATEN)
+// ============================================================
+
+model Provinsi {
+  id           Int      @id @default(autoincrement())
+  kode         String   @unique
+  nama         String
+  status       String   @default("Aktif") // Aktif | Pembentukan
+  ketua        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  kabupaten    Kabupaten[]
+  anggota      Anggota[]
+  pengurus     Pengurus[]
+  pendaftaran  Pendaftaran[]
+
+  @@map("provinsi")
+}
+
+model Kabupaten {
+  id           Int      @id @default(autoincrement())
+  kode         String   @unique
+  nama         String
+  provinsiId   Int
+  status       String   @default("Aktif")
+  ketua        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  provinsi     Provinsi @relation(fields: [provinsiId], references: [id])
+  anggota      Anggota[]
+  pengurus     Pengurus[]
+  pendaftaran  Pendaftaran[]
+
+  @@map("kabupaten")
+}
+
+// ============================================================
+// PENDAFTARAN ANGGOTA (Calon Anggota)
+// ============================================================
+
+model Pendaftaran {
+  id            Int      @id @default(autoincrement())
+  namaLengkap   String
+  nik           String
+  tempatLahir   String
+  tanggalLahir  DateTime
+  jenisKelamin  String   // L | P
+  agama         String?
+  pendidikan    String?
+  pekerjaan     String?
+  statusPribadi String?
+
+  alamat        String
+  provinsiId    Int
+  kabupatenId   Int
+  kecamatan     String?
+  desa          String?
+  kodePos       String?
+
+  email         String
+  hp            String
+  whatsapp      String?
+  motivasi      String?
+
+  foto          String?
+  ktp           String?
+  cv            String?
+  suratPernyataan String?
+  suratSehat    String?
+
+  // Checklist persyaratan (JSON string untuk SQLite)
+  persyaratan   String   @default("[]")
+
+  // DRAFT | DIAJUKAN | DIVERIFIKASI | DISETUJUI | DITOLAK | PERBAIKAN
+  status        String   @default("DRAFT")
+  catatan       String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  provinsi      Provinsi  @relation(fields: [provinsiId], references: [id])
+  kabupaten     Kabupaten @relation(fields: [kabupatenId], references: [id])
+  riwayat       PendaftaranRiwayat[]
+
+  @@map("pendaftaran")
+}
+
+model PendaftaranRiwayat {
+  id            Int      @id @default(autoincrement())
+  pendaftaranId Int
+  aksi          String
+  oleh          String
+  catatan       String?
+  createdAt     DateTime @default(now())
+
+  pendaftaran   Pendaftaran @relation(fields: [pendaftaranId], references: [id], onDelete: Cascade)
+
+  @@map("pendaftaran_riwayat")
+}
+
+// ============================================================
+// ANGGOTA (Setelah disetujui)
+// ============================================================
+
+model Anggota {
+  id            Int      @id @default(autoincrement())
+  nia           String   @unique // Nomor Induk Anggota, format: KIPAN-JBR-3204-2026-00012
+  namaLengkap   String
+  nik           String
+  tempatLahir   String
+  tanggalLahir  DateTime
+  jenisKelamin  String
+  agama         String?
+  pendidikan    String?
+  pekerjaan     String?
+
+  alamat        String
+  provinsiId    Int
+  kabupatenId   Int
+  kecamatan     String?
+  desa          String?
+  kodePos       String?
+
+  email         String
+  hp            String
+  whatsapp      String?
+  foto          String?
+
+  // AKTIF | NONAKTIF | MENGUNDURKAN_DIRI | DIBERHENTIKAN | MENINGGAL
+  status        String   @default("AKTIF")
+  angkatan      String?
+  tanggalDaftar DateTime @default(now())
+  tanggalAngkat DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id])
+
+  provinsi      Provinsi  @relation(fields: [provinsiId], references: [id])
+  kabupaten     Kabupaten @relation(fields: [kabupatenId], references: [id])
+
+  @@map("anggota")
+}
+
+// ============================================================
+// PENGURUS
+// ============================================================
+
+model Pengurus {
+  id            Int      @id @default(autoincrement())
+  namaLengkap   String
+  jabatan       String
+  // NASIONAL | PROVINSI | KABUPATEN | KECAMATAN
+  level         String
+  provinsiId    Int?
+  kabupatenId   Int?
+  foto          String?
+  email         String
+  hp            String?
+  status        String   @default("Aktif") // Aktif | Nonaktif
+  tanggalMulai  DateTime @default(now())
+  tanggalSelesai DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  provinsi      Provinsi?  @relation(fields: [provinsiId], references: [id])
+  kabupaten     Kabupaten? @relation(fields: [kabupatenId], references: [id])
+
+  @@map("pengurus")
+}
+
+// ============================================================
+// CMS - BERITA
+// ============================================================
+
+model Berita {
+  id            Int      @id @default(autoincrement())
+  judul         String
+  slug          String   @unique
+  kategori      String   // Nasional | Provinsi | Kabupaten
+  excerpt       String
+  konten        String
+  thumbnail     String?
+  penulis       String
+  status        String   @default("Draft") // Draft | Published
+  publishedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("berita")
+}
+
+// ============================================================
+// CMS - GALERI
+// ============================================================
+
+model Galeri {
+  id            Int      @id @default(autoincrement())
+  judul         String
+  album         String?
+  foto          String
+  lokasi        String?
+  kategori      String   @default("Kegiatan") // Kegiatan | Pelatihan | Sosialisasi | Rapat | Kampanye
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("galeri")
+}
+
+// ============================================================
+// CMS - PROGRAM KERJA
+// ============================================================
+
+model ProgramKerja {
+  id            Int      @id @default(autoincrement())
+  nama          String
+  deskripsi     String?
+  // Nasional | Provinsi | Kabupaten
+  tingkat       String
+  pic           String?
+  tanggalMulai  DateTime
+  tanggalSelesai DateTime?
+  // Direncanakan | Berjalan | Selesai
+  status        String   @default("Direncanakan")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("program_kerja")
+}
+
+// ============================================================
+// PROFIL ORGANISASI (Settings)
+// ============================================================
+
+model ProfilOrganisasi {
+  id            Int      @id @default(1)
+  nama          String
+  namaLengkap   String
+  tagline       String?
+  logo          String?
+  email         String?
+  telepon       String?
+  alamat        String?
+  instagram     String?
+  website       String?
+  deskripsi     String?
+  updatedAt     DateTime @updatedAt
+
+  @@map("profil_organisasi")
 }
