@@ -23,10 +23,11 @@ interface AnggotaDetailProps {
   onClose: () => void;
   onEdit?: () => void;
   onViewPengurus?: (id: number) => void;
+  onPromote?: (id: number) => void;
 }
 
 export default function AnggotaDetailDialog({
-  anggotaId, onClose, onEdit, onViewPengurus,
+  anggotaId, onClose, onEdit, onViewPengurus, onPromote,
 }: AnggotaDetailProps) {
   const [activeTab, setActiveTab] = useState("profil");
   const [data, setData] = useState<any>(null);
@@ -89,16 +90,42 @@ export default function AnggotaDetailDialog({
                   <QrCode className="w-10 h-10" />
                 </div>
               </div>
-              <div className="flex gap-2 mt-4">
-                <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold">
+              <div className="flex flex-wrap gap-2 mt-4">
+                <button
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold"
+                >
                   <CreditCard className="w-3.5 h-3.5" /> Cetak Kartu
                 </button>
-                <button className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold">
+                <button
+                  onClick={() => {
+                    // Generate a simple text-based PDF download
+                    const a = data?.anggota;
+                    if (!a) return;
+                    const text = `KARTU ANGGOTA KIPAN INDONESIA\n\nNIA: ${a.nia}\nNama: ${a.namaLengkap}\nWilayah: ${a.kabupaten?.nama || "-"}, ${a.provinsi?.nama || "-"}\nStatus: ${a.status}\nAngkatan: ${a.angkatan || "-"}\nTanggal Daftar: ${a.tanggalDaftar ? new Date(a.tanggalDaftar).toLocaleDateString("id-ID") : "-"}\n\nKIPAN Indonesia`;
+                    const blob = new Blob([text], { type: "text/plain" });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = `KTA-${a.nia}.txt`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold"
+                >
                   <Download className="w-3.5 h-3.5" /> Download PDF
                 </button>
                 {onEdit && (
                   <button onClick={onEdit} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold">
                     <Edit className="w-3.5 h-3.5" /> Edit
+                  </button>
+                )}
+                {onPromote && (
+                  <button
+                    onClick={() => onPromote(anggotaId!)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/80 hover:bg-violet-500 rounded-lg text-xs font-semibold"
+                  >
+                    <UserCog className="w-3.5 h-3.5" /> Jadikan Pengurus
                   </button>
                 )}
               </div>

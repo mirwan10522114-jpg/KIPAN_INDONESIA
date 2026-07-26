@@ -486,12 +486,17 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
           </div>
           <div className="space-y-3">
             {topProvinsi.map((p, idx) => (
-              <div key={idx} className="flex items-center gap-3">
+              <div
+                key={idx}
+                onClick={() => onNavigate?.("anggota")}
+                className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors group"
+                title={`Klik untuk lihat anggota ${p.nama}`}
+              >
                 <span className="text-xs font-bold text-slate-400 w-6">#{idx + 1}</span>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-slate-700">{p.nama}</span>
-                    <span className="text-xs font-bold text-blue-600">{p.jumlah.toLocaleString("id-ID")}</span>
+                    <span className="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">{p.nama}</span>
+                    <span className="text-xs font-bold text-blue-600 group-hover:underline">{p.jumlah.toLocaleString("id-ID")} anggota →</span>
                   </div>
                   <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div

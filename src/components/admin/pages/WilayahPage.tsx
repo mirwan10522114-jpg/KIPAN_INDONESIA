@@ -288,8 +288,20 @@ export default function WilayahPage({
       });
       setShowFormDialog(true);
     }, show: canEdit },
-    { label: "Kelola Pengurus", icon: UserCog, action: () => { setActionMenuId(null); onNavigate?.("pengurus"); }, show: true },
-    { label: "Lihat Anggota", icon: Users, action: () => { setActionMenuId(null); onNavigate?.("anggota"); }, show: true },
+    { label: "Kelola Pengurus", icon: UserCog, action: (item: any) => {
+      setActionMenuId(null);
+      const filter: Record<string, string> = {};
+      if (tab === "provinsi") filter.provinsiNama = item.nama;
+      else filter.kabupatenNama = item.nama;
+      onNavigate?.("pengurus", filter);
+    }, show: true },
+    { label: "Lihat Anggota", icon: Users, action: (item: any) => {
+      setActionMenuId(null);
+      const filter: Record<string, string> = {};
+      if (tab === "provinsi") filter.provinsiNama = item.nama;
+      else filter.kabupatenNama = item.nama;
+      onNavigate?.("anggota", filter);
+    }, show: true },
     { label: "Nonaktifkan", icon: Ban, action: (item: any) => {
       // Toggle status
       fetch("/api/wilayah", {

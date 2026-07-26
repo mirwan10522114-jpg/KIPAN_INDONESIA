@@ -36,10 +36,16 @@ import DatabasePage from "@/components/admin/pages/DatabasePage";
 
 export default function AdminDashboard({ onClose }: { onClose: () => void }) {
   const [activePage, setActivePage] = useState("dashboard");
+  const [pageFilter, setPageFilter] = useState<Record<string, string> | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const logout = useAuthStore((s) => s.logout);
+
+  const navigateWithFilter = (page: string, filter?: Record<string, string>) => {
+    setActivePage(page);
+    setPageFilter(filter || null);
+  };
 
   const handleLogout = () => {
     logout();
@@ -52,10 +58,10 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
 
   const renderPage = () => {
     switch (activePage) {
-      case "dashboard": return <DashboardPage onNavigate={setActivePage} />;
-      case "wilayah": return <WilayahPage onNavigate={setActivePage} />;
-      case "pengurus": return <PengurusPage onNavigate={setActivePage} />;
-      case "anggota": return <AnggotaPage />;
+      case "dashboard": return <DashboardPage onNavigate={(p) => navigateWithFilter(p)} />;
+      case "wilayah": return <WilayahPage onNavigate={(p, f) => navigateWithFilter(p, f)} />;
+      case "pengurus": return <PengurusPage onNavigate={(p) => navigateWithFilter(p)} initialFilter={pageFilter} />;
+      case "anggota": return <AnggotaPage initialFilter={pageFilter} onNavigate={(p) => navigateWithFilter(p)} />;
       case "pendaftaran": return <PendaftaranPage onVerify={(id) => setActivePage("verifikasi")} />;
       case "verifikasi": return <VerifikasiPage />;
       case "berita": return <BeritaPage />;

@@ -6,7 +6,13 @@ import { Search, Eye, Download, X, QrCode, CreditCard, RefreshCw, Plus, UserPlus
 import { toast } from "sonner";
 import AnggotaDetailDialog from "./AnggotaDetailDialog";
 
-export default function AnggotaPage() {
+export default function AnggotaPage({
+  initialFilter,
+  onNavigate,
+}: {
+  initialFilter?: Record<string, string> | null;
+  onNavigate?: (page: string) => void;
+}) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
   const [provFilter, setProvFilter] = useState("Semua");
@@ -33,7 +39,7 @@ export default function AnggotaPage() {
       const anggotaJson = await anggotaRes.json();
       const wilayahJson = await wilayahRes.json();
       if (anggotaJson.success) setData(anggotaJson.data);
-      if (wilayahJson.success) setProvinsiList(wilayahJson.data);
+      if (wilayahJson.success) setProvinsiList(wilayahJson.data.filter((p: any) => p.status === "Aktif"));
     } catch (e) {
       console.error(e);
     } finally {
@@ -42,6 +48,14 @@ export default function AnggotaPage() {
   };
 
   useEffect(() => {
+    if (initialFilter) {
+      if (initialFilter.provinsiNama) setProvFilter(initialFilter.provinsiNama);
+      if (initialFilter.kabupatenNama) {
+        // Set kabupaten filter — we need to also set provinsi first
+        // For now, set search to the kabupaten name as a workaround
+        setSearch(initialFilter.kabupatenNama);
+      }
+    }
     fetchData();
   }, []);
 
@@ -216,7 +230,43 @@ export default function AnggotaPage() {
       <AnggotaDetailDialog
         anggotaId={selectedId}
         onClose={() => setSelectedId(null)}
-        onEdit={() => setSelectedId(null)}
+        onEdit={() => { setSelectedId(null); toast.info("Form edit anggota akan dibuka"); }}
+        onPromote={(id) => {
+          setSelectedId(null);
+          // Promote anggota to pengurus
+          fetch("/api/anggota", { method: "OPTIONS" }).then(() => {});
+          // Call promote API
+          fetch(`/api/anggota/${id}/detail`, { cache: "no-store" })
+            .then((r) => r.json())
+            .then(async (json) => {
+              if (json.success) {
+                const a = json.data.anggota;
+                const res = await fetch("/api/pengurus", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    namaLengkap: a.namaLengkap,
+                    jabatan: "Pengurus",
+                    level: "KABUPATEN",
+                    provinsiId: a.provinsi?.id ? String(a.provinsi.id) : undefined,
+                    kabupatenId: a.kabupaten?.id ? String(a.kabupaten.id) : undefined,
+                    foto: a.foto,
+                    email: a.email,
+                    hp: a.hp,
+                    status: "Aktif",
+                    tanggalMulai: new Date().toISOString().split("T")[0],
+                    nomorSK: `SK-PROMOTE/${a.nia}/${new Date().getFullYear()}`,
+                  }),
+                });
+                const result = await res.json();
+                if (result.success) {
+                  toast.success(`Anggota ${a.namaLengkap} berhasil dijadikan pengurus!`);
+                } else {
+                  toast.error(result.error || "Gagal promote");
+                }
+              }
+            });
+        }}
       />
 
       {/* Add Anggota Dialog */}
@@ -298,7 +348,7 @@ export default function AnggotaPage() {
                         setAddForm({ ...addForm, provinsiId: e.target.value, kabupatenId: "" });
                         const res = await fetch(`/api/wilayah?type=kabupaten`, { cache: "no-store" });
                         const json = await res.json();
-                        if (json.success) setKabupatenList(json.data.filter((k: any) => k.provinsiId === parseInt(e.target.value)));
+                        if (json.success) setKabupatenList(json.data.filter((k: any) => k.provinsiId === parseInt(e.target.value) && k.status === "Aktif"));
                       }}
                       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
                     >
@@ -322,6 +372,45 @@ export default function AnggotaPage() {
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">No. HP</label>
                     <input type="tel" value={addForm.hp} onChange={(e) => setAddForm({ ...addForm, hp: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                </div>
+
+                {/* Upload Dokumen */}
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Upload Dokumen</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { key: "foto", label: "Pas Foto" },
+                      { key: "ktp", label: "KTP" },
+                      { key: "cv", label: "CV/Resume" },
+                      { key: "suratPernyataan", label: "Surat Pernyataan" },
+                    ].map((doc) => (
+                      <div key={doc.key}>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">{doc.label}</label>
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            if (file.size > 1024 * 1024 * 2) {
+                              toast.error("File maksimal 2MB");
+                              return;
+                            }
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              setAddForm((prev) => ({ ...prev, [doc.key]: reader.result }));
+                              toast.success(`${doc.label} uploaded`);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                          className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                        {(addForm as any)[doc.key] && (
+                          <span className="text-[10px] text-emerald-600 mt-0.5 block">✓ {doc.label} terupload</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

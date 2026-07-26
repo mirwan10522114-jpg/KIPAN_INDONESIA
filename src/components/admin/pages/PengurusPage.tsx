@@ -40,9 +40,11 @@ type SortDir = "asc" | "desc" | null;
 export default function PengurusPage({
   onNavigate,
   userRole = "SUPER_ADMIN",
+  initialFilter,
 }: {
   onNavigate?: (page: string) => void;
   userRole?: string;
+  initialFilter?: Record<string, string> | null;
 }) {
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("Semua");
@@ -78,8 +80,12 @@ export default function PengurusPage({
     }
   };
 
-  // Initial load
+  // Initial load + apply filter from navigation
   useEffect(() => {
+    if (initialFilter) {
+      if (initialFilter.provinsiNama) setProvinsiFilter(initialFilter.provinsiNama);
+      if (initialFilter.kabupatenNama) setKabupatenFilter(initialFilter.kabupatenNama);
+    }
     fetchData();
   }, []);
 

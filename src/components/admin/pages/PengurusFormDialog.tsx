@@ -23,6 +23,8 @@ export default function PengurusFormDialog({
     tanggalMulai: new Date().toISOString().split("T")[0],
     tanggalSelesai: "",
     nomorSK: "",
+    foto: "",
+    fileSK: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -137,6 +139,51 @@ export default function PengurusFormDialog({
               </div>
 
               <Field label="Nomor SK" value={form.nomorSK} onChange={(v) => setForm({ ...form, nomorSK: v })} placeholder="SK-001/KIPAN/..." />
+
+              {/* Upload Dokumen */}
+              <div className="mt-2 pt-3 border-t border-slate-100">
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Upload Dokumen</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Upload SK (PDF)</label>
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 1024 * 1024 * 2) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setForm((prev) => ({ ...prev, fileSK: reader.result as string }));
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {form.fileSK && <span className="text-[10px] text-emerald-600 mt-0.5 block">✓ SK terupload</span>}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Upload Foto</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 1024 * 1024 * 2) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setForm((prev) => ({ ...prev, foto: reader.result as string }));
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {form.foto && <span className="text-[10px] text-emerald-600 mt-0.5 block">✓ Foto terupload</span>}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
