@@ -27,24 +27,38 @@ export async function GET(
     if (anggota.kabupatenId) {
       wherePengurus.OR = [
         { kabupatenId: anggota.kabupatenId },
-        { provinsiId: anggota.provinsiId, level: "Provinsi" },
-        { level: "Nasional" },
+        { provinsiId: anggota.provinsiId, level: "PROVINSI" },
+        { level: "NASIONAL" },
       ];
     } else {
       wherePengurus.OR = [
         { provinsiId: anggota.provinsiId },
-        { level: "Nasional" },
+        { level: "NASIONAL" },
       ];
     }
 
     const pengurusWilayah = await db.pengurus.findMany({
       where: wherePengurus,
       include: {
+        anggota: {
+          select: {
+            id: true,
+            namaLengkap: true,
+            foto: true,
+            email: true,
+            hp: true,
+            nia: true,
+          },
+        },
+        jabatan: { select: { nama: true, level: true, urutan: true } },
         provinsi: { select: { nama: true } },
         kabupaten: { select: { nama: true } },
       },
       take: 10,
-      orderBy: [{ level: "asc" }, { namaLengkap: "asc" }],
+      orderBy: [
+        { level: "asc" },
+        { jabatan: { urutan: "asc" } },
+      ],
     });
 
     // Pendaftaran riwayat (if linked)
@@ -104,12 +118,12 @@ export async function GET(
         },
         pengurusWilayah: pengurusWilayah.map((p) => ({
           id: p.id,
-          namaLengkap: p.namaLengkap,
-          jabatan: p.jabatan,
+          namaLengkap: p.anggota?.namaLengkap || "-",
+          jabatan: p.jabatan?.nama || "-",
           level: p.level,
-          foto: p.foto,
-          email: p.email,
-          hp: p.hp,
+          foto: p.anggota?.foto,
+          email: p.anggota?.email,
+          hp: p.anggota?.hp,
           status: p.status,
           wilayah: p.kabupaten?.nama || p.provinsi?.nama || "Indonesia",
         })),

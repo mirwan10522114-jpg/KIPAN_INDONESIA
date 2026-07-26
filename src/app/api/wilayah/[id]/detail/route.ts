@@ -25,9 +25,23 @@ export async function GET(
           },
           pengurus: {
             include: {
+              anggota: {
+                select: {
+                  id: true,
+                  namaLengkap: true,
+                  foto: true,
+                  email: true,
+                  hp: true,
+                  nia: true,
+                },
+              },
+              jabatan: { select: { nama: true, level: true, urutan: true } },
               kabupaten: { select: { nama: true } },
             },
-            orderBy: [{ level: "asc" }, { namaLengkap: "asc" }],
+            orderBy: [
+              { level: "asc" },
+              { jabatan: { urutan: "asc" } },
+            ],
           },
           anggota: {
             include: {
@@ -92,12 +106,12 @@ export async function GET(
           })),
           pengurusList: provinsi.pengurus.map((p) => ({
             id: p.id,
-            namaLengkap: p.namaLengkap,
-            jabatan: p.jabatan,
+            namaLengkap: p.anggota?.namaLengkap || "-",
+            jabatan: p.jabatan?.nama || "-",
             level: p.level,
-            foto: p.foto,
-            email: p.email,
-            hp: p.hp,
+            foto: p.anggota?.foto,
+            email: p.anggota?.email,
+            hp: p.anggota?.hp,
             status: p.status,
             tanggalMulai: p.tanggalMulai,
             tanggalSelesai: p.tanggalSelesai,
@@ -138,7 +152,23 @@ export async function GET(
       include: {
         provinsi: { select: { nama: true, kode: true } },
         pengurus: {
-          orderBy: [{ level: "asc" }, { namaLengkap: "asc" }],
+          include: {
+            anggota: {
+              select: {
+                id: true,
+                namaLengkap: true,
+                foto: true,
+                email: true,
+                hp: true,
+                nia: true,
+              },
+            },
+            jabatan: { select: { nama: true, level: true, urutan: true } },
+          },
+          orderBy: [
+            { level: "asc" },
+            { jabatan: { urutan: "asc" } },
+          ],
         },
         anggota: {
           orderBy: { createdAt: "desc" },
@@ -187,12 +217,12 @@ export async function GET(
         },
         pengurusList: kabupaten.pengurus.map((p) => ({
           id: p.id,
-          namaLengkap: p.namaLengkap,
-          jabatan: p.jabatan,
+          namaLengkap: p.anggota?.namaLengkap || "-",
+          jabatan: p.jabatan?.nama || "-",
           level: p.level,
-          foto: p.foto,
-          email: p.email,
-          hp: p.hp,
+          foto: p.anggota?.foto,
+          email: p.anggota?.email,
+          hp: p.anggota?.hp,
           status: p.status,
           tanggalMulai: p.tanggalMulai,
           tanggalSelesai: p.tanggalSelesai,
