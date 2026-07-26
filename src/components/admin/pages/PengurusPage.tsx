@@ -1,123 +1,530 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Search, Eye, Edit, UserCog, Trash2 } from "lucide-react";
-import { PENGURUS_LIST } from "@/lib/admin-data";
+import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  UserCog,
+  Shield,
+  Building2,
+  Clock,
+  Plus,
+  Search,
+  RefreshCw,
+  Download,
+  FileText,
+  Eye,
+  Edit,
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpDown,
+  Inbox,
+  Users,
+  KeyRound,
+  Ban,
+  Trash2,
+  ExternalLink,
+  CalendarClock,
+} from "lucide-react";
+import { PENGURUS_LIST, PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
+import type { Pengurus } from "@/lib/admin-data";
+import PengurusDetailDialog from "./PengurusDetailDialog";
 
-export default function PengurusPage() {
-  const [filter, setFilter] = useState("Semua");
-  const [statusFilter, setStatusFilter] = useState("Semua");
+type SortDir = "asc" | "desc" | null;
+
+export default function PengurusPage({
+  onNavigate,
+  userRole = "SUPER_ADMIN",
+}: {
+  onNavigate?: (page: string) => void;
+  userRole?: string;
+}) {
   const [search, setSearch] = useState("");
+  const [levelFilter, setLevelFilter] = useState("Semua");
+  const [provinsiFilter, setProvinsiFilter] = useState("Semua");
+  const [kabupatenFilter, setKabupatenFilter] = useState("Semua");
+  const [statusFilter, setStatusFilter] = useState("Semua");
+  const [masaJabatanFilter, setMasaJabatanFilter] = useState("Semua");
+  const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [detail, setDetail] = useState<Pengurus | null>(null);
+  const [actionMenuId, setActionMenuId] = useState<number | null>(null);
 
-  const filtered = PENGURUS_LIST.filter((p) => {
-    const matchLevel = filter === "Semua" || p.level === filter;
-    const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
-    const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
-      p.jabatan.toLowerCase().includes(search.toLowerCase());
-    return matchLevel && matchStatus && matchSearch;
-  });
+  // Initial load
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Permission check
+  const canCreate = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
+  const canDelete = userRole === "SUPER_ADMIN";
+  const canEdit = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
+  const canResetPassword = ["SUPER_ADMIN", "ADMIN_NASIONAL"].includes(userRole);
+
+  // Stat cards
+  const totalPengurus = PENGURUS_LIST.length;
+  const pengurusNasional = PENGURUS_LIST.filter((p) => p.level === "Nasional").length;
+  const pengurusProvinsi = PENGURUS_LIST.filter((p) => p.level === "Provinsi").length;
+  const pengurusKabupaten = PENGURUS_LIST.filter((p) => p.level === "Kabupaten").length;
+  const masaJabatanBerakhir = PENGURUS_LIST.filter((p) => {
+    if (!p.tanggalSelesai) return false;
+    const end = new Date(p.tanggalSelesai);
+    const now = new Date();
+    const diff = (end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    return diff > 0 && diff < 365; // within 1 year
+  }).length;
+
+  const statCards = [
+    { label: "Total Pengurus", value: totalPengurus, icon: UserCog, color: "from-blue-500 to-sky-500" },
+    { label: "Pengurus Nasional", value: pengurusNasional, icon: Shield, color: "from-violet-500 to-purple-500" },
+    { label: "Pengurus Provinsi", value: pengurusProvinsi, icon: Building2, color: "from-sky-500 to-cyan-500" },
+    { label: "Pengurus Kabupaten", value: pengurusKabupaten, icon: Building2, color: "from-cyan-500 to-teal-500" },
+    { label: "Masa Jabatan Akan Berakhir", value: masaJabatanBerakhir, icon: CalendarClock, color: "from-amber-500 to-orange-500" },
+  ];
+
+  // Dependent: kabupaten options based on provinsi filter
+  const kabupatenOptions = useMemo(() => {
+    if (provinsiFilter === "Semua") return KABUPATEN_LIST;
+    return KABUPATEN_LIST.filter((k) => k.provinsiNama === provinsiFilter);
+  }, [provinsiFilter]);
+
+  // Filter data
+  const filtered = useMemo(() => {
+    let result = PENGURUS_LIST.filter((p) => {
+      const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
+        p.jabatan.toLowerCase().includes(search.toLowerCase()) ||
+        p.nomorSK.toLowerCase().includes(search.toLowerCase());
+      const matchLevel = levelFilter === "Semua" || p.level === levelFilter;
+      const matchProv = provinsiFilter === "Semua" || p.provinsiNama === provinsiFilter;
+      const matchKab = kabupatenFilter === "Semua" || p.kabupatenNama === kabupatenFilter;
+      const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
+      let matchMasa = true;
+      if (masaJabatanFilter === "Aktif") {
+        matchMasa = p.status === "Aktif" && (!p.tanggalSelesai || new Date(p.tanggalSelesai) > new Date());
+      } else if (masaJabatanFilter === "Akan Berakhir") {
+        if (!p.tanggalSelesai) matchMasa = false;
+        else {
+          const diff = (new Date(p.tanggalSelesai).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
+          matchMasa = diff > 0 && diff < 365;
+        }
+      } else if (masaJabatanFilter === "Berakhir") {
+        matchMasa = p.tanggalSelesai ? new Date(p.tanggalSelesai) < new Date() : false;
+      }
+      return matchSearch && matchLevel && matchProv && matchKab && matchStatus && matchMasa;
+    });
+    if (sortBy && sortDir) {
+      result = [...result].sort((a: any, b: any) => {
+        const aVal = a[sortBy];
+        const bVal = b[sortBy];
+        if (typeof aVal === "string") {
+          return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      });
+    }
+    return result;
+  }, [search, levelFilter, provinsiFilter, kabupatenFilter, statusFilter, masaJabatanFilter, sortBy, sortDir]);
+
+  const totalData = filtered.length;
+  const totalPages = Math.ceil(totalData / rowsPerPage) || 1;
+  const currentPage = Math.min(page, totalPages);
+  const startIdx = (currentPage - 1) * rowsPerPage;
+  const endIdx = Math.min(startIdx + rowsPerPage, totalData);
+  const pageData = filtered.slice(startIdx, endIdx);
+
+  const handleSort = (col: string) => {
+    if (sortBy === col) {
+      if (sortDir === "asc") { setSortDir("desc"); }
+      else if (sortDir === "desc") { setSortBy(null); setSortDir(null); }
+    } else {
+      setSortBy(col);
+      setSortDir("asc");
+    }
+  };
+
+  const getSortIcon = (col: string) => {
+    if (sortBy !== col) return <ArrowUpDown className="w-3 h-3 text-slate-300" />;
+    if (sortDir === "asc") return <ChevronUp className="w-3 h-3 text-blue-600" />;
+    if (sortDir === "desc") return <ChevronDown className="w-3 h-3 text-blue-600" />;
+    return <ArrowUpDown className="w-3 h-3 text-slate-300" />;
+  };
+
+  const handleRefresh = () => {
+    setLoading(true);
+    setSearch("");
+    setLevelFilter("Semua");
+    setProvinsiFilter("Semua");
+    setKabupatenFilter("Semua");
+    setStatusFilter("Semua");
+    setMasaJabatanFilter("Semua");
+    setSortBy(null);
+    setSortDir(null);
+    setPage(1);
+    setTimeout(() => setLoading(false), 600);
+  };
+
+  const statusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      Aktif: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      Nonaktif: "bg-slate-100 text-slate-600 border-slate-200",
+      Dibekukan: "bg-rose-100 text-rose-700 border-rose-200",
+    };
+    return styles[status] || "bg-slate-100 text-slate-600 border-slate-200";
+  };
+
+  const levelBadge = (level: string) => {
+    const styles: Record<string, string> = {
+      Nasional: "bg-violet-100 text-violet-700",
+      Provinsi: "bg-blue-100 text-blue-700",
+      Kabupaten: "bg-cyan-100 text-cyan-700",
+    };
+    return styles[level] || "bg-slate-100 text-slate-600";
+  };
+
+  const formatMasaJabatan = (mulai: string, selesai?: string) => {
+    const m = new Date(mulai).toLocaleDateString("id-ID", { month: "short", year: "numeric" });
+    if (!selesai) return `${m} - Sekarang`;
+    const s = new Date(selesai).toLocaleDateString("id-ID", { month: "short", year: "numeric" });
+    return `${m} - ${s}`;
+  };
+
+  const actions = [
+    { label: "Detail", icon: Eye, action: (item: Pengurus) => setDetail(item), show: true },
+    { label: "Edit", icon: Edit, action: () => {}, show: canEdit },
+    { label: "Lihat Anggota", icon: Users, action: () => onNavigate?.("anggota"), show: true },
+    { label: "Reset Password", icon: KeyRound, action: () => {}, show: canResetPassword },
+    { label: "Nonaktifkan", icon: Ban, action: () => {}, show: canDelete, danger: false },
+    { label: "Hapus", icon: Trash2, action: () => {}, show: canDelete, danger: true },
+  ];
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-blue-950">Manajemen Pengurus</h1>
-          <p className="text-slate-500 text-sm mt-1">Total {PENGURUS_LIST.length} pengurus terdaftar</p>
+          <p className="text-slate-500 text-sm mt-1">
+            Kelola data pengurus KIPAN dari tingkat Nasional hingga Kabupaten/Kota
+          </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
-          <Plus className="w-4 h-4" /> Tambah Pengurus
-        </button>
+        {canCreate && (
+          <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+            <Plus className="w-4 h-4" />
+            Tambah Pengurus
+          </button>
+        )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex gap-2">
-          {["Semua", "Nasional", "Provinsi", "Kabupaten"].map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                filter === f ? "bg-blue-600 text-white" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-              }`}
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {statCards.map((s, idx) => {
+          const Icon = s.icon;
+          return (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.08 }}
+              whileHover={{ y: -3 }}
+              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100"
             >
-              {f}
-            </button>
-          ))}
-        </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-        >
-          <option value="Semua">Semua Status</option>
-          <option value="Aktif">Aktif</option>
-          <option value="Nonaktif">Nonaktif</option>
-        </select>
-        <div className="relative flex-1 max-w-md">
+              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center shadow-md mb-3`}>
+                <Icon className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-3xl font-extrabold text-blue-950">{s.value}</div>
+              <div className="text-xs text-slate-500 mt-1">{s.label}</div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Toolbar */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari pengurus..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            placeholder="Cari nama, jabatan, atau nomor SK..."
+            className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
           />
         </div>
-        <span className="text-xs text-slate-500">{filtered.length} dari {PENGURUS_LIST.length} pengurus</span>
+        <select
+          value={levelFilter}
+          onChange={(e) => { setLevelFilter(e.target.value); setPage(1); }}
+          className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Level</option>
+          <option value="Nasional">Nasional</option>
+          <option value="Provinsi">Provinsi</option>
+          <option value="Kabupaten">Kabupaten</option>
+        </select>
+        <select
+          value={provinsiFilter}
+          onChange={(e) => { setProvinsiFilter(e.target.value); setKabupatenFilter("Semua"); setPage(1); }}
+          className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Provinsi</option>
+          {PROVINSI_LIST.map((p) => (
+            <option key={p.id}>{p.nama}</option>
+          ))}
+        </select>
+        <select
+          value={kabupatenFilter}
+          onChange={(e) => { setKabupatenFilter(e.target.value); setPage(1); }}
+          className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+          disabled={provinsiFilter === "Semua"}
+        >
+          <option value="Semua">Semua Kabupaten</option>
+          {kabupatenOptions.map((k) => (
+            <option key={k.id}>{k.nama}</option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Status</option>
+          <option value="Aktif">Aktif</option>
+          <option value="Nonaktif">Nonaktif</option>
+          <option value="Dibekukan">Dibekukan</option>
+        </select>
+        <select
+          value={masaJabatanFilter}
+          onChange={(e) => { setMasaJabatanFilter(e.target.value); setPage(1); }}
+          className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+        >
+          <option value="Semua">Semua Masa Jabatan</option>
+          <option value="Aktif">Sedang Menjabat</option>
+          <option value="Akan Berakhir">Akan Berakhir (&lt;1 thn)</option>
+          <option value="Berakhir">Sudah Berakhir</option>
+        </select>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleRefresh}
+            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+          <button className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Export Excel">
+            <Download className="w-4 h-4" />
+          </button>
+          <button className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Export PDF">
+            <FileText className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-slate-50 border-b border-slate-200">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Foto</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Jabatan</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Level</th>
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Wilayah</th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Status</th>
-              <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filtered.map((p) => (
-              <tr key={p.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3">
-                  <img src={p.foto} alt={p.nama} className="w-10 h-10 rounded-full object-cover border-2 border-blue-100" />
-                </td>
-                <td className="px-4 py-3">
-                  <div className="text-sm font-semibold text-blue-950">{p.nama}</div>
-                  <div className="text-xs text-slate-500">{p.email}</div>
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-700">{p.jabatan}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                    p.level === "Nasional" ? "bg-violet-100 text-violet-700" :
-                    p.level === "Provinsi" ? "bg-blue-100 text-blue-700" :
-                    "bg-cyan-100 text-cyan-700"
-                  }`}>
-                    {p.level}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm text-slate-600">{p.wilayah}</td>
-                <td className="px-4 py-3 text-center">
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                    p.status === "Aktif" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                  }`}>
-                    {p.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-center gap-1">
-                    <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Eye className="w-4 h-4" /></button>
-                    <button className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded"><Edit className="w-4 h-4" /></button>
-                    <button className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </td>
-              </tr>
+      {/* Table */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        {loading ? (
+          <div className="p-6 space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-slate-200 animate-pulse rounded-full" />
+                <div className="flex-1 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="w-24 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="w-20 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="w-28 h-4 bg-slate-200 animate-pulse rounded" />
+                <div className="w-8 h-4 bg-slate-200 animate-pulse rounded" />
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        ) : pageData.length === 0 ? (
+          <div className="p-16 text-center">
+            <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+              <Inbox className="w-10 h-10 text-slate-300" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-700 mb-1">Belum ada data pengurus</h3>
+            <p className="text-sm text-slate-500 mb-4">
+              {search || levelFilter !== "Semua" || statusFilter !== "Semua" || provinsiFilter !== "Semua"
+                ? "Tidak ada data yang sesuai dengan filter. Coba ubah filter atau kata kunci pencarian."
+                : "Belum ada pengurus yang terdaftar dalam sistem."}
+            </p>
+            {canCreate && !search && levelFilter === "Semua" && statusFilter === "Semua" && (
+              <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700">
+                <Plus className="w-4 h-4" />
+                Tambah Pengurus
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Foto</th>
+                  <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama</Th>
+                  <Th onClick={() => handleSort("jabatan")} icon={getSortIcon("jabatan")}>Jabatan</Th>
+                  <Th onClick={() => handleSort("level")} icon={getSortIcon("level")}>Level</Th>
+                  <Th onClick={() => handleSort("wilayah")} icon={getSortIcon("wilayah")}>Wilayah</Th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Masa Jabatan</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Nomor SK</th>
+                  <Th onClick={() => handleSort("status")} icon={getSortIcon("status")}>Status</Th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {pageData.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="hover:bg-slate-50 cursor-pointer transition-colors"
+                    onClick={() => setDetail(item)}
+                  >
+                    <td className="px-4 py-3">
+                      <img src={item.foto} alt={item.nama} className="w-9 h-9 rounded-full object-cover border-2 border-blue-100" />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-semibold text-blue-950">{item.nama}</div>
+                      <div className="text-xs text-slate-500">{item.email}</div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">{item.jabatan}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${levelBadge(item.level)}`}>
+                        {item.level}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{item.wilayah}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600">
+                      {formatMasaJabatan(item.tanggalMulai, item.tanggalSelesai)}
+                    </td>
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <a
+                        href={item.fileSK || "#"}
+                        onClick={(e) => e.preventDefault()}
+                        className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 hover:text-blue-700 hover:underline"
+                        title="Lihat file SK"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        {item.nomorSK}
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusBadge(item.status)}`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      <div className="relative inline-block">
+                        <button
+                          onClick={() => setActionMenuId(actionMenuId === item.id ? null : item.id)}
+                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+                          title="Menu aksi"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        <AnimatePresence>
+                          {actionMenuId === item.id && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -5, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -5, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-2xl border border-slate-100 py-1 z-20"
+                            >
+                              {actions.filter((a) => a.show).map((action, idx) => {
+                                const Icon = action.icon;
+                                return (
+                                  <button
+                                    key={idx}
+                                    onClick={() => {
+                                      action.action(item);
+                                      setActionMenuId(null);
+                                    }}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-slate-50 transition-colors ${
+                                      action.danger ? "text-rose-600" : "text-slate-700"
+                                    }`}
+                                  >
+                                    <Icon className="w-3.5 h-3.5" />
+                                    {action.label}
+                                  </button>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && pageData.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-100">
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span>Rows per page:</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(1); }}
+                className="px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+              >
+                {[10, 25, 50, 100].map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              <span className="ml-2">
+                Menampilkan {startIdx + 1}-{endIdx} dari {totalData} data
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage(1)} disabled={currentPage === 1} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Halaman pertama">
+                <ChevronsUpDown className="w-4 h-4 rotate-90" />
+              </button>
+              <button onClick={() => setPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Halaman sebelumnya">
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs font-medium text-slate-600 px-3 py-1">{currentPage} / {totalPages}</span>
+              <button onClick={() => setPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Halaman berikutnya">
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <button onClick={() => setPage(totalPages)} disabled={currentPage === totalPages} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed" title="Halaman terakhir">
+                <ChevronsUpDown className="w-4 h-4 -rotate-90" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Detail Dialog */}
+      <PengurusDetailDialog
+        detail={detail}
+        onClose={() => setDetail(null)}
+        onEdit={canEdit ? () => { setDetail(null); } : undefined}
+      />
+
+      {/* Backdrop for action menu */}
+      {actionMenuId !== null && (
+        <div className="fixed inset-0 z-[5]" onClick={() => setActionMenuId(null)} />
+      )}
     </div>
+  );
+}
+
+function Th({ children, onClick, icon }: { children: React.ReactNode; onClick: () => void; icon: React.ReactNode }) {
+  return (
+    <th
+      onClick={onClick}
+      className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        {icon}
+      </span>
+    </th>
   );
 }
