@@ -11,18 +11,57 @@ import {
   MapPin,
   Building2,
   RefreshCw,
+  AlertCircle,
+  FileText,
+  Newspaper,
+  ChevronRight,
+  CheckCircle2,
+  XCircle,
+  Activity,
+  Globe,
+  Shield,
+  Calendar,
 } from "lucide-react";
 
+interface DashboardData {
+  stats: {
+    totalAnggota: number;
+    anggotaAktif: number;
+    anggotaBaru: number;
+    menungguVerifikasi: number;
+    totalPengurus: number;
+    totalProvinsi: number;
+    totalKabupaten: number;
+    totalBerita: number;
+    totalGaleri: number;
+    totalProgram: number;
+  };
+  pendaftaranByStatus: Record<string, number>;
+  anggotaPerProvinsi: { nama: string; kode: string; jumlah: number }[];
+  anggotaByStatus: Record<string, number>;
+  recentPendaftaran: {
+    id: number;
+    nama: string;
+    status: string;
+    waktu: string;
+    kabupaten: string | null;
+  }[];
+}
+
 export default function DashboardPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/dashboard", { cache: "no-store" });
       const json = await res.json();
-      if (json.success) setData(json.data);
+      if (json.success) {
+        setData(json.data);
+        setLastUpdate(new Date());
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -32,6 +71,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchData();
+    // Auto-refresh every 60 seconds
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading || !data) {
@@ -55,106 +97,330 @@ export default function DashboardPage() {
   }
 
   const stats = data.stats;
-  const statCards = [
-    { label: "Total Anggota", value: stats.totalAnggota.toLocaleString("id-ID"), icon: Users, color: "from-blue-500 to-sky-500", change: `${stats.anggotaAktif} aktif` },
-    { label: "Anggota Baru", value: stats.anggotaBaru.toString(), icon: UserPlus, color: "from-emerald-500 to-teal-500", change: "Bulan ini" },
-    { label: "Menunggu Verifikasi", value: stats.menungguVerifikasi.toString(), icon: Clock, color: "from-amber-500 to-orange-500", change: "Perlu tindakan" },
-    { label: "Total Pengurus", value: stats.totalPengurus.toString(), icon: UserCog, color: "from-violet-500 to-purple-500", change: `${stats.totalProvinsi} provinsi` },
+
+  // Quick actions (priority items)
+  const quickActions = [
+    {
+      icon: AlertCircle,
+      label: `${data.pendaftaranByStatus.DIAJUKAN || 0} Pendaftaran Menunggu Verifikasi`,
+      desc: "Perlu ditinjau segera",
+      action: "Verifikasi",
+      color: "from-amber-500 to-orange-500",
+      bgColor: "from-amber-50 to-orange-50",
+      borderColor: "border-amber-200",
+      iconColor: "text-amber-600",
+      count: data.pendaftaranByStatus.DIAJUKAN || 0,
+      priority: "high",
+    },
+    {
+      icon: FileText,
+      label: `${data.pendaftaranByStatus.PERBAIKAN || 0} Data Perlu Perbaikan`,
+      desc: "Calon anggota dengan dokumen kurang",
+      action: "Lihat",
+      color: "from-blue-500 to-sky-500",
+      bgColor: "from-blue-50 to-sky-50",
+      borderColor: "border-blue-200",
+      iconColor: "text-blue-600",
+      count: data.pendaftaranByStatus.PERBAIKAN || 0,
+      priority: "medium",
+    },
+    {
+      icon: UserPlus,
+      label: "Tambah Anggota",
+      desc: "Input anggota baru manual",
+      action: "Tambah",
+      color: "from-emerald-500 to-teal-500",
+      bgColor: "from-emerald-50 to-teal-50",
+      borderColor: "border-emerald-200",
+      iconColor: "text-emerald-600",
+      count: null,
+      priority: "low",
+    },
+    {
+      icon: Newspaper,
+      label: "Tambah Berita",
+      desc: "Publikasikan berita baru",
+      action: "Tulis",
+      color: "from-violet-500 to-purple-500",
+      bgColor: "from-violet-50 to-purple-50",
+      borderColor: "border-violet-200",
+      iconColor: "text-violet-600",
+      count: null,
+      priority: "low",
+    },
+  ];
+
+  // Stat cards (2 rows)
+  const statCardsRow1 = [
+    { label: "Total Anggota", value: stats.totalAnggota, icon: Users, color: "from-blue-500 to-sky-500", change: `${stats.anggotaAktif} aktif` },
+    { label: "Anggota Aktif", value: stats.anggotaAktif, icon: CheckCircle2, color: "from-emerald-500 to-teal-500", change: `${Math.round((stats.anggotaAktif / stats.totalAnggota) * 100)}% dari total` },
+    { label: "Menunggu Verifikasi", value: stats.menungguVerifikasi, icon: Clock, color: "from-amber-500 to-orange-500", change: "Perlu tindakan" },
+    { label: "Anggota Baru Bulan Ini", value: stats.anggotaBaru, icon: UserPlus, color: "from-violet-500 to-purple-500", change: "Bulan berjalan" },
+  ];
+
+  const statCardsRow2 = [
+    { label: "Total Pengurus", value: stats.totalPengurus, icon: UserCog, color: "from-cyan-500 to-blue-500", change: `${stats.totalProvinsi} provinsi` },
+    { label: "Provinsi Terdaftar", value: stats.totalProvinsi, icon: MapPin, color: "from-sky-500 to-indigo-500", change: "dari 38 provinsi" },
+    { label: "Kabupaten Terdaftar", value: stats.totalKabupaten, icon: Building2, color: "from-teal-500 to-cyan-500", change: "dari 514 kab/kota" },
+    { label: "Coverage Wilayah", value: `${Math.round((stats.totalKabupaten / 514) * 100)}%`, icon: Globe, color: "from-indigo-500 to-violet-500", change: "Nasional" },
+  ];
+
+  // Format waktu relatif
+  const formatRelativeTime = (dateStr: string) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (diff < 60) return "Baru saja";
+    if (diff < 3600) return `${Math.floor(diff / 60)} menit lalu`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} jam lalu`;
+    return `${Math.floor(diff / 86400)} hari lalu`;
+  };
+
+  const formatClock = (dateStr: string) => {
+    return new Date(dateStr).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  // Last update display
+  const updateDiff = Math.floor((new Date().getTime() - lastUpdate.getTime()) / 1000);
+  const updateText = updateDiff < 60 ? `${updateDiff} detik lalu` : `${Math.floor(updateDiff / 60)} menit lalu`;
+
+  // Status distribution
+  const statusDistribution = [
+    { label: "Aktif", value: data.anggotaByStatus.AKTIF || 0, color: "bg-emerald-500", dot: "bg-emerald-500", textColor: "text-emerald-700" },
+    { label: "Nonaktif", value: data.anggotaByStatus.NONAKTIF || 0, color: "bg-slate-400", dot: "bg-slate-400", textColor: "text-slate-700" },
+    { label: "Mengundurkan Diri", value: data.anggotaByStatus.MENGUNDURKAN_DIRI || 0, color: "bg-amber-500", dot: "bg-amber-500", textColor: "text-amber-700" },
+    { label: "Diberhentikan", value: data.anggotaByStatus.DIBERHENTIKAN || 0, color: "bg-rose-500", dot: "bg-rose-500", textColor: "text-rose-700" },
+    { label: "Meninggal", value: data.anggotaByStatus.MENINGGAL || 0, color: "bg-slate-600", dot: "bg-slate-600", textColor: "text-slate-800" },
+  ];
+
+  // Pendaftaran status summary
+  const pendaftaranStatus = [
+    { label: "Draft", value: data.pendaftaranByStatus.DRAFT || 0, color: "bg-slate-100 text-slate-600" },
+    { label: "Diajukan", value: data.pendaftaranByStatus.DIAJUKAN || 0, color: "bg-cyan-100 text-cyan-700" },
+    { label: "Diverifikasi", value: data.pendaftaranByStatus.DIVERIFIKASI || 0, color: "bg-blue-100 text-blue-700" },
+    { label: "Perbaikan", value: data.pendaftaranByStatus.PERBAIKAN || 0, color: "bg-amber-100 text-amber-700" },
+    { label: "Disetujui", value: data.pendaftaranByStatus.DISETUJUI || 0, color: "bg-emerald-100 text-emerald-700" },
+    { label: "Ditolak", value: data.pendaftaranByStatus.DITOLAK || 0, color: "bg-rose-100 text-rose-700" },
+  ];
+
+  // Chart data - anggota per provinsi (top 8)
+  const topProvinsi = data.anggotaPerProvinsi.slice(0, 8);
+  const maxAnggota = Math.max(...topProvinsi.map((p) => p.jumlah), 1);
+
+  // Perlu tindakan
+  const perluTindakan = [
+    { icon: AlertCircle, text: `${data.pendaftaranByStatus.DIAJUKAN || 0} Pendaftaran Baru`, color: "text-amber-600", bg: "bg-amber-50" },
+    { icon: FileText, text: `${data.pendaftaranByStatus.PERBAIKAN || 0} Dokumen Kurang`, color: "text-blue-600", bg: "bg-blue-50" },
+    { icon: UserCog, text: `${stats.totalPengurus} Profil Pengurus`, color: "text-violet-600", bg: "bg-violet-50" },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Welcome */}
-      <div className="flex items-center justify-between">
+      {/* ============ HERO ============ */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-blue-950">Selamat Datang, Super Admin! 👋</h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Ringkasan sistem keanggotaan KIPAN Indonesia per{" "}
-            {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-          </p>
+          <h1 className="text-2xl font-bold text-blue-950">
+            Selamat Datang, Super Admin 👋
+          </h1>
+          <div className="flex items-center gap-2 mt-1.5 text-sm text-slate-500">
+            <Shield className="w-3.5 h-3.5 text-blue-600" />
+            <span className="font-medium text-blue-700">KIPAN Indonesia</span>
+            <span className="text-slate-300">•</span>
+            <Calendar className="w-3.5 h-3.5" />
+            <span>{new Date().toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
+          </div>
+          <p className="text-xs text-slate-400 mt-1">Ringkasan Sistem Hari Ini</p>
         </div>
-        <button
-          onClick={fetchData}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3 bg-white rounded-xl border border-slate-200 px-4 py-2.5 shadow-sm">
+          <div className="text-right">
+            <div className="text-[10px] text-slate-500 uppercase tracking-wider">Terakhir diperbarui</div>
+            <div className="text-xs font-semibold text-slate-700">{updateText}</div>
+          </div>
+          <div className="w-px h-8 bg-slate-200" />
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+        </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              whileHover={{ y: -3 }}
-              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-md`}>
-                  <Icon className="w-6 h-6 text-white" />
+      {/* ============ QUICK ACTION (Prioritas Utama) ============ */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1 h-5 bg-blue-600 rounded-full" />
+          <h2 className="text-sm font-bold text-blue-950 uppercase tracking-wider">Quick Action</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {quickActions.map((action, idx) => {
+            const Icon = action.icon;
+            const isPriority = action.priority === "high" && action.count > 0;
+            return (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.08 }}
+                whileHover={{ y: -3 }}
+                className={`relative bg-gradient-to-br ${action.bgColor} border ${action.borderColor} rounded-2xl p-4 overflow-hidden`}
+              >
+                {isPriority && (
+                  <span className="absolute top-2 right-2 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                  </span>
+                )}
+                <div className="flex items-start gap-3">
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md shrink-0`}>
+                    <Icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-slate-800 leading-tight">{action.label}</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">{action.desc}</div>
+                  </div>
                 </div>
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
-              </div>
-              <div className="text-3xl font-extrabold text-blue-950">{stat.value}</div>
-              <div className="text-sm text-slate-500 mt-1">{stat.label}</div>
-              <div className="text-[10px] text-slate-400 mt-2">{stat.change}</div>
-            </motion.div>
-          );
-        })}
+                <button className={`mt-3 w-full inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white text-slate-700 hover:bg-slate-50 rounded-lg transition-colors border border-slate-200`}>
+                  {action.action}
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
 
+      {/* ============ STAT CARDS (2 rows) ============ */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1 h-5 bg-blue-600 rounded-full" />
+          <h2 className="text-sm font-bold text-blue-950 uppercase tracking-wider">Statistik Utama</h2>
+        </div>
+        {/* Row 1 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          {statCardsRow1.map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.08 }}
+                whileHover={{ y: -3 }}
+                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-md`}>
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div className="text-3xl font-extrabold text-blue-950">{stat.value.toLocaleString("id-ID")}</div>
+                <div className="text-sm text-slate-500 mt-1">{stat.label}</div>
+                <div className="text-[10px] text-slate-400 mt-2">{stat.change}</div>
+              </motion.div>
+            );
+          })}
+        </div>
+        {/* Row 2 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {statCardsRow2.map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + idx * 0.08 }}
+                whileHover={{ y: -3 }}
+                className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-md`}>
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <div className="text-3xl font-extrabold text-blue-950">{stat.value}</div>
+                <div className="text-sm text-slate-500 mt-1">{stat.label}</div>
+                <div className="text-[10px] text-slate-400 mt-2">{stat.change}</div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ============ PENDAFTARAN TERBARU & AKTIVITAS ============ */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Anggota per provinsi */}
+        {/* Pendaftaran Terbaru */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100"
+          className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
         >
-          <h3 className="font-bold text-blue-950 mb-4">Anggota per Provinsi (Top 8)</h3>
-          <div className="space-y-3">
-            {data.anggotaPerProvinsi.slice(0, 8).map((p: any, idx: number) => {
-              const maxAnggota = Math.max(...data.anggotaPerProvinsi.map((x: any) => x.jumlah));
-              return (
-                <div key={idx} className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-slate-400 w-6">#{idx + 1}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-slate-700">{p.nama}</span>
-                      <span className="text-xs font-bold text-blue-600">{p.jumlah.toLocaleString("id-ID")}</span>
-                    </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(p.jumlah / maxAnggota) * 100}%` }}
-                        transition={{ delay: idx * 0.1, duration: 0.6 }}
-                        className="h-full bg-gradient-to-r from-blue-500 to-sky-400"
-                      />
-                    </div>
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-blue-600" />
+              <h3 className="font-bold text-blue-950">Pendaftaran Terbaru</h3>
+            </div>
+            <button className="text-xs font-semibold text-blue-600 hover:text-blue-700">Lihat semua →</button>
+          </div>
+          <ul className="divide-y divide-slate-50">
+            {data.recentPendaftaran.map((p, idx) => (
+              <li key={p.id} className="p-4 hover:bg-slate-50 flex items-center gap-3">
+                <div className="flex flex-col items-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-sky-500 flex items-center justify-center text-white text-sm font-bold">
+                    {p.nama.charAt(0)}
+                  </div>
+                  <span className="text-[9px] text-slate-400 mt-1">{formatClock(p.waktu)}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-blue-950 truncate">{p.nama}</div>
+                  <div className="text-xs text-slate-500">
+                    Mendaftar dari {p.kabupaten || "wilayah"}
                   </div>
                 </div>
-              );
-            })}
-            {data.anggotaPerProvinsi.length === 0 && (
-              <p className="text-sm text-slate-500 text-center py-4">Belum ada data anggota</p>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold ${
+                    p.status === "DISETUJUI" ? "bg-emerald-100 text-emerald-700" :
+                    p.status === "DITOLAK" ? "bg-rose-100 text-rose-700" :
+                    p.status === "DIVERIFIKASI" ? "bg-blue-100 text-blue-700" :
+                    p.status === "PERBAIKAN" ? "bg-amber-100 text-amber-700" :
+                    p.status === "DIAJUKAN" ? "bg-cyan-100 text-cyan-700" :
+                    "bg-slate-100 text-slate-600"
+                  }`}>
+                    {p.status === "DIAJUKAN" ? "Diajukan" :
+                     p.status === "DIVERIFIKASI" ? "Diverifikasi" :
+                     p.status === "DISETUJUI" ? "Disetujui" :
+                     p.status === "DITOLAK" ? "Ditolak" :
+                     p.status === "PERBAIKAN" ? "Perbaikan" : "Draft"}
+                  </span>
+                  <span className="text-[10px] text-slate-400">{formatRelativeTime(p.waktu)}</span>
+                </div>
+              </li>
+            ))}
+            {data.recentPendaftaran.length === 0 && (
+              <li className="p-8 text-center text-sm text-slate-500">Belum ada pendaftaran terbaru</li>
             )}
-          </div>
+          </ul>
         </motion.div>
 
-        {/* Recent pendaftaran */}
+        {/* Aktivitas Terbaru */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100"
+          className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
         >
-          <h3 className="font-bold text-blue-950 mb-4">Pendaftaran Terbaru</h3>
-          <ul className="space-y-3">
-            {data.recentPendaftaran.map((p: any, idx: number) => (
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-600" />
+              <h3 className="font-bold text-blue-950">Aktivitas Terbaru</h3>
+            </div>
+            <button className="text-xs font-semibold text-blue-600 hover:text-blue-700">Lihat semua →</button>
+          </div>
+          <ul className="p-5 space-y-4">
+            {data.recentPendaftaran.slice(0, 5).map((p, idx) => (
               <li key={idx} className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
                   <UserPlus className="w-4 h-4 text-blue-600" />
@@ -163,72 +429,451 @@ export default function DashboardPage() {
                   <p className="text-xs text-slate-700 leading-snug">
                     <strong>{p.nama}</strong> mendaftar dari {p.kabupaten || "wilayah"}
                   </p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    {new Date(p.waktu).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} • {p.status}
-                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">{formatRelativeTime(p.waktu)} • Status: {p.status}</p>
                 </div>
+                <button className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 shrink-0">Detail →</button>
               </li>
             ))}
             {data.recentPendaftaran.length === 0 && (
-              <p className="text-sm text-slate-500 text-center py-4">Belum ada pendaftaran terbaru</p>
+              <li className="text-sm text-slate-500 text-center py-4">Belum ada aktivitas</li>
             )}
           </ul>
         </motion.div>
       </div>
 
-      {/* Wilayah stats */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        {[
-          { label: "Provinsi Terdaftar", value: stats.totalProvinsi, total: 38, icon: MapPin, color: "text-blue-600", bg: "bg-blue-50" },
-          { label: "Kabupaten/Kota Terdaftar", value: stats.totalKabupaten, total: 514, icon: Building2, color: "text-sky-600", bg: "bg-sky-50" },
-          { label: "Coverage Wilayah", value: `${Math.round((stats.totalKabupaten / 514) * 100)}%`, total: "100%", icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50" },
-        ].map((s, idx) => {
-          const Icon = s.icon;
-          return (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-4"
-            >
-              <div className={`w-12 h-12 rounded-xl ${s.bg} flex items-center justify-center`}>
-                <Icon className={`w-6 h-6 ${s.color}`} />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-950">
-                  {s.value}<span className="text-sm text-slate-400">/{s.total}</span>
+      {/* ============ TOP PROVINSI & STATUS ANGGOTA ============ */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Top Provinsi dengan Bar Chart */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6"
+        >
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-blue-600" />
+              <h3 className="font-bold text-blue-950">Top 8 Provinsi (Anggota Terbanyak)</h3>
+            </div>
+            <span className="text-xs text-slate-400">Bar Chart</span>
+          </div>
+          <div className="space-y-3">
+            {topProvinsi.map((p, idx) => (
+              <div key={idx} className="flex items-center gap-3">
+                <span className="text-xs font-bold text-slate-400 w-6">#{idx + 1}</span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-slate-700">{p.nama}</span>
+                    <span className="text-xs font-bold text-blue-600">{p.jumlah.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(p.jumlah / maxAnggota) * 100}%` }}
+                      transition={{ delay: idx * 0.08, duration: 0.6 }}
+                      className="h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full"
+                    />
+                  </div>
                 </div>
-                <div className="text-xs text-slate-500">{s.label}</div>
               </div>
-            </motion.div>
-          );
-        })}
+            ))}
+            {topProvinsi.length === 0 && (
+              <p className="text-sm text-slate-500 text-center py-4">Belum ada data anggota per provinsi</p>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Distribusi Status Anggota */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6"
+        >
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              <h3 className="font-bold text-blue-950">Distribusi Status Anggota</h3>
+            </div>
+            <span className="text-xs text-slate-400">Total {stats.totalAnggota}</span>
+          </div>
+          <div className="space-y-3">
+            {statusDistribution.map((s, idx) => {
+              const total = stats.totalAnggota || 1;
+              const pct = ((s.value / total) * 100).toFixed(1);
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.08 }}
+                  className="flex items-center gap-3"
+                >
+                  <div className={`w-3 h-3 ${s.dot} rounded-full shrink-0`} />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-slate-700">{s.label}</span>
+                      <span className={`text-sm font-bold ${s.textColor}`}>{s.value}</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ delay: idx * 0.08, duration: 0.6 }}
+                        className={`h-full ${s.color} rounded-full`}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-xs text-slate-400 w-12 text-right">{pct}%</span>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Donut chart visual */}
+          <div className="mt-5 pt-5 border-t border-slate-100">
+            <div className="flex items-center justify-center">
+              <div className="relative w-32 h-32">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  {(() => {
+                    let offset = 0;
+                    const total = stats.totalAnggota || 1;
+                    const colors = ["#10b981", "#94a3b8", "#f59e0b", "#f43f5e", "#475569"];
+                    return statusDistribution.map((s, idx) => {
+                      const pct = (s.value / total) * 100;
+                      const dash = (pct * 100) / 100;
+                      const circle = (
+                        <circle
+                          key={idx}
+                          cx="18"
+                          cy="18"
+                          r="15.915"
+                          fill="transparent"
+                          stroke={colors[idx]}
+                          strokeWidth="3"
+                          strokeDasharray={`${dash} ${100 - dash}`}
+                          strokeDashoffset={-offset}
+                        />
+                      );
+                      offset += dash;
+                      return circle;
+                    });
+                  })()}
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="text-2xl font-extrabold text-blue-950">{stats.totalAnggota}</div>
+                  <div className="text-[10px] text-slate-500">Total</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Status distribution */}
+      {/* ============ RINGKASAN PENDAFTARAN & PERLU TINDAKAN ============ */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Status Pendaftaran */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6"
+        >
+          <div className="flex items-center gap-2 mb-5">
+            <FileText className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-blue-950">Ringkasan Status Pendaftaran</h3>
+          </div>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+            {pendaftaranStatus.map((s, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                className="text-center p-4 bg-slate-50 rounded-xl"
+              >
+                <div className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold mb-2 ${s.color}`}>
+                  {s.label}
+                </div>
+                <div className="text-2xl font-extrabold text-blue-950">{s.value}</div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Stacked bar visualization */}
+          <div className="mt-5">
+            <div className="text-xs text-slate-500 mb-2">Visualisasi Distribusi</div>
+            <div className="flex h-3 rounded-full overflow-hidden bg-slate-100">
+              {pendaftaranStatus.map((s, idx) => {
+                const total = pendaftaranStatus.reduce((a, b) => a + b.value, 0) || 1;
+                const pct = (s.value / total) * 100;
+                if (pct === 0) return null;
+                const colors = ["bg-slate-400", "bg-cyan-500", "bg-blue-500", "bg-amber-500", "bg-emerald-500", "bg-rose-500"];
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${pct}%` }}
+                    transition={{ delay: idx * 0.05, duration: 0.6 }}
+                    className={`${colors[idx]} h-full`}
+                    title={`${s.label}: ${s.value}`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Perlu Tindakan */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <AlertCircle className="w-5 h-5 text-amber-600" />
+            <h3 className="font-bold text-amber-900">Perlu Tindakan</h3>
+          </div>
+          <ul className="space-y-3">
+            {perluTindakan.map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <li key={idx} className="flex items-center gap-3 bg-white rounded-xl p-3 border border-amber-100">
+                  <div className={`w-8 h-8 rounded-lg ${item.bg} flex items-center justify-center shrink-0`}>
+                    <Icon className={`w-4 h-4 ${item.color}`} />
+                  </div>
+                  <span className="text-sm text-slate-700 flex-1">{item.text}</span>
+                  <ChevronRight className="w-4 h-4 text-slate-300" />
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-4 pt-4 border-t border-amber-200">
+            <div className="text-xs text-amber-700 text-center">
+              Total: {perluTindakan.reduce((a, b) => {
+                const match = b.text.match(/\d+/);
+                return a + (match ? parseInt(match[0]) : 0);
+              }, 0)} item perlu ditindaklanjuti
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* ============ COVERAGE WILAYAH ============ */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100"
+        className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6"
       >
-        <h3 className="font-bold text-blue-950 mb-4">Distribusi Status Anggota</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {[
-            { label: "Aktif", value: data.anggotaByStatus.AKTIF || 0, color: "bg-emerald-500" },
-            { label: "Nonaktif", value: data.anggotaByStatus.NONAKTIF || 0, color: "bg-slate-400" },
-            { label: "Mengundurkan Diri", value: data.anggotaByStatus.MENGUNDURKAN_DIRI || 0, color: "bg-amber-500" },
-            { label: "Diberhentikan", value: data.anggotaByStatus.DIBERHENTIKAN || 0, color: "bg-rose-500" },
-            { label: "Meninggal", value: data.anggotaByStatus.MENINGGAL || 0, color: "bg-slate-600" },
-          ].map((s, idx) => (
-            <div key={idx} className="text-center p-3 bg-slate-50 rounded-xl">
-              <div className={`w-3 h-3 ${s.color} rounded-full mx-auto mb-2`} />
-              <div className="text-xl font-bold text-blue-950">{s.value}</div>
-              <div className="text-[10px] text-slate-500 mt-1">{s.label}</div>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-blue-950">Coverage Wilayah Nasional</h3>
+          </div>
+          <span className="text-xs text-slate-400">Real-time</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Provinsi */}
+          <div className="bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-100 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <MapPin className="w-6 h-6 text-blue-600" />
+              <span className="text-xs font-semibold text-blue-600 bg-white px-2 py-0.5 rounded-full">
+                {Math.round((stats.totalProvinsi / 38) * 100)}%
+              </span>
             </div>
-          ))}
+            <div className="text-3xl font-extrabold text-blue-950">
+              {stats.totalProvinsi}<span className="text-base text-slate-400">/38</span>
+            </div>
+            <div className="text-sm text-slate-600 mt-1">Provinsi Terdaftar</div>
+            <div className="mt-3 h-2 bg-white rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(stats.totalProvinsi / 38) * 100}%` }}
+                transition={{ duration: 0.8 }}
+                className="h-full bg-gradient-to-r from-blue-500 to-sky-400"
+              />
+            </div>
+          </div>
+
+          {/* Kabupaten */}
+          <div className="bg-gradient-to-br from-sky-50 to-cyan-50 border border-sky-100 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <Building2 className="w-6 h-6 text-sky-600" />
+              <span className="text-xs font-semibold text-sky-600 bg-white px-2 py-0.5 rounded-full">
+                {Math.round((stats.totalKabupaten / 514) * 100)}%
+              </span>
+            </div>
+            <div className="text-3xl font-extrabold text-blue-950">
+              {stats.totalKabupaten}<span className="text-base text-slate-400">/514</span>
+            </div>
+            <div className="text-sm text-slate-600 mt-1">Kabupaten/Kota Terdaftar</div>
+            <div className="mt-3 h-2 bg-white rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(stats.totalKabupaten / 514) * 100}%` }}
+                transition={{ duration: 0.8 }}
+                className="h-full bg-gradient-to-r from-sky-500 to-cyan-400"
+              />
+            </div>
+          </div>
+
+          {/* Anggota per Provinsi rata-rata */}
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <Users className="w-6 h-6 text-emerald-600" />
+              <span className="text-xs font-semibold text-emerald-600 bg-white px-2 py-0.5 rounded-full">
+                Rata-rata
+              </span>
+            </div>
+            <div className="text-3xl font-extrabold text-blue-950">
+              {Math.round(stats.totalAnggota / (stats.totalProvinsi || 1))}
+            </div>
+            <div className="text-sm text-slate-600 mt-1">Anggota per Provinsi</div>
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex-1 h-2 bg-white rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 0.8 }}
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400"
+                />
+              </div>
+              <TrendingUp className="w-4 h-4 text-emerald-500" />
+            </div>
+          </div>
         </div>
       </motion.div>
+
+      {/* ============ CHART: TREND ANGGOTA ============ */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6"
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-blue-950">Tren Pertumbuhan Anggota (7 Bulan Terakhir)</h3>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1 text-blue-600">
+              <span className="w-2 h-2 bg-blue-500 rounded-full" /> Anggota Baru
+            </span>
+          </div>
+        </div>
+        <LineChart data={data.monthlyTrend || []} />
+      </motion.div>
+    </div>
+  );
+}
+
+// ============================================================
+// LINE CHART COMPONENT (SVG-based, no external library)
+// ============================================================
+function LineChart({ data }: { data: { bulan: string; baru: number }[] }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-48 flex items-center justify-center text-sm text-slate-400">
+        Belum ada data tren
+      </div>
+    );
+  }
+
+  const width = 800;
+  const height = 240;
+  const padding = { top: 20, right: 40, bottom: 40, left: 50 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const maxBaru = Math.max(...data.map((d) => d.baru), 1);
+
+  // X scale
+  const xStep = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
+
+  // Points for bar (anggota baru)
+  const barPoints = data.map((d, i) => ({
+    x: padding.left + i * xStep,
+    y: padding.top + chartHeight - (d.baru / maxBaru) * chartHeight,
+  }));
+
+  // Build cumulative line
+  const cumData: number[] = [];
+  data.reduce((acc, d) => {
+    const newTotal = acc + d.baru;
+    cumData.push(newTotal);
+    return newTotal;
+  }, 0);
+  const minCum = Math.min(...cumData);
+  const maxCum = Math.max(...cumData);
+  const cumRange = maxCum - minCum || 1;
+
+  const linePoints = cumData.map((c, i) => ({
+    x: padding.left + i * xStep,
+    y: padding.top + chartHeight - ((c - minCum) / cumRange) * (chartHeight - 20) - 10,
+  }));
+
+  const linePath = linePoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  const areaPath = `${linePath} L ${linePoints[linePoints.length - 1].x} ${padding.top + chartHeight} L ${linePoints[0].x} ${padding.top + chartHeight} Z`;
+
+  return (
+    <div className="w-full overflow-x-auto">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ minWidth: "600px" }}>
+        <defs>
+          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#60a5fa" />
+          </linearGradient>
+        </defs>
+
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((pct, idx) => {
+          const y = padding.top + chartHeight * pct;
+          return (
+            <g key={idx}>
+              <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
+              <text x={padding.left - 8} y={y + 4} textAnchor="end" className="fill-slate-400" style={{ fontSize: "10px" }}>
+                {Math.round(maxBaru * (1 - pct))}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Area under line */}
+        <path d={areaPath} fill="url(#areaGradient)" />
+
+        {/* Line for cumulative */}
+        <path d={linePath} fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5 5" />
+
+        {/* Bars for anggota baru */}
+        {barPoints.map((p, idx) => (
+          <g key={idx}>
+            <rect
+              x={p.x - 12}
+              y={p.y}
+              width="24"
+              height={padding.top + chartHeight - p.y}
+              fill="url(#barGradient)"
+              rx="3"
+            />
+            <text x={p.x} y={p.y - 6} textAnchor="middle" className="fill-blue-600" style={{ fontSize: "10px", fontWeight: "bold" }}>
+              {data[idx].baru}
+            </text>
+          </g>
+        ))}
+
+        {/* Points on line */}
+        {linePoints.map((p, idx) => (
+          <circle key={idx} cx={p.x} cy={p.y} r="3" fill="#94a3b8" stroke="white" strokeWidth="1.5" />
+        ))}
+
+        {/* X axis labels */}
+        {data.map((d, idx) => (
+          <text key={idx} x={padding.left + idx * xStep} y={height - padding.bottom + 20} textAnchor="middle" className="fill-slate-500" style={{ fontSize: "12px", fontWeight: 500 }}>
+            {d.bulan}
+          </text>
+        ))}
+      </svg>
     </div>
   );
 }

@@ -80,6 +80,32 @@ export async function GET() {
       },
     });
 
+    // Pendaftaran hari ini
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const pendaftaranHariIni = await db.pendaftaran.count({
+      where: { createdAt: { gte: today } },
+    });
+
+    // Trend anggota baru 7 bulan terakhir
+    const monthlyTrend = [];
+    for (let i = 6; i >= 0; i--) {
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
+      const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() - i + 1, 1);
+      const count = await db.anggota.count({
+        where: {
+          tanggalAngkat: {
+            gte: monthStart,
+            lt: monthEnd,
+          },
+        },
+      });
+      monthlyTrend.push({
+        bulan: monthStart.toLocaleDateString("id-ID", { month: "short" }),
+        baru: count,
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -94,6 +120,7 @@ export async function GET() {
           totalBerita,
           totalGaleri,
           totalProgram,
+          pendaftaranHariIni,
         },
         pendaftaranByStatus: pendaftaranByStatus.reduce((acc: any, cur) => {
           acc[cur.status] = cur._count;
@@ -111,6 +138,7 @@ export async function GET() {
           waktu: p.createdAt,
           kabupaten: p.kabupaten?.nama,
         })),
+        monthlyTrend,
       },
     });
   } catch (error) {

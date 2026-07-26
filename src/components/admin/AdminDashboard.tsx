@@ -250,8 +250,16 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
                   SA
                 </div>
                 <div className="hidden sm:block text-left">
-                  <div className="text-xs font-semibold text-slate-800">Super Admin</div>
-                  <div className="text-[10px] text-slate-500">Nasional</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-slate-800">Super Admin</span>
+                    <span className="px-1.5 py-0.5 rounded-full text-[8px] font-bold bg-rose-100 text-rose-700">
+                      SUPER
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                    Wilayah: <span className="font-medium">Nasional</span>
+                  </div>
                 </div>
                 <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
