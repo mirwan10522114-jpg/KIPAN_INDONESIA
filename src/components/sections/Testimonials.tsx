@@ -39,8 +39,8 @@ export default function Testimonials() {
             id: p.id,
             name: p.namaLengkap,
             role: p.jabatan,
-            level: p.level === "Nasional" ? "Nasional" : p.level === "Provinsi" ? "Provinsi" : "Kabupaten",
-            wilayah: p.level === "Nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || ""),
+            level: (p.level || "").toLowerCase() === "nasional" ? "Nasional" : (p.level || "").toLowerCase() === "provinsi" ? "Provinsi" : "Kabupaten",
+            wilayah: (p.level || "").toLowerCase() === "nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || ""),
             photo: p.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
             kontak: p.email,
           }));

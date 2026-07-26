@@ -90,14 +90,24 @@ export default function PengurusPage({
   const canResetPassword = ["SUPER_ADMIN", "ADMIN_NASIONAL"].includes(userRole);
 
   // Stat cards
-  // Map API data to Pengurus format
+  // Map API data to Pengurus format — normalize level to Title Case
+  const normalizeLevel = (level: string): string => {
+    if (!level) return "";
+    const lower = level.toLowerCase();
+    if (lower === "nasional") return "Nasional";
+    if (lower === "provinsi") return "Provinsi";
+    if (lower === "kabupaten") return "Kabupaten";
+    if (lower === "kecamatan") return "Kecamatan";
+    return level;
+  };
+
   const pengurusData: any[] = useApiData ? apiData.map((p: any) => ({
     id: p.id,
     nama: p.namaLengkap,
     foto: p.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     jabatan: p.jabatan,
-    level: p.level,
-    wilayah: p.level === "Nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || ""),
+    level: normalizeLevel(p.level),
+    wilayah: normalizeLevel(p.level) === "Nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || ""),
     provinsiNama: p.provinsi?.nama,
     kabupatenNama: p.kabupaten?.nama,
     email: p.email,

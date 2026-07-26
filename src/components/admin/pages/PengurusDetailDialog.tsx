@@ -55,12 +55,23 @@ export default function PengurusDetailDialog({
     return styles[status] || "bg-slate-100 text-slate-600 border-slate-200";
   };
   const levelBadge = (level: string) => {
+    const lower = (level || "").toLowerCase();
     const styles: Record<string, string> = {
-      Nasional: "bg-violet-100 text-violet-700",
-      Provinsi: "bg-blue-100 text-blue-700",
-      Kabupaten: "bg-cyan-100 text-cyan-700",
+      nasional: "bg-violet-100 text-violet-700",
+      provinsi: "bg-blue-100 text-blue-700",
+      kabupaten: "bg-cyan-100 text-cyan-700",
+      kecamatan: "bg-teal-100 text-teal-700",
     };
-    return styles[level] || "bg-slate-100 text-slate-600";
+    return styles[lower] || "bg-slate-100 text-slate-600";
+  };
+
+  const normalizeLevel = (level: string): string => {
+    const lower = (level || "").toLowerCase();
+    if (lower === "nasional") return "Nasional";
+    if (lower === "provinsi") return "Provinsi";
+    if (lower === "kabupaten") return "Kabupaten";
+    if (lower === "kecamatan") return "Kecamatan";
+    return level || "-";
   };
   const formatTanggal = (d: string) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-";
 
@@ -86,13 +97,13 @@ export default function PengurusDetailDialog({
                 <SafeImage src={p?.foto} alt={p?.namaLengkap || ""} className="w-20 h-20 rounded-2xl object-cover border-4 border-white/30" loading="eager" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${levelBadge(p?.level || "")}`}>{p?.level}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${levelBadge(p?.level || "")}`}>{normalizeLevel(p?.level || "")}</span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-white ${statusBadge(p?.status || "")}`}>{p?.status}</span>
                   </div>
                   <h2 className="text-2xl font-bold">{p?.namaLengkap}</h2>
                   <p className="text-blue-100 text-sm mt-1">{p?.jabatan}</p>
                   <div className="flex flex-wrap gap-4 mt-3 text-sm">
-                    <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /><span>{p?.level === "Nasional" ? "Indonesia" : (p?.kabupaten?.nama || p?.provinsi?.nama || "-")}</span></div>
+                    <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /><span>{normalizeLevel(p?.level || "") === "Nasional" ? "Indonesia" : (p?.kabupaten?.nama || p?.provinsi?.nama || "-")}</span></div>
                     <div className="flex items-center gap-1.5"><Mail className="w-4 h-4" /><span>{p?.email}</span></div>
                     <div className="flex items-center gap-1.5"><Phone className="w-4 h-4" /><span>{p?.hp || "-"}</span></div>
                     <div className="flex items-center gap-1.5"><FileText className="w-4 h-4" /><span>SK: {p?.nomorSK || "-"}</span></div>
@@ -167,7 +178,7 @@ export default function PengurusDetailDialog({
                   {activeTab === "wilayah" && (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4 text-sm">
-                        <InfoRow label="Level" value={p?.level} />
+                        <InfoRow label="Level" value={normalizeLevel(p?.level || "")} />
                         <InfoRow label="Provinsi" value={p?.provinsi?.nama || "-"} />
                         <InfoRow label="Kabupaten/Kota" value={p?.kabupaten?.nama || "-"} />
                         <InfoRow label="Alamat" value={p?.alamat || "-"} />

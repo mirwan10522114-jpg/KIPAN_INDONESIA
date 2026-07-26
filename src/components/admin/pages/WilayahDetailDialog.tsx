@@ -206,8 +206,8 @@ export default function WilayahDetailDialog({
                           </div>
                           <div className="text-right shrink-0">
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold ${
-                              p.level === "Nasional" ? "bg-violet-100 text-violet-700" :
-                              p.level === "Provinsi" ? "bg-blue-100 text-blue-700" : "bg-cyan-100 text-cyan-700"
+                              (p.level || "").toLowerCase() === "nasional" ? "bg-violet-100 text-violet-700" :
+                              (p.level || "").toLowerCase() === "provinsi" ? "bg-blue-100 text-blue-700" : "bg-cyan-100 text-cyan-700"
                             }`}>{p.level}</span>
                             <div className={`text-[9px] mt-1 ${p.status === "Aktif" ? "text-emerald-600" : "text-slate-400"}`}>{p.status}</div>
                           </div>
