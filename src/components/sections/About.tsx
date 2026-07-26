@@ -3,20 +3,17 @@
 import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect, useRef } from "react";
 import {
-  Award,
-  Globe2,
-  TrendingUp,
-  Handshake,
-  Calendar,
-  MapPin,
+  Target,
+  Eye,
+  Heart,
+  CheckCircle2,
   Sparkles,
-  Building2,
+  MapPin,
+  Award,
 } from "lucide-react";
-import { STATS, COMPANY } from "@/lib/data";
 import { useContentStore } from "@/lib/content-store";
 import SafeImage from "@/components/ui/safe-image";
 
-// Animated counter
 function Counter({ value, suffix = "" }: { value: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-50px" });
@@ -42,49 +39,19 @@ function Counter({ value, suffix = "" }: { value: number; suffix?: string }) {
   return <span ref={ref}>0{suffix}</span>;
 }
 
-const MILESTONES = [
-  {
-    year: "1997",
-    title: "Awal Mula di Cisarua",
-    desc: "Berdiri pada 10 Agustus 1997 di Cisarua, Bandung Barat oleh Agus Setiawan.",
-    icon: Calendar,
-    color: "from-amber-400 to-orange-500",
-  },
-  {
-    year: "2000s",
-    title: "Ekspansi Layanan",
-    desc: "Berkembang dari kontraktor lokal menjadi solusi end-to-end berskala nasional.",
-    icon: TrendingUp,
-    color: "from-cyan-400 to-sky-500",
-  },
-  {
-    year: "2010s",
-    title: "Kemitraan Astral Pool",
-    desc: "Menjadi mitra resmi Astral Pool S.A. Barcelona, Spanyol — standar internasional.",
-    icon: Handshake,
-    color: "from-violet-400 to-purple-500",
-  },
-  {
-    year: "Now",
-    title: "1.000+ Proyek Selesai",
-    desc: "Dipercaya klien di 34 provinsi seluruh Indonesia, dari Sabang sampai Merauke.",
-    icon: Globe2,
-    color: "from-emerald-400 to-teal-500",
-  },
-];
-
 export default function About() {
   const about = useContentStore((s) => s.about);
   const company = useContentStore((s) => s.company);
+
   return (
     <section
       id="tentang"
-      className="relative py-20 lg:py-28 overflow-hidden bg-gradient-to-br from-sky-950 via-sky-900 to-cyan-900"
+      className="relative py-20 lg:py-28 overflow-hidden bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-900"
     >
       {/* Decorative shapes */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-sky-500/15 rounded-full blur-3xl" />
-      <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-cyan-400/10 rounded-full blur-3xl animate-wave" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-500/15 rounded-full blur-3xl" />
+      <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-emerald-400/10 rounded-full blur-3xl animate-wave" />
 
       {/* Grid pattern overlay */}
       <div
@@ -105,14 +72,14 @@ export default function About() {
           transition={{ duration: 0.6 }}
           className="max-w-3xl"
         >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-cyan-500/20 backdrop-blur-sm border border-cyan-400/30 text-cyan-300 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/20 backdrop-blur-sm border border-emerald-400/30 text-emerald-300 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
             <Sparkles className="w-3.5 h-3.5" />
-            Tentang Kami
+            Tentang KIPAN
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight">
-            Dari Cisarua ke{" "}
-            <span className="bg-gradient-to-r from-cyan-300 via-cyan-400 to-sky-400 bg-clip-text text-transparent">
-              Seluruh Indonesia
+            Gerakan Pemuda{" "}
+            <span className="bg-gradient-to-r from-emerald-300 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
+              Anti Narkoba
             </span>
           </h2>
         </motion.div>
@@ -126,61 +93,57 @@ export default function About() {
             transition={{ duration: 0.7 }}
             className="relative order-2 lg:order-1"
           >
-            <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-cyan-500/20 aspect-[4/5] sm:aspect-[5/4] border-4 border-white/10">
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-emerald-500/20 aspect-[4/5] sm:aspect-[5/4] border-4 border-white/10">
               <SafeImage
                 src={about.image}
-                alt="Proyek kolam renang villa oleh Dunia Pool & Pond"
+                alt="Kegiatan KIPAN Indonesia"
                 className="w-full h-full object-cover"
                 loading="eager"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-sky-950/80 via-sky-950/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/80 via-emerald-950/20 to-transparent" />
 
-              {/* Floating featured tag */}
-              <div className="absolute top-4 left-4 bg-cyan-500/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+              <div className="absolute top-4 left-4 bg-emerald-500/90 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5">
                 <Sparkles className="w-3 h-3" />
-                Featured Project
+                Bersama BNN RI
               </div>
 
-              {/* Caption */}
               <div className="absolute bottom-6 left-6 right-6 text-white">
-                <p className="text-lg font-bold">Proyek Kolam Renang Villa</p>
-                <p className="text-sm text-cyan-200">Dunia Pool & Pond</p>
+                <p className="text-lg font-bold">KIPAN Indonesia</p>
+                <p className="text-sm text-emerald-200">{company.tagline}</p>
               </div>
             </div>
 
-            {/* Floating experience badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.4, type: "spring" }}
-              className="absolute -top-6 -right-6 lg:-right-10 bg-white rounded-2xl shadow-2xl p-5 border border-cyan-100 max-w-[200px] hover:scale-105 transition-transform"
+              className="absolute -top-6 -right-6 lg:-right-10 bg-white rounded-2xl shadow-2xl p-5 border border-emerald-100 max-w-[200px] hover:scale-105 transition-transform"
             >
               <div className="flex items-center gap-2 mb-1">
                 <Award className="w-5 h-5 text-amber-500" />
                 <div className="text-3xl font-extrabold text-gradient-water">
-                  25+
+                  <Counter value={20} suffix="rb+" />
                 </div>
               </div>
               <div className="text-xs text-slate-600 font-medium leading-tight">
-                Tahun Membangun Kepercayaan Klien
+                Anggota Aktif Nasional di 38 Provinsi
               </div>
             </motion.div>
 
-            {/* Floating location badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.5, type: "spring" }}
-              className="absolute -bottom-4 -left-4 bg-gradient-to-br from-cyan-500 to-sky-600 rounded-2xl shadow-2xl p-4 flex items-center gap-3"
+              className="absolute -bottom-4 -left-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-2xl p-4 flex items-center gap-3"
             >
               <MapPin className="w-6 h-6 text-white" />
               <div className="text-white">
                 <div className="text-[10px] uppercase tracking-wider opacity-80">
-                  Berbasis di
+                  Sejak
                 </div>
-                <div className="text-sm font-bold">Bandung Barat</div>
+                <div className="text-sm font-bold">{company.establishedYear}</div>
               </div>
             </motion.div>
           </motion.div>
@@ -193,55 +156,52 @@ export default function About() {
             transition={{ duration: 0.7 }}
             className="order-1 lg:order-2"
           >
-            <p className="text-sky-100/90 text-base lg:text-lg leading-relaxed">
-              {about.paragraph1}
-            </p>
-            <p className="text-sky-100/90 text-base lg:text-lg leading-relaxed mt-4">
-              {about.paragraph2}
-            </p>
-            <p className="text-sky-100/90 text-base lg:text-lg leading-relaxed mt-4">
-              {about.paragraph3}
-            </p>
+            {about.paragraphs.map((p, i) => (
+              <p
+                key={i}
+                className="text-emerald-100/90 text-base lg:text-lg leading-relaxed mt-4 first:mt-0"
+              >
+                {p}
+              </p>
+            ))}
 
-            {/* Inline stats — colorful cards */}
-            <div className="grid grid-cols-2 gap-4 mt-8">
-              {[
-                { value: 25, suffix: "+", label: "Tahun Pengalaman", icon: Calendar, color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/30" },
-                { value: 1000, suffix: "+", label: "Proyek Selesai", icon: Building2, color: "text-cyan-400", bg: "bg-cyan-500/15", border: "border-cyan-500/30" },
-                { value: 34, suffix: "", label: "Provinsi Dilayani", icon: Globe2, color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30" },
-                { value: 0, suffix: "", label: "Mitra Internasional", icon: Handshake, color: "text-violet-400", bg: "bg-violet-500/15", border: "border-violet-500/30", customText: "Astral Pool" },
-              ].map((stat, idx) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: idx * 0.1 }}
-                  whileHover={{ scale: 1.03, y: -3 }}
-                  className={`bg-white/5 backdrop-blur-sm rounded-xl p-4 border ${stat.border} hover:bg-white/10 transition-all cursor-default`}
-                >
-                  <div className={`w-10 h-10 rounded-lg ${stat.bg} flex items-center justify-center mb-2`}>
-                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                  </div>
-                  <div className="text-2xl lg:text-3xl font-extrabold text-white">
-                    {stat.customText ? (
-                      <span className="bg-gradient-to-r from-cyan-300 to-sky-400 bg-clip-text text-transparent text-xl">
-                        {stat.customText}
-                      </span>
-                    ) : (
-                      <Counter value={stat.value} suffix={stat.suffix} />
-                    )}
-                  </div>
-                  <div className="text-xs lg:text-sm text-sky-200/80 mt-1">
-                    {stat.label}
-                  </div>
-                </motion.div>
-              ))}
+            {/* Visi */}
+            <div className="mt-8 bg-white/5 backdrop-blur-sm border border-emerald-400/30 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Eye className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Visi</h3>
+              </div>
+              <p className="text-emerald-50 text-sm lg:text-base italic leading-relaxed">
+                &ldquo;{about.visi}&rdquo;
+              </p>
+            </div>
+
+            {/* Misi */}
+            <div className="mt-4 bg-white/5 backdrop-blur-sm border border-emerald-400/30 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Target className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Misi</h3>
+              </div>
+              <ul className="space-y-2">
+                {about.misi.map((m, idx) => (
+                  <motion.li
+                    key={idx}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: idx * 0.1 }}
+                    className="flex items-start gap-2 text-emerald-100 text-sm"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span>{m}</span>
+                  </motion.li>
+                ))}
+              </ul>
             </div>
           </motion.div>
         </div>
 
-        {/* Milestones timeline */}
+        {/* Nilai Organisasi */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -249,41 +209,65 @@ export default function About() {
           transition={{ duration: 0.6 }}
           className="mt-20"
         >
-          <h3 className="text-center text-2xl lg:text-3xl font-bold text-white mb-12">
-            Perjalanan Kami{" "}
-            <span className="text-cyan-300">Sejak 1997</span>
-          </h3>
+          <div className="text-center mb-12">
+            <h3 className="text-2xl lg:text-3xl font-bold text-white">
+              Nilai{" "}
+              <span className="text-emerald-300">Organisasi</span>
+            </h3>
+            <p className="text-emerald-200/70 text-sm mt-2">
+              Prinsip yang menjadi pegangan setiap kader KIPAN
+            </p>
+          </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {MILESTONES.map((m, idx) => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {about.nilai.map((n, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: idx * 0.15 }}
-                whileHover={{ y: -8 }}
-                className="relative group"
+                transition={{ duration: 0.4, delay: idx * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="bg-white/5 backdrop-blur-sm border border-emerald-400/20 rounded-2xl p-5 hover:bg-white/10 transition-all"
               >
-                {/* Connecting line */}
-                {idx < MILESTONES.length - 1 && (
-                  <div className="hidden lg:block absolute top-8 left-1/2 w-full h-0.5 bg-gradient-to-r from-cyan-500/40 to-transparent" />
-                )}
-
-                <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all hover:border-cyan-400/40">
-                  <div
-                    className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${m.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-transform`}
-                  >
-                    <m.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <div className="text-xs font-bold text-cyan-300 uppercase tracking-wider mb-1">
-                    {m.year}
-                  </div>
-                  <h4 className="text-lg font-bold text-white mb-2">{m.title}</h4>
-                  <p className="text-sm text-sky-100/70 leading-relaxed">
-                    {m.desc}
-                  </p>
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mb-3 shadow-lg">
+                  <Heart className="w-6 h-6 text-white" />
                 </div>
+                <h4 className="text-lg font-bold text-white mb-1">{n.title}</h4>
+                <p className="text-sm text-emerald-100/70 leading-relaxed">{n.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Tujuan */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+          className="mt-16"
+        >
+          <div className="text-center mb-8">
+            <h3 className="text-2xl lg:text-3xl font-bold text-white">
+              Tujuan{" "}
+              <span className="text-emerald-300">KIPAN</span>
+            </h3>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            {about.tujuan.map((t, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: idx % 2 === 0 ? -20 : 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: idx * 0.1 }}
+                className="flex items-start gap-3 bg-white/5 border border-emerald-400/20 rounded-xl p-4"
+              >
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-emerald-300">{idx + 1}</span>
+                </div>
+                <span className="text-emerald-50 text-sm">{t}</span>
               </motion.div>
             ))}
           </div>

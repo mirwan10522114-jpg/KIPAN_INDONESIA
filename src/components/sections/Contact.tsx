@@ -30,7 +30,7 @@ export default function Contact() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const text = `*Konsultasi Proyek Kolam - Dunia Pool & Pond*
+    const text = `*Pesan untuk KIPAN Indonesia*
 
 *Nama:* ${form.name}
 *Telepon:* ${form.phone}
@@ -47,13 +47,13 @@ Mohon segera dihubungi. Terima kasih.`;
   };
 
   const directWa = `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(
-    "Halo Dunia Pool & Pond, saya ingin konsultasi proyek kolam."
+    "Halo KIPAN Indonesia, saya ingin informasi lebih lanjut."
   )}`;
 
   const contactItems = [
     {
       icon: MapPin,
-      label: "Alamat",
+      label: "Alamat Sekretariat",
       value: company.currentAddress,
       href: `https://maps.google.com/?q=${encodeURIComponent(
         company.currentAddress
@@ -90,8 +90,8 @@ Mohon segera dihubungi. Terima kasih.`;
       label: "Website",
       value: company.website,
       href: company.websiteUrl,
-      color: "text-sky-500",
-      bg: "bg-sky-50",
+      color: "text-emerald-500",
+      bg: "bg-emerald-50",
     },
   ];
 
@@ -100,10 +100,9 @@ Mohon segera dihubungi. Terima kasih.`;
       id="kontak"
       className="relative py-20 lg:py-28 bg-white overflow-hidden"
     >
-      <div className="absolute top-0 left-0 w-96 h-96 bg-sky-100/40 rounded-full blur-3xl" />
+      <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl" />
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -111,21 +110,21 @@ Mohon segera dihubungi. Terima kasih.`;
           transition={{ duration: 0.6 }}
           className="max-w-3xl mb-14"
         >
-          <span className="inline-block px-4 py-1.5 bg-cyan-100 text-cyan-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
+          <span className="inline-block px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
             Hubungi Kami
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-sky-950 leading-tight">
-            Mulai Konsultasi{" "}
-            <span className="text-gradient-water">Proyek Anda</span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-emerald-950 leading-tight">
+            Butuh Informasi?{" "}
+            <span className="text-gradient-water">Hubungi KIPAN</span>
           </h2>
           <p className="mt-5 text-slate-600 text-base lg:text-lg leading-relaxed">
-            Tim ahli kami siap mendampingi Anda dari konsep hingga kolam impian
-            terwujud — termasuk perancangan sistem sirkulasi kolam secara gratis.
+            Tim pengurus KIPAN siap menjawab pertanyaan Anda seputar
+            pendaftaran anggota, program, atau kerja sama.
           </p>
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Left: contact info */}
+          {/* Contact info */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -156,130 +155,88 @@ Mohon segera dihubungi. Terima kasih.`;
                 </div>
               </a>
             ))}
-
-            {/* Map embed */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="rounded-2xl overflow-hidden shadow-md border border-slate-100"
-            >
-              <iframe
-                title="Lokasi Dunia Pool & Pond"
-                src={`https://www.google.com/maps?q=${encodeURIComponent(
-                  company.currentAddress
-                )}&output=embed`}
-                width="100%"
-                height="240"
-                style={{ border: 0 }}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </motion.div>
           </motion.div>
 
-          {/* Right: form */}
+          {/* Form */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.7 }}
-            className="bg-gradient-to-br from-sky-50 to-cyan-50 rounded-3xl p-6 lg:p-10 shadow-xl border border-sky-100"
+            className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-6 lg:p-10 shadow-xl border border-emerald-100"
           >
-            <h3 className="text-2xl lg:text-3xl font-bold text-sky-950 mb-2">
+            <h3 className="text-2xl lg:text-3xl font-bold text-emerald-950 mb-2">
               Kirim Pesan
             </h3>
             <p className="text-slate-600 text-sm mb-6">
-              Konsultasikan proyek Anda — termasuk perancangan sistem sirkulasi
-              kolam secara gratis.
+              Sampaikan pertanyaan atau pesan Anda. Pesan akan dikirim via
+              WhatsApp ke sekretariat KIPAN.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-slate-700 mb-1.5"
-                >
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Nama Lengkap
                 </label>
                 <input
-                  id="name"
                   type="text"
                   name="name"
                   value={form.name}
                   onChange={handleChange}
                   required
                   placeholder="Nama Anda"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
                 />
               </div>
-
               <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-slate-700 mb-1.5"
-                >
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   No. Telepon / WhatsApp
                 </label>
                 <input
-                  id="phone"
                   type="tel"
                   name="phone"
                   value={form.phone}
                   onChange={handleChange}
                   required
                   placeholder="0812xxxxxxx"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
                 />
               </div>
-
               <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-slate-700 mb-1.5"
-                >
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Email
                 </label>
                 <input
-                  id="email"
                   type="email"
                   name="email"
                   value={form.email}
                   onChange={handleChange}
                   required
                   placeholder="email@domain.com"
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
                 />
               </div>
-
               <div>
-                <label
-                  htmlFor="message"
-                  className="block text-sm font-medium text-slate-700 mb-1.5"
-                >
-                  Ceritakan proyek kolam Anda...
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  Pesan Anda
                 </label>
                 <textarea
-                  id="message"
                   name="message"
                   value={form.message}
                   onChange={handleChange}
                   required
                   rows={4}
-                  placeholder="Saya ingin membangun kolam renang di..."
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition-all resize-none"
+                  placeholder="Saya ingin bertanya tentang..."
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all resize-none"
                 />
               </div>
-
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-cyan-500 to-sky-600 text-white py-4 rounded-xl font-semibold hover:shadow-xl hover:shadow-cyan-500/30 transition-all flex items-center justify-center gap-2 group"
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 rounded-xl font-semibold hover:shadow-xl hover:shadow-emerald-500/30 transition-all flex items-center justify-center gap-2 group"
               >
                 <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 Kirim Pesan via WhatsApp
               </button>
-
               <a
                 href={directWa}
                 target="_blank"

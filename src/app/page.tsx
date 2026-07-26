@@ -1,12 +1,13 @@
 import Navbar from "@/components/sections/Navbar";
 import Hero from "@/components/sections/Hero";
 import About from "@/components/sections/About";
-import LeaderMessage from "@/components/sections/LeaderMessage";
+import StrukturOrganisasi from "@/components/sections/StrukturOrganisasi";
 import Services from "@/components/sections/Services";
 import TargetMarket from "@/components/sections/TargetMarket";
 import Gallery from "@/components/sections/Gallery";
 import Products from "@/components/sections/Products";
 import Testimonials from "@/components/sections/Testimonials";
+import PendaftaranAnggota from "@/components/sections/PendaftaranAnggota";
 import CTASection from "@/components/sections/CTASection";
 import Contact from "@/components/sections/Contact";
 import Footer from "@/components/sections/Footer";
@@ -20,12 +21,13 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
         <About />
-        <LeaderMessage />
+        <StrukturOrganisasi />
         <Services />
         <TargetMarket />
         <Gallery />
         <Products />
         <Testimonials />
+        <PendaftaranAnggota />
         <CTASection />
         <Contact />
       </main>

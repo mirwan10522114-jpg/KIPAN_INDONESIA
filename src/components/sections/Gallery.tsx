@@ -20,7 +20,7 @@ export default function Gallery() {
       : gallery.filter((item) => item.category === filter);
 
   const waLink = `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(
-    "Halo Dunia Pool & Pond, saya ingin melihat portfolio lengkap proyek Anda."
+    "Halo KIPAN, saya ingin melihat dokumentasi kegiatan lengkap."
   )}`;
 
   const openLightbox = (idx: number) => setLightboxIdx(idx);
@@ -41,10 +41,10 @@ export default function Gallery() {
   return (
     <section
       id="galeri"
-      className="relative py-20 lg:py-28 bg-gradient-to-b from-white via-sky-50/40 to-white overflow-hidden"
+      className="relative py-20 lg:py-28 bg-gradient-to-b from-white via-emerald-50/40 to-white overflow-hidden"
     >
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-100/40 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-sky-100/40 rounded-full blur-3xl" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-100/40 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-100/40 rounded-full blur-3xl" />
 
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -56,17 +56,17 @@ export default function Gallery() {
           className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12"
         >
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-cyan-100 text-cyan-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
               <ImageOff className="w-3.5 h-3.5" />
-              Galeri Proyek
+              Galeri Kegiatan
             </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-sky-950 leading-tight">
-              Portofolio Karya{" "}
-              <span className="text-gradient-water">Dunia Pool & Pond</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-emerald-950 leading-tight">
+              Dokumentasi Kegiatan{" "}
+              <span className="text-gradient-water">KIPAN</span>
             </h2>
             <p className="mt-5 text-slate-600 text-base lg:text-lg leading-relaxed">
-              Jelajahi beragam proyek kolam renang yang telah kami selesaikan —
-              dari hunian pribadi hingga fasilitas komersial bintang lima.
+              Jelajahi dokumentasi kegiatan KIPAN di seluruh Indonesia — dari
+              pelatihan, sosialisasi, hingga kampanye anti narkoba.
             </p>
           </div>
 
@@ -76,18 +76,18 @@ export default function Gallery() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="bg-white rounded-2xl p-4 border border-cyan-100 shadow-sm max-w-xs"
+            className="bg-white rounded-2xl p-4 border border-emerald-100 shadow-sm max-w-xs"
           >
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-sky-600 flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
                 <Upload className="w-6 h-6 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-extrabold text-sky-950">
+                <div className="text-2xl font-extrabold text-emerald-950">
                   {filtered.length}
                 </div>
                 <div className="text-xs text-slate-500">
-                  Proyek ditampilkan
+                  Foto ditampilkan
                 </div>
               </div>
             </div>
@@ -109,14 +109,14 @@ export default function Gallery() {
               onClick={() => setFilter(cat)}
               className={`relative px-5 py-2.5 rounded-full text-sm font-medium transition-all overflow-hidden ${
                 filter === cat
-                  ? "text-white shadow-lg shadow-cyan-500/30"
-                  : "bg-white text-slate-600 hover:bg-sky-50 border border-slate-200"
+                  ? "text-white shadow-lg shadow-500/30"
+                  : "bg-white text-slate-600 hover:bg-50 border border-slate-200"
               }`}
             >
               {filter === cat && (
                 <motion.div
                   layoutId="activeFilter"
-                  className="absolute inset-0 bg-gradient-to-r from-sky-700 to-cyan-600"
+                  className="absolute inset-0 bg-gradient-to-r from-700 to-600"
                   transition={{ type: "spring", duration: 0.5 }}
                 />
               )}
@@ -149,7 +149,7 @@ export default function Gallery() {
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-sky-950/80 via-sky-950/10 to-transparent opacity-70 group-hover:opacity-95 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-t from-950/80 via-950/10 to-transparent opacity-70 group-hover:opacity-95 transition-opacity" />
 
                 {/* Zoom icon */}
                 <div className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0">
@@ -157,7 +157,7 @@ export default function Gallery() {
                 </div>
 
                 {/* Category tag */}
-                <span className="absolute top-3 left-3 bg-gradient-to-r from-cyan-500 to-sky-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-md">
+                <span className="absolute top-3 left-3 bg-gradient-to-r from-500 to-emerald-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full shadow-md">
                   {item.category}
                 </span>
 
@@ -167,8 +167,8 @@ export default function Gallery() {
                     {item.title}
                   </h3>
                   <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0 duration-300">
-                    <MapPin className="w-3 h-3 text-cyan-300 shrink-0" />
-                    <span className="text-xs text-sky-100 truncate">
+                    <MapPin className="w-3 h-3 text-300 shrink-0" />
+                    <span className="text-xs text-100 truncate">
                       {item.location}
                     </span>
                   </div>
@@ -202,7 +202,7 @@ export default function Gallery() {
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-sky-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-500 to-emerald-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
           >
             Lihat Portfolio Lengkap via WhatsApp
           </a>
@@ -217,7 +217,7 @@ export default function Gallery() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeLightbox}
-            className="fixed inset-0 z-[100] bg-sky-950/95 backdrop-blur-md flex items-center justify-center p-4 lg:p-8"
+            className="fixed inset-0 z-[100] bg-950/95 backdrop-blur-md flex items-center justify-center p-4 lg:p-8"
           >
             {/* Close button */}
             <button
@@ -260,11 +260,11 @@ export default function Gallery() {
                 <SafeImage
                   src={filtered[lightboxIdx]?.image}
                   alt={filtered[lightboxIdx]?.title || "Gallery image"}
-                  className="w-full max-h-[70vh] object-contain bg-sky-950"
+                  className="w-full max-h-[70vh] object-contain bg-950"
                   loading="eager"
                 />
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-sky-950/95 via-sky-950/80 to-transparent">
-                  <span className="inline-block bg-gradient-to-r from-cyan-500 to-sky-600 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-950/95 via-950/80 to-transparent">
+                  <span className="inline-block bg-gradient-to-r from-500 to-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">
                     {filtered[lightboxIdx].category}
                   </span>
                   <h3 className="text-2xl font-bold text-white">
@@ -272,12 +272,12 @@ export default function Gallery() {
                   </h3>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4 text-cyan-300" />
-                      <span className="text-sm text-sky-100">
+                      <MapPin className="w-4 h-4 text-300" />
+                      <span className="text-sm text-100">
                         {filtered[lightboxIdx].location}
                       </span>
                     </div>
-                    <span className="text-xs text-sky-300">
+                    <span className="text-xs text-emerald-300">
                       {lightboxIdx + 1} / {filtered.length}
                     </span>
                   </div>

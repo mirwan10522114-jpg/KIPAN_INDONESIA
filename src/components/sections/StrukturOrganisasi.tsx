@@ -1,0 +1,142 @@
+"use client";
+
+import { motion } from "framer-motion";
+import {
+  Landmark,
+  Map,
+  Building2,
+  Users,
+  User,
+  ChevronDown,
+  Network,
+} from "lucide-react";
+import { useContentStore } from "@/lib/content-store";
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Landmark,
+  Map,
+  Building2,
+  Users,
+  User,
+};
+
+export default function StrukturOrganisasi() {
+  const levels = useContentStore((s) => s.strukturLevels);
+
+  return (
+    <section
+      id="struktur"
+      className="relative py-20 lg:py-28 bg-white overflow-hidden"
+    >
+      <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-100/40 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-teal-100/40 rounded-full blur-3xl" />
+
+      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="max-w-3xl mx-auto text-center mb-14"
+        >
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-semibold tracking-wider uppercase rounded-full mb-4">
+            <Network className="w-3.5 h-3.5" />
+            Struktur Organisasi
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-emerald-950 leading-tight">
+            Hierarki{" "}
+            <span className="text-gradient-water">KIPAN Indonesia</span>
+          </h2>
+          <p className="mt-5 text-slate-600 text-base lg:text-lg leading-relaxed">
+            Dari pusat hingga daerah, KIPAN memiliki struktur berjenjang yang
+            terintegrasi dalam satu sistem nasional.
+          </p>
+        </motion.div>
+
+        {/* Hierarchy diagram */}
+        <div className="max-w-5xl mx-auto">
+          {levels.map((level, idx) => {
+            const Icon = ICON_MAP[level.icon] || Landmark;
+            const isLast = idx === levels.length - 1;
+            return (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: idx * 0.15 }}
+                className="relative"
+              >
+                {/* Connector line */}
+                {!isLast && (
+                  <div className="flex justify-center mb-2">
+                    <div className="flex flex-col items-center">
+                      <div className="w-0.5 h-8 bg-gradient-to-b from-emerald-400 to-emerald-300" />
+                      <ChevronDown className="w-5 h-5 text-emerald-400 -mt-2" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Card */}
+                <motion.div
+                  whileHover={{ scale: 1.02, y: -3 }}
+                  className={`relative bg-white rounded-3xl shadow-xl border-2 border-emerald-100 p-6 lg:p-8 max-w-3xl mx-auto transition-all hover:border-emerald-300 hover:shadow-2xl ${
+                    idx === 0 ? "ring-4 ring-emerald-100" : ""
+                  }`}
+                >
+                  <div className="grid sm:grid-cols-[auto_1fr_auto] gap-4 sm:gap-6 items-center">
+                    {/* Icon */}
+                    <div
+                      className={`w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br ${level.color} flex items-center justify-center shadow-lg shrink-0`}
+                    >
+                      <Icon className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
+                    </div>
+
+                    {/* Content */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">
+                          Level {idx + 1}: {level.level}
+                        </span>
+                      </div>
+                      <h3 className="text-lg lg:text-xl font-bold text-emerald-950 mb-1">
+                        {level.title}
+                      </h3>
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                        {level.desc}
+                      </p>
+                    </div>
+
+                    {/* Count badge */}
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 text-center shrink-0">
+                      <div className="text-xs text-emerald-600 uppercase tracking-wider font-semibold">
+                        Cakupan
+                      </div>
+                      <div className="text-lg font-extrabold text-emerald-700">
+                        {level.count}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Info card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="max-w-3xl mx-auto mt-12 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6 text-center"
+        >
+          <p className="text-sm text-slate-700 leading-relaxed">
+            <strong className="text-emerald-700">Sistem Informasi Manajemen Keanggotaan KIPAN (SIM-KIPAN)</strong> mengelola seluruh siklus hidup anggota—mulai dari pendaftaran, verifikasi berjenjang, pelatihan, hingga pengangkatan sebagai anggota aktif dengan kartu anggota digital.
+          </p>
+        </motion.div>
+      </div>
+    </section>
+  );
+}

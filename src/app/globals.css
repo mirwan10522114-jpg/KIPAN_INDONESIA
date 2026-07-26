@@ -132,17 +132,17 @@ html {
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #f0f9ff;
+  background: #ecfdf5;
 }
 ::-webkit-scrollbar-thumb {
-  background: #0284c7;
+  background: #10b981;
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0369a1;
+  background: #059669;
 }
 
-/* Water wave animation */
+/* Pulse animation */
 @keyframes wave {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-8px); }
@@ -160,9 +160,9 @@ html {
   animation: slow-ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
-/* Gradient text */
+/* Gradient text - KIPAN green theme */
 .text-gradient-water {
-  background: linear-gradient(135deg, #023e8a 0%, #00b4d8 50%, #48cae4 100%);
+  background: linear-gradient(135deg, #047857 0%, #10b981 50%, #34d399 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

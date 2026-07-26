@@ -19,35 +19,34 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Dunia Pool & Pond — Konstruksi, Renovasi & Perawatan Kolam Renang Sejak 1997",
+  title: "KIPAN Indonesia — Kader Inti Pemuda Anti Narkoba",
   description:
-    "Dunia Pool & Pond adalah kontraktor kolam renang & kolam hias terpercaya sejak 1997. Melayani pembangunan, renovasi, perawatan, sistem sirkulasi, water treatment, dan penyediaan perlengkapan kolam. Partner resmi Astral Pool S.A. Spanyol.",
+    "KIPAN (Kader Inti Pemuda Anti Narkoba) adalah komunitas pemuda Indonesia yang berkomitmen mencegah penyalahgunaan narkoba. Bergabunglah menjadi anggota di 38 provinsi dan 514 kabupaten/kota.",
   keywords: [
-    "kolam renang",
-    "kontraktor kolam renang",
-    "renovasi kolam renang",
-    "perawatan kolam renang",
-    "sistem sirkulasi kolam",
-    "water treatment kolam",
-    "Dunia Pool and Pond",
-    "Astral Pool",
-    "kolam hias",
-    "Bandung",
+    "KIPAN",
+    "Kader Inti Pemuda Anti Narkoba",
+    "anti narkoba",
+    "pencegahan narkoba",
+    "pemuda anti narkoba",
+    "BNN",
+    "organisasi pemuda",
+    "keanggotaan",
+    "pendaftaran anggota",
   ],
-  authors: [{ name: "Dunia Pool & Pond" }],
+  authors: [{ name: "KIPAN Indonesia" }],
   openGraph: {
-    title: "Dunia Pool & Pond — Spesialis Kolam Renang Sejak 1997",
+    title: "KIPAN Indonesia — Kader Inti Pemuda Anti Narkoba",
     description:
-      "Solusi end-to-end kolam renang: konstruksi, renovasi, perawatan, sistem sirkulasi & perlengkapan. Partner resmi Astral Pool S.A. Spanyol.",
-    siteName: "Dunia Pool & Pond",
+      "Komunitas pemuda Indonesia yang berkomitmen mencegah penyalahgunaan narkoba. Bergabung menjadi anggota di 38 provinsi dan 514 kabupaten/kota.",
+    siteName: "KIPAN Indonesia",
     type: "website",
     locale: "id_ID",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dunia Pool & Pond — Spesialis Kolam Renang Sejak 1997",
+    title: "KIPAN Indonesia — Kader Inti Pemuda Anti Narkoba",
     description:
-      "Solusi end-to-end kolam renang: konstruksi, renovasi, perawatan, sistem sirkulasi & perlengkapan. Partner resmi Astral Pool S.A. Spanyol.",
+      "Komunitas pemuda Indonesia yang berkomitmen mencegah penyalahgunaan narkoba.",
   },
 };
 

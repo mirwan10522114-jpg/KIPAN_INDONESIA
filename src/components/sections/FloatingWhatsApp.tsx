@@ -18,7 +18,7 @@ export default function FloatingWhatsApp() {
   }, []);
 
   const waLink = `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(
-    "Halo " + company.name + ", saya ingin berkonsultasi tentang proyek kolam renang."
+    "Halo " + company.name + " Indonesia, saya ingin informasi lebih lanjut."
   )}`;
 
   return (
