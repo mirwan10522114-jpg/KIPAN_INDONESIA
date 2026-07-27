@@ -77,9 +77,27 @@ export default function WilayahPage({
     }
   };
 
-  // Initial load
+  // Auto-fill ketua wilayah dari pengurus dengan jabatan Ketua Umum
+  const autoFillKetua = async () => {
+    try {
+      const res = await fetch("/api/wilayah/auto-fill-ketua", { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(json.message);
+        fetchData();
+      } else {
+        toast.error(json.error || "Gagal auto-fill ketua");
+      }
+    } catch (e) {
+      toast.error("Gagal auto-fill ketua");
+    }
+  };
+
+  // Initial load — auto-fill ketua dulu, lalu fetch data
   useEffect(() => {
-    fetchData();
+    fetch("/api/wilayah/auto-fill-ketua", { method: "POST" })
+      .then(() => fetchData())
+      .catch(() => fetchData());
   }, []);
 
   // Permission check
@@ -258,30 +276,57 @@ export default function WilayahPage({
   };
 
   const handleDelete = async (item: any) => {
-    if (!window.confirm(`Yakin hapus ${item.nama}?`)) return;
-    const res = await fetch(`/api/wilayah?type=${tab}&id=${item.id}`, { method: "DELETE" });
+    // Soft delete: ubah status menjadi Nonaktif (data tidak hilang)
+    const res = await fetch("/api/wilayah", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: item.id, type: tab, nama: item.nama, status: "Nonaktif", ketua: item.ketua }),
+    });
     const json = await res.json();
     if (json.success) {
-      toast.success(json.message);
+      toast.success(`${item.nama} dinonaktifkan (data tidak dihapus)`);
       fetchData();
     } else {
-      toast.error(json.error || "Gagal menghapus");
+      toast.error(json.error || "Gagal menonaktifkan");
     }
+  };
+
+  const handleToggleStatus = async (item: any) => {
+    const newStatus = item.status === "Aktif" ? "Nonaktif" : "Aktif";
+    const res = await fetch("/api/wilayah", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: item.id, type: tab, nama: item.nama, status: newStatus, ketua: item.ketua }),
+    });
+    const json = await res.json();
+    if (json.success) {
+      toast.success(`Status diubah menjadi ${newStatus}`);
+      fetchData();
+    } else {
+      toast.error(json.error || "Gagal mengubah status");
+    }
+  };
+
+  const openEditForm = (item: any) => {
+    setFormData({
+      id: item.id,
+      type: tab,
+      kode: item.kode,
+      nama: item.nama,
+      status: item.status,
+      ketua: item.ketua || "",
+      provinsiId: tab === "kabupaten" ? String(apiProvinsi.find((p: any) => p.nama === item.provinsiNama)?.id || "") : undefined,
+      masterProvinsiKode: tab === "kabupaten" ? apiProvinsi.find((p: any) => p.nama === item.provinsiNama)?.kode : undefined,
+      masterKabupatenKode: item.kode,
+    });
+    setShowFormDialog(true);
   };
 
   const actions = [
     { label: "Detail", icon: Eye, action: (item: any) => showDetail(item, tab), show: true },
     { label: "Edit", icon: Edit, action: (item: any) => {
-      setFormData({
-        id: item.id,
-        type: tab,
-        kode: item.kode,
-        nama: item.nama,
-        status: item.status,
-        ketua: item.ketua || "",
-        provinsiId: tab === "kabupaten" ? String(apiProvinsi.find((p: any) => p.nama === item.provinsiNama)?.id || "") : undefined,
-      });
-      setShowFormDialog(true);
+      setActionMenuId(null);
+      openEditForm(item);
     }, show: canEdit },
     { label: "Kelola Pengurus", icon: UserCog, action: (item: any) => {
       setActionMenuId(null);
@@ -290,15 +335,16 @@ export default function WilayahPage({
       else filter.kabupatenNama = item.nama;
       onNavigate?.("pengurus", filter);
     }, show: true },
-    { label: "Nonaktifkan", icon: Ban, action: (item: any) => {
-      // Toggle status
-      fetch("/api/wilayah", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: item.id, type: tab, nama: item.nama, status: "Nonaktif", ketua: item.ketua }),
-      }).then(() => { toast.success("Status diubah menjadi Nonaktif"); fetchData(); });
-    }, show: canDelete, danger: false },
-    { label: "Hapus", icon: Trash2, action: (item: any) => handleDelete(item), show: canDelete, danger: true },
+    { label: item.status === "Aktif" ? "Nonaktifkan" : "Aktifkan", icon: Ban, action: (item: any) => {
+      setActionMenuId(null);
+      handleToggleStatus(item);
+    }, show: canEdit, danger: false },
+    { label: "Hapus (Nonaktifkan)", icon: Trash2, action: (item: any) => {
+      setActionMenuId(null);
+      if (window.confirm(`Yakin nonaktifkan ${item.nama}? Data tidak akan dihapus permanen, hanya status diubah menjadi Nonaktif.`)) {
+        handleDelete(item);
+      }
+    }, show: canDelete, danger: true },
   ];
 
   return (
@@ -422,6 +468,13 @@ export default function WilayahPage({
             title="Refresh"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            onClick={autoFillKetua}
+            className="p-2 text-slate-500 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors"
+            title="Auto-fill Ketua dari Pengurus"
+          >
+            <UserCog className="w-4 h-4" />
           </button>
           <button
             onClick={() => toast.info("Export Excel akan segera hadir")}
@@ -701,8 +754,20 @@ export default function WilayahPage({
         type={detailType}
         onClose={() => setDetailId(null)}
         onEdit={canEdit ? () => {
-          setDetailId(null);
-          // Will need to open form with existing data
+          // Cari data wilayah yang sedang ditampilkan untuk dibuka di form edit
+          const currentList = detailType === "provinsi" ? provData : kabData;
+          const item = currentList.find((i: any) => i.id === detailId);
+          if (item) {
+            setDetailId(null);
+            // Set tab sesuai type sebelum buka form
+            if (detailType !== tab) {
+              setTab(detailType);
+            }
+            setTimeout(() => openEditForm(item), 100);
+          } else {
+            setDetailId(null);
+            toast.error("Data tidak ditemukan untuk diedit");
+          }
         } : undefined}
         onViewPengurus={(id) => {
           setDetailId(null);
