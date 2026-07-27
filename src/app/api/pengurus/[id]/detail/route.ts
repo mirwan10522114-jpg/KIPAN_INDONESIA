@@ -19,7 +19,7 @@ export async function GET(
             kabupaten: { select: { id: true, nama: true, kode: true } },
           },
         },
-        jabatan: { select: { id: true, nama: true, level: true, urutan: true } },
+        jabatan: { select: { id: true, nama: true, bidang: true, level: true, urutan: true } },
         provinsi: { select: { id: true, nama: true, kode: true } },
         kabupaten: { select: { id: true, nama: true, kode: true } },
       },
@@ -33,7 +33,7 @@ export async function GET(
     const allJabatan = await db.pengurus.findMany({
       where: { anggotaId: pengurus.anggotaId },
       include: {
-        jabatan: { select: { nama: true, level: true } },
+        jabatan: { select: { nama: true, bidang: true, level: true } },
         provinsi: { select: { nama: true } },
         kabupaten: { select: { nama: true } },
       },

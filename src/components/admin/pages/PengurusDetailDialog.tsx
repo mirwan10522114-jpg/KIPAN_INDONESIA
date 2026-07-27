@@ -134,9 +134,11 @@ export default function PengurusDetailDialog({
   const formatTanggal = (d: string) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-";
 
   return (
+    <>
     <AnimatePresence>
       {pengurusId && (
         <motion.div
+          key="main-dialog"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose}
           className="fixed inset-0 z-[300] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
@@ -390,6 +392,7 @@ export default function PengurusDetailDialog({
           </motion.div>
         </motion.div>
       )}
+    </AnimatePresence>
 
       {/* Ganti Jabatan Dialog */}
       {showGantiJabatanDialog && (
@@ -495,7 +498,7 @@ export default function PengurusDetailDialog({
           </div>
         </div>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 
