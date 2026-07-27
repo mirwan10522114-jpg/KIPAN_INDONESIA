@@ -6,6 +6,7 @@ import {
   X, UserCog, Mail, Phone, MapPin, Calendar, FileText, History,
   Users, Info, Edit, Shield, ExternalLink, Activity, Award,
   CheckCircle2, Building2, Briefcase, GraduationCap,
+  CreditCard, Download, QrCode,
 } from "lucide-react";
 import { toast } from "sonner";
 import SafeImage from "@/components/ui/safe-image";
@@ -161,7 +162,12 @@ export default function PengurusDetailDialog({
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-white ${statusBadge(p?.status || "")}`}>{p?.status}</span>
                   </div>
                   <h2 className="text-2xl font-bold">{p?.namaLengkap}</h2>
-                  <p className="text-blue-100 text-sm mt-1">{p?.jabatan}</p>
+                  <p className="text-blue-100 text-sm mt-1">{p?.jabatan}{p?.jabatanBidang && p?.jabatanBidang !== "Pengurus Harian" ? ` • ${p.jabatanBidang}` : ""}</p>
+                  {p?.nia && (
+                    <span className="inline-block mt-2 px-2.5 py-1 bg-white/20 rounded-md text-xs font-mono font-semibold">
+                      NIP: {p.nia}
+                    </span>
+                  )}
                   <div className="flex flex-wrap gap-4 mt-3 text-sm">
                     <div className="flex items-center gap-1.5"><MapPin className="w-4 h-4" /><span>{normalizeLevel(p?.level || "") === "Nasional" ? "Indonesia" : (p?.kabupaten?.nama || p?.provinsi?.nama || "-")}</span></div>
                     <div className="flex items-center gap-1.5"><Mail className="w-4 h-4" /><span>{p?.email}</span></div>
@@ -207,9 +213,139 @@ export default function PengurusDetailDialog({
                   {/* PROFIL */}
                   {activeTab === "profil" && (
                     <div className="space-y-6">
+                      {/* KTA — Kartu Pengurus Digital */}
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Kartu Pengurus (KTA)</h3>
+                        {/* KTA Card Design */}
+                        <div id="kta-card-pengurus" className="relative bg-gradient-to-br from-blue-700 via-blue-600 to-sky-500 rounded-2xl p-6 text-white shadow-2xl overflow-hidden max-w-sm mx-auto" style={{ aspectRatio: "1.586/1" }}>
+                          {/* Decorative pattern */}
+                          <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
+                          <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/3" />
+
+                          {/* Header */}
+                          <div className="relative flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                                <Shield className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <div className="text-[10px] opacity-80 uppercase tracking-wider">KIPAN Indonesia</div>
+                                <div className="text-xs font-bold">Kartu Pengurus</div>
+                              </div>
+                            </div>
+                            <div className="w-12 h-12 bg-white/15 rounded-lg flex items-center justify-center">
+                              <QrCode className="w-8 h-8" />
+                            </div>
+                          </div>
+
+                          {/* Member info */}
+                          <div className="relative flex items-center gap-3 mt-4">
+                            <SafeImage src={p?.foto} alt={p?.namaLengkap || ""} className="w-14 h-14 rounded-xl object-cover border-2 border-white/40" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-base truncate">{p?.namaLengkap}</div>
+                              <div className="text-[10px] opacity-70 font-mono">{p?.nia}</div>
+                              <div className="text-[10px] opacity-70 mt-0.5 truncate">
+                                {p?.jabatanNama}{p?.jabatanBidang && p?.jabatanBidang !== "Pengurus Harian" ? ` • ${p.jabatanBidang}` : ""}
+                              </div>
+                              <div className="text-[10px] opacity-70 mt-0.5 truncate">
+                                {normalizeLevel(p?.level || "") === "Nasional" ? "Indonesia" : (p?.kabupaten?.nama || p?.provinsi?.nama || "-")}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Footer */}
+                          <div className="relative flex items-center justify-between mt-4 text-[10px]">
+                            <div>
+                              <div className="opacity-60">Level</div>
+                              <div className="font-semibold">{normalizeLevel(p?.level || "")}</div>
+                            </div>
+                            <div>
+                              <div className="opacity-60">Status</div>
+                              <div className="font-semibold">{p?.status}</div>
+                            </div>
+                            <div>
+                              <div className="opacity-60">Berlaku</div>
+                              <div className="font-semibold">Seumur Hidup</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action buttons for KTA */}
+                        <div className="flex gap-2 justify-center mt-4">
+                          <button
+                            onClick={() => {
+                              if (!p) return;
+                              const printWin = window.open("", "_blank");
+                              if (!printWin) return;
+                              printWin.document.write(`
+                                <html><head><title>KTA - ${p.nia}</title>
+                                <style>
+                                  body { margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0; font-family:sans-serif; }
+                                  .card { width:400px; background:linear-gradient(135deg,#1d4ed8,#0ea5e9); border-radius:16px; padding:24px; color:white; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+                                  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+                                  .logo { display:flex; align-items:center; gap:8px; }
+                                  .logo-circle { width:32px; height:32px; background:rgba(255,255,255,0.2); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+                                  .info { display:flex; gap:12px; margin-top:16px; }
+                                  .photo { width:56px; height:56px; border-radius:12px; object-fit:cover; border:2px solid rgba(255,255,255,0.4); }
+                                  .footer { display:flex; justify-content:space-between; margin-top:16px; font-size:10px; }
+                                  .footer div div:first-child { opacity:0.6; }
+                                  .footer div div:last-child { font-weight:bold; }
+                                </style></head><body>
+                                <div class="card">
+                                  <div class="header">
+                                    <div class="logo">
+                                      <div class="logo-circle">🛡️</div>
+                                      <div><div style="font-size:9px;opacity:0.8">KIPAN INDONESIA</div><div style="font-size:11px;font-weight:bold">Kartu Pengurus</div></div>
+                                    </div>
+                                    <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px">📱</div>
+                                  </div>
+                                  <div class="info">
+                                    ${p.foto ? `<img src="${p.foto}" class="photo" />` : `<div class="photo" style="background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center">${(p.namaLengkap||'?').charAt(0)}</div>`}
+                                    <div>
+                                      <div style="font-weight:bold;font-size:15px">${p.namaLengkap}</div>
+                                      <div style="font-size:10px;opacity:0.7;font-family:monospace">${p.nia}</div>
+                                      <div style="font-size:10px;opacity:0.7;margin-top:2px">${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' • ' + p.jabatanBidang : ''}</div>
+                                      <div style="font-size:10px;opacity:0.7;margin-top:2px">${p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-')}</div>
+                                    </div>
+                                  </div>
+                                  <div class="footer">
+                                    <div><div>Level</div><div>${p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten'}</div></div>
+                                    <div><div>Status</div><div>${p.status}</div></div>
+                                    <div><div>Berlaku</div><div>Seumur Hidup</div></div>
+                                  </div>
+                                </div>
+                                <script>setTimeout(()=>window.print(),500)</script>
+                                </body></html>
+                              `);
+                              printWin.document.close();
+                            }}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700"
+                          >
+                            <CreditCard className="w-4 h-4" /> Cetak Kartu
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (!p) return;
+                              const text = `KARTU PENGURUS KIPAN INDONESIA\n\nNIP: ${p.nia}\nNama: ${p.namaLengkap}\nJabatan: ${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' (' + p.jabatanBidang + ')' : ''}\nLevel: ${p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten'}\nWilayah: ${p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-')}\nStatus: ${p.status}\nSK: ${p.nomorSK || '-'}\nMulai Menjabat: ${p.tanggalMulai ? new Date(p.tanggalMulai).toLocaleDateString('id-ID') : '-'}\n\nKIPAN Indonesia`;
+                              const blob = new Blob([text], { type: "text/plain" });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement("a");
+                              link.href = url;
+                              link.download = `KTA-${p.nia}.txt`;
+                              link.click();
+                              URL.revokeObjectURL(url);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700"
+                          >
+                            <Download className="w-4 h-4" /> Download
+                          </button>
+                        </div>
+                      </div>
+
                       <div>
                         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Biodata</h3>
                         <div className="grid grid-cols-2 gap-4 text-sm">
+                          <InfoRow label="NIP" value={p?.nia} />
                           <InfoRow label="Nama Lengkap" value={p?.namaLengkap} />
                           <InfoRow label="Tempat Lahir" value={p?.tempatLahir || "-"} />
                           <InfoRow label="Tanggal Lahir" value={p?.tanggalLahir ? formatTanggal(p.tanggalLahir) : "-"} />

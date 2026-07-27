@@ -585,6 +585,7 @@ export default function PengurusPage({
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Foto</th>
                   <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama</Th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">NIP</th>
                   <Th onClick={() => handleSort("jabatan")} icon={getSortIcon("jabatan")}>Jabatan</Th>
                   <Th onClick={() => handleSort("bidang")} icon={getSortIcon("bidang")}>Bidang</Th>
                   <Th onClick={() => handleSort("level")} icon={getSortIcon("level")}>Level</Th>
@@ -609,6 +610,7 @@ export default function PengurusPage({
                       <div className="text-sm font-semibold text-blue-950">{item.nama}</div>
                       <div className="text-xs text-slate-500">{item.email}</div>
                     </td>
+                    <td className="px-4 py-3 text-xs font-mono text-blue-600 whitespace-nowrap">{item.nia || "-"}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">{item.jabatan}</td>
                     <td className="px-4 py-3 text-xs text-slate-600">
                       <span className="inline-block px-2 py-0.5 bg-violet-50 text-violet-700 rounded-md text-[10px] font-medium">
