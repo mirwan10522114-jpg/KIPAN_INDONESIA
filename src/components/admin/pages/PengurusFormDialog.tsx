@@ -636,7 +636,7 @@ export default function PengurusFormDialog({
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    if (file.size > 1024 * 1024 * 2) return;
+                    if (file.size > 1024 * 1024 * 2) { toast.error("File SK maksimal 2MB"); return; }
                     const reader = new FileReader();
                     reader.onload = () => {
                       setForm((prev) => ({ ...prev, fileSK: reader.result as string }));

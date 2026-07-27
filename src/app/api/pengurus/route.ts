@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
             suratPernyataan: nd.suratPernyataan || null,
             suratSehat: nd.suratSehat || null,
             status: "Aktif",
-            angkatan: "XII",
+            angkatan: body.angkatan || "XII",
             tanggalAngkat: new Date(),
           },
         });

@@ -114,7 +114,7 @@ export default function WilayahDetailDialog({
 
             {/* Tabs */}
             <div className="flex border-b border-slate-100 sticky top-0 bg-white z-10 overflow-x-auto">
-              {TABS.map((t) => {
+              {TABS.filter((t) => t.id !== "kabupaten" || type === "provinsi").map((t) => {
                 const Icon = t.icon;
                 return (
                   <button key={t.id} onClick={() => setActiveTab(t.id)}
@@ -204,9 +204,6 @@ export default function WilayahDetailDialog({
                         </table>
                       </div>
                     </div>
-                  )}
-                  {activeTab === "kabupaten" && type === "kabupaten" && (
-                    <p className="text-sm text-slate-500 text-center py-8">Tab ini hanya tersedia untuk Provinsi</p>
                   )}
 
                   {/* PENGURUS */}
