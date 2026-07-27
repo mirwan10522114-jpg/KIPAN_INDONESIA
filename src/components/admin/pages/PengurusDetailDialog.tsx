@@ -41,11 +41,26 @@ export default function PengurusDetailDialog({
   const [editLoading, setEditLoading] = useState(false);
   const [editForm, setEditForm] = useState({
     namaLengkap: "",
+    nik: "",
     tempatLahir: "",
     tanggalLahir: "",
+    jenisKelamin: "L",
+    agama: "",
+    pendidikan: "",
+    pekerjaan: "",
     alamat: "",
+    kecamatan: "",
+    desa: "",
+    kodePos: "",
     email: "",
     hp: "",
+    whatsapp: "",
+    angkatan: "",
+    foto: "",
+    ktp: "",
+    cv: "",
+    suratPernyataan: "",
+    suratSehat: "",
   });
 
   const fetchData = () => {
@@ -146,11 +161,26 @@ export default function PengurusDetailDialog({
     if (!p) return;
     setEditForm({
       namaLengkap: p.namaLengkap || "",
+      nik: p.nik || "",
       tempatLahir: p.tempatLahir || "",
       tanggalLahir: p.tanggalLahir ? new Date(p.tanggalLahir).toISOString().split("T")[0] : "",
+      jenisKelamin: p.jenisKelamin || "L",
+      agama: p.agama || "",
+      pendidikan: p.pendidikan || "",
+      pekerjaan: p.pekerjaan || "",
       alamat: p.alamat || "",
+      kecamatan: p.kecamatan || "",
+      desa: p.desa || "",
+      kodePos: p.kodePos || "",
       email: p.email || "",
       hp: p.hp || "",
+      whatsapp: p.whatsapp || "",
+      angkatan: p.angkatan || "",
+      foto: p.foto || "",
+      ktp: p.ktp || "",
+      cv: p.cv || "",
+      suratPernyataan: p.suratPernyataan || "",
+      suratSehat: p.suratSehat || "",
     });
     setShowEditForm(true);
   };
@@ -714,10 +744,10 @@ export default function PengurusDetailDialog({
           onClick={() => setShowEditForm(false)}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative bg-gradient-to-r from-blue-600 to-sky-500 p-5 text-white">
+            <div className="relative bg-gradient-to-r from-blue-600 to-sky-500 p-5 text-white sticky top-0 z-10">
               <button
                 onClick={() => setShowEditForm(false)}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
@@ -736,88 +766,183 @@ export default function PengurusDetailDialog({
             </div>
 
             <div className="p-6 space-y-3">
+              {/* Biodata Dasar */}
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nama Lengkap *</label>
-                <input
-                  type="text"
-                  value={editForm.namaLengkap}
-                  onChange={(e) => setEditForm({ ...editForm, namaLengkap: e.target.value })}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-                />
+                <input type="text" value={editForm.namaLengkap} onChange={(e) => setEditForm({ ...editForm, namaLengkap: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">NIK</label>
+                  <input type="text" maxLength={16} value={editForm.nik} onChange={(e) => setEditForm({ ...editForm, nik: e.target.value.replace(/\D/g, "") })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Jenis Kelamin</label>
+                  <select value={editForm.jenisKelamin} onChange={(e) => setEditForm({ ...editForm, jenisKelamin: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none">
+                    <option value="L">Laki-laki</option>
+                    <option value="P">Perempuan</option>
+                  </select>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tempat Lahir *</label>
-                  <input
-                    type="text"
-                    value={editForm.tempatLahir}
-                    onChange={(e) => setEditForm({ ...editForm, tempatLahir: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-                  />
+                  <input type="text" value={editForm.tempatLahir} onChange={(e) => setEditForm({ ...editForm, tempatLahir: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Lahir *</label>
-                  <input
-                    type="date"
-                    value={editForm.tanggalLahir}
-                    onChange={(e) => setEditForm({ ...editForm, tanggalLahir: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-                  />
+                  <input type="date" value={editForm.tanggalLahir} onChange={(e) => setEditForm({ ...editForm, tanggalLahir: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
                 </div>
               </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Alamat *</label>
-                <textarea
-                  value={editForm.alamat}
-                  onChange={(e) => setEditForm({ ...editForm, alamat: e.target.value })}
-                  rows={2}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none resize-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email *</label>
-                  <input
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-                  />
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Agama</label>
+                  <select value={editForm.agama} onChange={(e) => setEditForm({ ...editForm, agama: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none">
+                    <option value="">-</option>
+                    <option>Islam</option><option>Kristen</option><option>Katolik</option>
+                    <option>Hindu</option><option>Buddha</option><option>Konghucu</option>
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">No. HP *</label>
-                  <input
-                    type="tel"
-                    value={editForm.hp}
-                    onChange={(e) => setEditForm({ ...editForm, hp: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-                  />
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Pendidikan</label>
+                  <select value={editForm.pendidikan} onChange={(e) => setEditForm({ ...editForm, pendidikan: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none">
+                    <option value="">-</option>
+                    <option>SMP</option><option>SMA/SMK</option><option>D3</option>
+                    <option>S1</option><option>S2</option><option>S3</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Pekerjaan</label>
+                  <input type="text" value={editForm.pekerjaan} onChange={(e) => setEditForm({ ...editForm, pekerjaan: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                </div>
+              </div>
+
+              {/* Alamat */}
+              <div className="border-t border-slate-100 pt-3">
+                <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Alamat</p>
+                <textarea value={editForm.alamat} onChange={(e) => setEditForm({ ...editForm, alamat: e.target.value })} rows={2}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none resize-none" />
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Kecamatan</label>
+                    <input type="text" value={editForm.kecamatan} onChange={(e) => setEditForm({ ...editForm, kecamatan: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Desa</label>
+                    <input type="text" value={editForm.desa} onChange={(e) => setEditForm({ ...editForm, desa: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Kode Pos</label>
+                    <input type="text" maxLength={5} value={editForm.kodePos} onChange={(e) => setEditForm({ ...editForm, kodePos: e.target.value.replace(/\D/g, "") })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Kontak */}
+              <div className="border-t border-slate-100 pt-3">
+                <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Kontak</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email *</label>
+                    <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">No. HP *</label>
+                    <input type="tel" value={editForm.hp} onChange={(e) => setEditForm({ ...editForm, hp: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">WhatsApp</label>
+                    <input type="tel" value={editForm.whatsapp} onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Angkatan</label>
+                    <input type="text" value={editForm.angkatan} onChange={(e) => setEditForm({ ...editForm, angkatan: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload Dokumen */}
+              <div className="border-t border-slate-100 pt-3">
+                <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Upload Dokumen</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { key: "foto", label: "Pas Foto", accept: "image/*" },
+                    { key: "ktp", label: "KTP", accept: "image/*,.pdf" },
+                    { key: "cv", label: "CV/Resume", accept: "image/*,.pdf" },
+                    { key: "suratPernyataan", label: "Surat Pernyataan", accept: "image/*,.pdf" },
+                    { key: "suratSehat", label: "Surat Sehat", accept: "image/*,.pdf" },
+                  ].map((doc) => (
+                    <div key={doc.key}>
+                      <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">{doc.label}</label>
+                      <input type="file" accept={doc.accept}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 1024 * 1024 * 2) { toast.error("File maksimal 2MB"); return; }
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setEditForm((prev) => ({ ...prev, [doc.key]: reader.result as string }));
+                            toast.success(`${doc.label} terupload`);
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                        className="w-full text-[10px] border border-slate-200 rounded-lg px-1.5 py-1 file:mr-1.5 file:py-0.5 file:px-1.5 file:rounded file:border-0 file:text-[10px] file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      {(editForm as any)[doc.key] && (
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[9px] text-emerald-600">✓ {doc.label} terupload</span>
+                          <button type="button"
+                            onClick={() => {
+                              const url = (editForm as any)[doc.key] as string;
+                              const w = window.open();
+                              if (w) {
+                                if (url.startsWith("data:image/")) {
+                                  w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
+                                } else if (url.startsWith("data:application/pdf")) {
+                                  w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0"><iframe src="${url}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
+                                }
+                                w.document.close();
+                              }
+                            }}
+                            className="text-[9px] text-blue-600 hover:text-blue-700 underline">Lihat</button>
+                          <button type="button"
+                            onClick={() => setEditForm((prev) => ({ ...prev, [doc.key]: "" }))}
+                            className="text-[9px] text-rose-500 hover:text-rose-700 underline">Hapus</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
-              <button
-                onClick={() => setShowEditForm(false)}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg"
-              >
+            <div className="p-5 border-t border-slate-100 flex justify-end gap-2 sticky bottom-0 bg-white">
+              <button onClick={() => setShowEditForm(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">
                 Batal
               </button>
-              <button
-                onClick={handleSaveEdit}
-                disabled={editLoading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
+              <button onClick={handleSaveEdit} disabled={editLoading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50">
                 {editLoading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Menyimpan...
-                  </>
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
                 ) : (
-                  <>
-                    <Edit className="w-4 h-4" />
-                    Simpan Perubahan
-                  </>
+                  <><Edit className="w-4 h-4" /> Simpan Perubahan</>
                 )}
               </button>
             </div>

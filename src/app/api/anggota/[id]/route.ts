@@ -42,16 +42,33 @@ export async function PUT(
       }
     }
 
+    // Build update data — hanya field yang diberikan (undefined = tidak diubah)
+    const data: any = {};
+    if (body.namaLengkap !== undefined) data.namaLengkap = body.namaLengkap;
+    if (body.nik !== undefined) data.nik = body.nik;
+    if (body.tempatLahir !== undefined) data.tempatLahir = body.tempatLahir;
+    if (body.tanggalLahir !== undefined) data.tanggalLahir = body.tanggalLahir ? new Date(body.tanggalLahir) : undefined;
+    if (body.jenisKelamin !== undefined) data.jenisKelamin = body.jenisKelamin;
+    if (body.agama !== undefined) data.agama = body.agama || null;
+    if (body.pendidikan !== undefined) data.pendidikan = body.pendidikan || null;
+    if (body.pekerjaan !== undefined) data.pekerjaan = body.pekerjaan || null;
+    if (body.alamat !== undefined) data.alamat = body.alamat;
+    if (body.kecamatan !== undefined) data.kecamatan = body.kecamatan || null;
+    if (body.desa !== undefined) data.desa = body.desa || null;
+    if (body.kodePos !== undefined) data.kodePos = body.kodePos || null;
+    if (body.email !== undefined) data.email = body.email;
+    if (body.hp !== undefined) data.hp = body.hp;
+    if (body.whatsapp !== undefined) data.whatsapp = body.whatsapp || null;
+    if (body.foto !== undefined) data.foto = body.foto || null;
+    if (body.ktp !== undefined) data.ktp = body.ktp || null;
+    if (body.cv !== undefined) data.cv = body.cv || null;
+    if (body.suratPernyataan !== undefined) data.suratPernyataan = body.suratPernyataan || null;
+    if (body.suratSehat !== undefined) data.suratSehat = body.suratSehat || null;
+    if (body.angkatan !== undefined) data.angkatan = body.angkatan || null;
+
     const updated = await db.anggota.update({
       where: { id },
-      data: {
-        namaLengkap: body.namaLengkap,
-        tempatLahir: body.tempatLahir,
-        tanggalLahir: body.tanggalLahir ? new Date(body.tanggalLahir) : undefined,
-        alamat: body.alamat,
-        email: body.email,
-        hp: body.hp,
-      },
+      data,
     });
 
     return NextResponse.json({
