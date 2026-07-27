@@ -158,8 +158,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: "Kabupaten tidak ditemukan" }, { status: 404 });
     }
 
-    const totalPengurus = await db.pengurus.count({ where: { kabupatenId: id } });
-    const pengurusAktif = await db.pengurus.count({ where: { kabupatenId: id, status: "Aktif" } });
+    const totalPengurus = await db.pengurus.count({ where: { kabupatenId: id, level: "KABUPATEN" } });
+    const pengurusAktif = await db.pengurus.count({ where: { kabupatenId: id, level: "KABUPATEN", status: "Aktif" } });
 
     const monthlyGrowth = [];
     for (let i = 5; i >= 0; i--) {
@@ -168,6 +168,7 @@ export async function GET(
       const count = await db.pengurus.count({
         where: {
           kabupatenId: id,
+          level: "KABUPATEN",
           tanggalMulai: { gte: monthStart, lt: monthEnd },
         },
       });

@@ -101,11 +101,9 @@ export default function WilayahPage({
     }
   };
 
-  // Initial load — auto-fill ketua dulu, lalu fetch data
+  // Initial load — just fetch data (auto-fill ketua via manual button only)
   useEffect(() => {
-    fetch("/api/wilayah/auto-fill-ketua", { method: "POST" })
-      .then(() => fetchData())
-      .catch(() => fetchData());
+    fetchData();
   }, []);
 
   // Permission check
