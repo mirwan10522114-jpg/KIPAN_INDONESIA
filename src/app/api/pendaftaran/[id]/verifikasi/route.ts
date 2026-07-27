@@ -160,6 +160,11 @@ export async function PATCH(
       });
     }
 
+    const aksiLog = status === "DISETUJUI" ? "approve" : status === "DITOLAK" ? "reject" : "update";
+    await db.activityLog.create({
+      data: { table: "pendaftaran", recordId: id, aksi: aksiLog, oleh: "Admin", detail: JSON.stringify({ status, catatan: catatan || null }) },
+    });
+
     return NextResponse.json({
       success: true,
       data: pendaftaran,

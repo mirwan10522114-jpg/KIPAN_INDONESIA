@@ -317,3 +317,19 @@ model ProfilOrganisasi {
 
   @@map("profil_organisasi")
 }
+
+// ============================================================
+// ACTIVITY LOG — Audit trail untuk semua mutasi data
+// ============================================================
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  table     String   // "pengurus" | "wilayah" | "jabatan" | "anggota" | "pendaftaran"
+  recordId  Int
+  aksi      String   // "create" | "update" | "delete" | "ganti_jabatan" | "approve" | "reject"
+  oleh      String   @default("Admin") // "Admin" | "Sistem"
+  detail    String?  // JSON string dengan perubahan
+  createdAt DateTime @default(now())
+
+  @@map("activity_log")
+}

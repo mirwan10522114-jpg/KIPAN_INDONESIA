@@ -33,6 +33,7 @@ export default function WilayahDetailDialog({
   const [activeTab, setActiveTab] = useState("informasi");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [activityLogs, setActivityLogs] = useState<any[]>([]);
 
   useEffect(() => {
     if (!wilayahId) return;
@@ -47,6 +48,16 @@ export default function WilayahDetailDialog({
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; controller.abort(); };
   }, [wilayahId, type]);
+
+  // Fetch activity logs when activity tab is opened
+  useEffect(() => {
+    if (activeTab === "activity" && wilayahId) {
+      fetch(`/api/activity-log?table=wilayah&recordId=${wilayahId}&limit=20`, { cache: "no-store" })
+        .then((r) => r.json())
+        .then((json) => { if (json.success) setActivityLogs(json.data); })
+        .catch(() => {});
+    }
+  }, [activeTab, wilayahId]);
 
   if (!wilayahId) return null;
 
@@ -290,21 +301,36 @@ export default function WilayahDetailDialog({
                   {/* ACTIVITY */}
                   {activeTab === "activity" && (
                     <div className="space-y-3">
-                      {data.activity?.map((a: any, idx: number) => (
-                        <div key={idx} className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                            <Activity className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-slate-800">{a.aksi}</div>
-                            <div className="text-xs text-slate-500 mt-0.5">
-                              {new Date(a.tanggal).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} • oleh {a.oleh}
+                      {activityLogs.length === 0 ? (
+                        <p className="text-sm text-slate-400 text-center py-8">Belum ada aktivitas tercatat</p>
+                      ) : (
+                        activityLogs.map((log, idx) => (
+                          <div key={idx} className="flex items-start gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
+                              log.aksi === "create" ? "bg-emerald-100" :
+                              log.aksi === "update" ? "bg-blue-100" :
+                              log.aksi === "delete" ? "bg-rose-100" : "bg-slate-100"
+                            }`}>
+                              <Activity className={`w-4 h-4 ${
+                                log.aksi === "create" ? "text-emerald-600" :
+                                log.aksi === "delete" ? "text-rose-600" : "text-blue-600"
+                              }`} />
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-slate-800">
+                                {log.aksi === "create" ? "Wilayah dibuat" :
+                                 log.aksi === "update" ? "Data wilayah diperbarui" :
+                                 log.aksi === "delete" ? "Wilayah dinonaktifkan" : log.aksi}
+                              </div>
+                              <div className="text-xs text-slate-500 mt-0.5">
+                                {new Date(log.createdAt).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })} • oleh {log.oleh}
+                              </div>
+                              {log.detail && (
+                                <div className="text-[10px] text-slate-400 mt-1 font-mono">{log.detail}</div>
+                              )}
                             </div>
                           </div>
-                        </div>
-                      ))}
-                      {(!data.activity || data.activity.length === 0) && (
-                        <p className="text-sm text-slate-400 text-center py-8">Belum ada aktivitas</p>
+                        ))
                       )}
                     </div>
                   )}

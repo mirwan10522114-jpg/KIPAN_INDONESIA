@@ -71,6 +71,16 @@ export async function PUT(
       data,
     });
 
+    await db.activityLog.create({
+      data: {
+        table: "anggota",
+        recordId: id,
+        aksi: "update",
+        oleh: "Admin",
+        detail: JSON.stringify(Object.keys(data)),
+      },
+    });
+
     return NextResponse.json({
       success: true,
       data: updated,

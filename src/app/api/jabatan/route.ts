@@ -95,6 +95,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await db.activityLog.create({
+      data: { table: "jabatan", recordId: jabatan.id, aksi: "create", oleh: "Admin", detail: JSON.stringify({ nama: jabatan.nama, bidang: jabatan.bidang, level: jabatan.level }) },
+    });
+
     return NextResponse.json({
       success: true,
       data: jabatan,

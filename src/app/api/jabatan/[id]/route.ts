@@ -76,6 +76,10 @@ export async function PATCH(
       data,
     });
 
+    await db.activityLog.create({
+      data: { table: "jabatan", recordId: id, aksi: "update", oleh: "Admin", detail: JSON.stringify(data) },
+    });
+
     return NextResponse.json({
       success: true,
       data: updated,
@@ -115,6 +119,10 @@ export async function DELETE(
     await db.jabatan.update({
       where: { id },
       data: { status: "Nonaktif" },
+    });
+
+    await db.activityLog.create({
+      data: { table: "jabatan", recordId: id, aksi: "delete", oleh: "Admin", detail: JSON.stringify({ softDelete: true }) },
     });
 
     return NextResponse.json({

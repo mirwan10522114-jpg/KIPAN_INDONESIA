@@ -259,6 +259,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await db.activityLog.create({
+      data: {
+        table: "pengurus",
+        recordId: pengurus.id,
+        aksi: "create",
+        oleh: "Admin",
+        detail: JSON.stringify({ anggotaId: pengurus.anggotaId, jabatanId: pengurus.jabatanId, level: pengurus.level, status: pengurus.status }),
+      },
+    });
+
     return NextResponse.json({ success: true, data: pengurus, message: `Pengurus berhasil ditambahkan dengan jabatan "${jabatanExists.nama}" di bidang "${jabatanExists.bidang}".${endedOldJabatan}` });
   } catch (error) {
     console.error("POST /api/pengurus error:", error);

@@ -103,6 +103,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      await db.activityLog.create({
+        data: { table: "wilayah", recordId: provinsi.id, aksi: "create", oleh: "Admin", detail: JSON.stringify({ type: "provinsi", kode: provinsi.kode, nama: provinsi.nama }) },
+      });
       return NextResponse.json({ success: true, data: provinsi, message: "Provinsi berhasil ditambahkan" });
     }
 
@@ -127,6 +130,9 @@ export async function POST(req: NextRequest) {
         include: { provinsi: { select: { nama: true, kode: true } } },
       });
 
+      await db.activityLog.create({
+        data: { table: "wilayah", recordId: kabupaten.id, aksi: "create", oleh: "Admin", detail: JSON.stringify({ type: "kabupaten", kode: kabupaten.kode, nama: kabupaten.nama }) },
+      });
       return NextResponse.json({ success: true, data: kabupaten, message: "Kabupaten/Kota berhasil ditambahkan" });
     }
 
@@ -151,6 +157,9 @@ export async function PUT(req: NextRequest) {
           ketua: body.ketua || null,
         },
       });
+      await db.activityLog.create({
+        data: { table: "wilayah", recordId: provinsi.id, aksi: "update", oleh: "Admin", detail: JSON.stringify({ type: "provinsi", status: provinsi.status, ketua: provinsi.ketua }) },
+      });
       return NextResponse.json({ success: true, data: provinsi, message: "Provinsi berhasil diperbarui" });
     }
 
@@ -164,6 +173,9 @@ export async function PUT(req: NextRequest) {
           ketua: body.ketua || null,
         },
         include: { provinsi: { select: { nama: true, kode: true } } },
+      });
+      await db.activityLog.create({
+        data: { table: "wilayah", recordId: kabupaten.id, aksi: "update", oleh: "Admin", detail: JSON.stringify({ type: "kabupaten", status: kabupaten.status, ketua: kabupaten.ketua }) },
       });
       return NextResponse.json({ success: true, data: kabupaten, message: "Kabupaten/Kota berhasil diperbarui" });
     }

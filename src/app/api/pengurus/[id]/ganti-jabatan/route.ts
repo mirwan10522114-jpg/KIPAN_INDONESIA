@@ -124,6 +124,16 @@ export async function PATCH(
       },
     });
 
+    await db.activityLog.create({
+      data: {
+        table: "pengurus",
+        recordId: newPengurus.id,
+        aksi: "ganti_jabatan",
+        oleh: "Admin",
+        detail: JSON.stringify({ oldPengurusId: id, newJabatan: newJabatan.nama, bidang: newJabatan.bidang, level: newPengurus.level }),
+      },
+    });
+
     return NextResponse.json({
       success: true,
       data: newPengurus,
