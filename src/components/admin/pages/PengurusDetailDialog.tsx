@@ -305,75 +305,82 @@ export default function PengurusDetailDialog({
                       {/* KTA — Kartu Pengurus Digital */}
                       <div>
                         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Kartu Pengurus (KTA)</h3>
-                        {/* KTA Card Design — Navy Blue theme matching KIPAN logo */}
-                        <div id="kta-card-pengurus" className="relative rounded-2xl shadow-2xl overflow-hidden max-w-md mx-auto" style={{ aspectRatio: "1.586/1" }}>
-                          {/* Navy blue background */}
-                          <div className="absolute inset-0 bg-gradient-to-br from-[#0a1f44] via-[#0d2a5c] to-[#0a1f44]" />
-                          
-                          {/* Gold border line */}
-                          <div className="absolute inset-2 border-2 border-yellow-500/60 rounded-xl pointer-events-none" />
-                          
-                          {/* Decorative circles */}
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full -translate-y-1/3 translate-x-1/3" />
-                          <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/5 rounded-full translate-y-1/3 -translate-x-1/3" />
+                        {/* KTA Card Design — White background, Navy/Red/Yellow theme per KIPAN design */}
+                        <div id="kta-card-pengurus" className="relative rounded-[20px] shadow-2xl overflow-hidden mx-auto bg-white" style={{ width: "480px", height: "302px" }}>
+                          {/* Watermark logo */}
+                          <img src="/kipan-logo.png" alt="" className="absolute right-[-40px] top-1/2 -translate-y-1/2 w-[200px] h-[200px] opacity-[0.05] pointer-events-none" />
+
+                          {/* Wave footer */}
+                          <div className="absolute bottom-0 left-0 right-0 h-[60px] overflow-hidden">
+                            <svg viewBox="0 0 480 60" preserveAspectRatio="none" className="w-full h-full">
+                              <path d="M0,30 Q120,0 240,30 T480,30 L480,60 L0,60 Z" fill="#002060" />
+                              <path d="M0,35 Q120,5 240,35 T480,35" fill="none" stroke="#FFC107" strokeWidth="3" />
+                            </svg>
+                          </div>
 
                           {/* Content */}
-                          <div className="relative h-full flex flex-col p-5">
-                            {/* Header — Logo + Org Name */}
+                          <div className="relative h-full flex flex-col p-4 z-10">
+                            {/* Header — Logo + Title + QR */}
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2.5">
-                                <img src="/kipan-logo.png" alt="KIPAN" className="w-12 h-12 rounded-full object-cover border-2 border-yellow-500/60" />
-                                <div className="text-white">
-                                  <div className="text-[9px] uppercase tracking-wider text-yellow-400 font-semibold">Kader Inti Pemuda</div>
-                                  <div className="text-xs font-bold text-white leading-tight">Anti Narkoba</div>
-                                  <div className="text-[8px] text-blue-200 mt-0.5">Sekretariat Nasional</div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-[9px] text-yellow-400 font-semibold uppercase tracking-wider">Kartu Pengurus</div>
-                                <div className="text-[8px] text-blue-200">KIPAN Indonesia</div>
-                              </div>
-                            </div>
-
-                            {/* Member info — Photo + QR + Details */}
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="shrink-0">
-                                <SafeImage src={p?.foto} alt={p?.namaLengkap || ""} className="w-16 h-20 rounded-lg object-cover border-2 border-yellow-500/60" />
-                              </div>
-                              <div className="flex-1 min-w-0 text-white">
-                                <div className="text-[8px] text-yellow-400 uppercase tracking-wider mb-0.5">Nama</div>
-                                <div className="font-bold text-sm leading-tight truncate">{p?.namaLengkap}</div>
-                                
-                                <div className="text-[8px] text-yellow-400 uppercase tracking-wider mt-2 mb-0.5">NIP</div>
-                                <div className="text-[10px] font-mono text-blue-100 truncate">{p?.nia}</div>
-                                
-                                <div className="text-[8px] text-yellow-400 uppercase tracking-wider mt-2 mb-0.5">Jabatan</div>
-                                <div className="text-[10px] text-blue-100 truncate">
-                                  {p?.jabatanNama}{p?.jabatanBidang && p?.jabatanBidang !== "Pengurus Harian" ? ` • ${p.jabatanBidang}` : ""}
+                                <img src="/kipan-logo.png" alt="KIPAN" className="w-14 h-14 rounded-full object-cover" />
+                                <div className="border-l border-gray-300 pl-2.5">
+                                  <div className="text-2xl font-extrabold text-[#002060] leading-none">KIPAN</div>
+                                  <div className="text-[8px] font-bold text-[#002060] uppercase tracking-wide mt-0.5">Kader Inti Pemuda</div>
+                                  <div className="text-[8px] font-bold text-[#002060] uppercase tracking-wide">Anti Narkoba</div>
+                                  <div className="text-[8px] font-bold text-[#E31C25] uppercase tracking-wide">Sekretariat Nasional</div>
                                 </div>
                               </div>
                               {/* QR Code */}
-                              <div className="shrink-0 bg-white p-1 rounded-md">
-                                <QRCodeSVG value={p?.nia || "KIPAN"} size={48} level="M" />
+                              <div className="shrink-0 bg-white p-1 rounded-lg border-2 border-[#002060]">
+                                <QRCodeSVG value={p?.nia || "KIPAN"} size={56} level="M" />
                               </div>
                             </div>
 
-                            {/* Footer — Level, Wilayah, Status */}
-                            <div className="flex items-end justify-between mt-3 pt-2 border-t border-yellow-500/20">
-                              <div className="text-white">
-                                <div className="text-[7px] text-yellow-400 uppercase">Level</div>
-                                <div className="text-[9px] font-semibold">{normalizeLevel(p?.level || "")}</div>
-                                <div className="text-[7px] text-blue-200 mt-1">
-                                  {normalizeLevel(p?.level || "") === "Nasional" ? "Indonesia" : (p?.kabupaten?.nama || p?.provinsi?.nama || "-")}
+                            {/* Member info — Photo + Details */}
+                            <div className="flex items-start gap-3 flex-1">
+                              {/* Photo */}
+                              <div className="shrink-0">
+                                <div className="w-[70px] h-[90px] rounded-[10px] overflow-hidden border-[3px] border-[#FFC107]" style={{ background: p?.foto ? "transparent" : "#CC0000" }}>
+                                  <SafeImage src={p?.foto} alt={p?.namaLengkap || ""} className="w-full h-full object-cover" />
                                 </div>
                               </div>
-                              <div className="text-center">
-                                <div className="text-[7px] text-yellow-400 uppercase">Status</div>
-                                <div className="text-[9px] font-semibold text-white">{p?.status}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-[7px] text-yellow-400 uppercase">Berlaku</div>
-                                <div className="text-[9px] font-semibold text-white">Seumur Hidup</div>
+                              {/* Details */}
+                              <div className="flex-1 min-w-0">
+                                {/* Jabatan as title */}
+                                <div className="text-sm font-extrabold text-[#002060] uppercase leading-tight truncate mb-1">
+                                  {p?.jabatanNama}{p?.jabatanBidang && p?.jabatanBidang !== "Pengurus Harian" ? ` ${p.jabatanBidang}` : ""}
+                                </div>
+                                {/* NIP badge */}
+                                <div className="inline-block bg-[#002060] text-white text-[9px] font-mono font-semibold px-2.5 py-1 rounded-full mb-2">
+                                  {p?.nia}
+                                </div>
+                                {/* Data rows */}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-4 h-4 rounded-full bg-[#002060] flex items-center justify-center shrink-0">
+                                      <span className="text-white text-[7px]">N</span>
+                                    </div>
+                                    <span className="text-[9px] font-bold text-[#333] w-16 shrink-0">Nama</span>
+                                    <span className="text-[9px] text-[#444] truncate">{p?.namaLengkap}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-4 h-4 rounded-full bg-[#002060] flex items-center justify-center shrink-0">
+                                      <span className="text-white text-[7px]">L</span>
+                                    </div>
+                                    <span className="text-[9px] font-bold text-[#333] w-16 shrink-0">Wilayah</span>
+                                    <span className="text-[9px] text-[#444] truncate">
+                                      {normalizeLevel(p?.level || "") === "Nasional" ? "Indonesia" : (p?.kabupaten?.nama || p?.provinsi?.nama || "-")}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-4 h-4 rounded-full bg-[#002060] flex items-center justify-center shrink-0">
+                                      <span className="text-white text-[7px]">S</span>
+                                    </div>
+                                    <span className="text-[9px] font-bold text-[#333] w-16 shrink-0">Status</span>
+                                    <span className="text-[9px] text-[#444]">{p?.status} • Seumur Hidup</span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -386,80 +393,84 @@ export default function PengurusDetailDialog({
                               if (!p) return;
                               const printWin = window.open("", "_blank");
                               if (!printWin) return;
-                              // Generate QR code as SVG string for print window
-                              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=48x48&data=${encodeURIComponent(p.nia || 'KIPAN')}`;
+                              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=56x56&data=${encodeURIComponent(p.nia || 'KIPAN')}`;
+                              const levelText = p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten';
+                              const wilayahText = p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-');
+                              const jabatanText = (p.jabatanNama || '-') + (p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' ' + p.jabatanBidang : '');
                               printWin.document.write(`
                                 <html><head><title>KTA - ${p.nia}</title>
                                 <style>
                                   * { margin:0; padding:0; box-sizing:border-box; }
-                                  body { display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0; font-family:'Segoe UI',sans-serif; }
-                                  .card { width:480px; height:302px; background:linear-gradient(135deg,#0a1f44,#0d2a5c,#0a1f44); border-radius:16px; padding:20px; position:relative; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.3); }
-                                  .gold-border { position:absolute; inset:8px; border:2px solid rgba(234,179,8,0.6); border-radius:12px; }
-                                  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; position:relative; }
+                                  body { display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0; font-family:'Segoe UI',Arial,sans-serif; }
+                                  .card { width:480px; height:302px; background:#fff; border-radius:20px; position:relative; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+                                  .watermark { position:absolute; right:-40px; top:50%; transform:translateY(-50%); width:200px; height:200px; opacity:0.05; }
+                                  .wave { position:absolute; bottom:0; left:0; right:0; height:60px; overflow:hidden; }
+                                  .wave svg { width:100%; height:100%; }
+                                  .content { position:relative; height:100%; padding:16px; z-index:10; display:flex; flex-direction:column; }
+                                  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
                                   .logo-box { display:flex; align-items:center; gap:10px; }
-                                  .logo-img { width:48px; height:48px; border-radius:50%; border:2px solid rgba(234,179,8,0.6); }
-                                  .org-name { color:white; }
-                                  .org-name .top { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:#eab308; font-weight:600; }
-                                  .org-name .mid { font-size:12px; font-weight:bold; color:white; }
-                                  .org-name .sub { font-size:8px; color:#93c5fd; }
-                                  .card-type { text-align:right; }
-                                  .card-type .label { font-size:9px; color:#eab308; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
-                                  .card-type .sub { font-size:8px; color:#93c5fd; }
-                                  .info-row { display:flex; gap:12px; align-items:center; position:relative; flex:1; }
-                                  .photo { width:64px; height:80px; border-radius:8px; object-fit:cover; border:2px solid rgba(234,179,8,0.6); }
-                                  .details { color:white; flex:1; }
-                                  .field-label { font-size:8px; color:#eab308; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:1px; }
-                                  .field-value { font-size:11px; color:#dbeafe; margin-bottom:6px; }
-                                  .field-value.name { font-size:14px; font-weight:bold; color:white; }
-                                  .field-value.nip { font-family:monospace; font-size:10px; }
-                                  .qr-box { background:white; padding:4px; border-radius:4px; }
-                                  .qr-img { width:48px; height:48px; }
-                                  .footer { display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px; padding-top:8px; border-top:1px solid rgba(234,179,8,0.2); position:relative; }
-                                  .footer-item .label { font-size:7px; color:#eab308; text-transform:uppercase; }
-                                  .footer-item .value { font-size:9px; color:white; font-weight:600; }
-                                  .footer-item .sub { font-size:7px; color:#93c5fd; }
+                                  .logo-img { width:56px; height:56px; border-radius:50%; }
+                                  .title-box { border-left:1px solid #ccc; padding-left:10px; }
+                                  .title-main { font-size:24px; font-weight:900; color:#002060; line-height:1; }
+                                  .title-sub1 { font-size:8px; font-weight:bold; color:#002060; text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+                                  .title-sub2 { font-size:8px; font-weight:bold; color:#002060; text-transform:uppercase; letter-spacing:0.5px; }
+                                  .title-sub3 { font-size:8px; font-weight:bold; color:#E31C25; text-transform:uppercase; letter-spacing:0.5px; }
+                                  .qr-box { background:#fff; padding:4px; border-radius:8px; border:2px solid #002060; }
+                                  .qr-img { width:56px; height:56px; }
+                                  .info-row { display:flex; gap:12px; align-items:flex-start; flex:1; }
+                                  .photo-frame { width:70px; height:90px; border-radius:10px; overflow:hidden; border:3px solid #FFC107; background:#CC0000; }
+                                  .photo { width:100%; height:100%; object-fit:cover; }
+                                  .details { flex:1; min-width:0; }
+                                  .jabatan { font-size:14px; font-weight:900; color:#002060; text-transform:uppercase; line-height:1.1; margin-bottom:4px; }
+                                  .nip-badge { display:inline-block; background:#002060; color:#fff; font-size:9px; font-family:monospace; font-weight:bold; padding:3px 10px; border-radius:20px; margin-bottom:8px; }
+                                  .data-row { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+                                  .icon-circle { width:16px; height:16px; border-radius:50%; background:#002060; display:flex; align-items:center; justify-content:center; }
+                                  .icon-circle span { color:#fff; font-size:7px; }
+                                  .label { font-size:9px; font-weight:bold; color:#333; width:60px; flex-shrink:0; }
+                                  .value { font-size:9px; color:#444; }
                                 </style></head><body>
                                 <div class="card">
-                                  <div class="gold-border"></div>
-                                  <div class="header">
-                                    <div class="logo-box">
-                                      <img src="${window.location.origin}/kipan-logo.png" class="logo-img" />
-                                      <div class="org-name">
-                                        <div class="top">Kader Inti Pemuda</div>
-                                        <div class="mid">Anti Narkoba</div>
-                                        <div class="sub">Sekretariat Nasional</div>
+                                  <img src="${window.location.origin}/kipan-logo.png" class="watermark" />
+                                  <div class="wave">
+                                    <svg viewBox="0 0 480 60" preserveAspectRatio="none">
+                                      <path d="M0,30 Q120,0 240,30 T480,30 L480,60 L0,60 Z" fill="#002060" />
+                                      <path d="M0,35 Q120,5 240,35 T480,35" fill="none" stroke="#FFC107" stroke-width="3" />
+                                    </svg>
+                                  </div>
+                                  <div class="content">
+                                    <div class="header">
+                                      <div class="logo-box">
+                                        <img src="${window.location.origin}/kipan-logo.png" class="logo-img" />
+                                        <div class="title-box">
+                                          <div class="title-main">KIPAN</div>
+                                          <div class="title-sub1">Kader Inti Pemuda</div>
+                                          <div class="title-sub2">Anti Narkoba</div>
+                                          <div class="title-sub3">Sekretariat Nasional</div>
+                                        </div>
                                       </div>
+                                      <div class="qr-box"><img src="${qrUrl}" class="qr-img" alt="QR" /></div>
                                     </div>
-                                    <div class="card-type">
-                                      <div class="label">Kartu Pengurus</div>
-                                      <div class="sub">KIPAN Indonesia</div>
-                                    </div>
-                                  </div>
-                                  <div class="info-row">
-                                    ${p.foto ? `<img src="${p.foto}" class="photo" />` : `<div class="photo" style="background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:white;font-size:24px">${(p.namaLengkap||'?').charAt(0)}</div>`}
-                                    <div class="details">
-                                      <div class="field-label">Nama</div>
-                                      <div class="field-value name">${p.namaLengkap}</div>
-                                      <div class="field-label">NIP</div>
-                                      <div class="field-value nip">${p.nia}</div>
-                                      <div class="field-label">Jabatan</div>
-                                      <div class="field-value">${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' &bull; ' + p.jabatanBidang : ''}</div>
-                                    </div>
-                                    <div class="qr-box"><img src="${qrUrl}" class="qr-img" alt="QR" /></div>
-                                  </div>
-                                  <div class="footer">
-                                    <div class="footer-item">
-                                      <div class="label">Level</div>
-                                      <div class="value">${p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten'}</div>
-                                      <div class="sub">${p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-')}</div>
-                                    </div>
-                                    <div class="footer-item" style="text-align:center">
-                                      <div class="label">Status</div>
-                                      <div class="value">${p.status}</div>
-                                    </div>
-                                    <div class="footer-item" style="text-align:right">
-                                      <div class="label">Berlaku</div>
-                                      <div class="value">Seumur Hidup</div>
+                                    <div class="info-row">
+                                      ${p.foto ? `<div class="photo-frame" style="background:transparent"><img src="${p.foto}" class="photo" /></div>` : `<div class="photo-frame" style="display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px">${(p.namaLengkap||'?').charAt(0)}</div>`}
+                                      <div class="details">
+                                        <div class="jabatan">${jabatanText}</div>
+                                        <div class="nip-badge">${p.nia}</div>
+                                        <div class="data-row">
+                                          <div class="icon-circle"><span>N</span></div>
+                                          <span class="label">Nama</span>
+                                          <span class="value">${p.namaLengkap}</span>
+                                        </div>
+                                        <div class="data-row">
+                                          <div class="icon-circle"><span>L</span></div>
+                                          <span class="label">Wilayah</span>
+                                          <span class="value">${wilayahText}</span>
+                                        </div>
+                                        <div class="data-row">
+                                          <div class="icon-circle"><span>S</span></div>
+                                          <span class="label">Status</span>
+                                          <span class="value">${p.status} • Seumur Hidup</span>
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
