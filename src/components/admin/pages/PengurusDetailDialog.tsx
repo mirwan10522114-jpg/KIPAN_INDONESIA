@@ -15,7 +15,6 @@ const TABS = [
   { id: "profil", label: "Profil", icon: Info },
   { id: "jabatan", label: "Jabatan", icon: Award },
   { id: "wilayah", label: "Wilayah", icon: MapPin },
-  { id: "anggota", label: "Pengurus Wilayah", icon: Users },
   { id: "dokumen", label: "Dokumen", icon: FileText },
   { id: "riwayat", label: "Riwayat", icon: History },
   { id: "activity", label: "Activity", icon: Activity },
@@ -34,9 +33,19 @@ export default function PengurusDetailDialog({
   const [activeTab, setActiveTab] = useState("profil");
   const [data, setData] = useState<any>(null);
   const [showGantiJabatanDialog, setShowGantiJabatanDialog] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [jabatanList, setJabatanList] = useState<any[]>([]);
   const [selectedJabatanId, setSelectedJabatanId] = useState<string>("");
   const [gantiLoading, setGantiLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editForm, setEditForm] = useState({
+    namaLengkap: "",
+    tempatLahir: "",
+    tanggalLahir: "",
+    alamat: "",
+    email: "",
+    hp: "",
+  });
 
   const fetchData = () => {
     if (!pengurusId) return;
@@ -91,7 +100,13 @@ export default function PengurusDetailDialog({
       if (json.success) {
         toast.success(json.message);
         setShowGantiJabatanDialog(false);
+        // Refresh data untuk update jabatan di dialog
         fetchData();
+        // Jika ganti jabatan membuat record pengurus baru, update pengurusId
+        if (json.data?.id && json.data.id !== pengurusId) {
+          // Parent perlu tahu ID baru — tapi untuk sekarang, reload saja
+          window.location.reload();
+        }
       } else {
         toast.error(json.error || "Gagal ganti jabatan");
       }
@@ -100,6 +115,43 @@ export default function PengurusDetailDialog({
     } finally {
       setGantiLoading(false);
     }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!p) return;
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/anggota/${p.anggotaId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Biodata pengurus berhasil diperbarui");
+        setShowEditForm(false);
+        fetchData();
+      } else {
+        toast.error(json.error || "Gagal menyimpan");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const openEditForm = () => {
+    if (!p) return;
+    setEditForm({
+      namaLengkap: p.namaLengkap || "",
+      tempatLahir: p.tempatLahir || "",
+      tanggalLahir: p.tanggalLahir ? new Date(p.tanggalLahir).toISOString().split("T")[0] : "",
+      alamat: p.alamat || "",
+      email: p.email || "",
+      hp: p.hp || "",
+    });
+    setShowEditForm(true);
   };
 
   if (!pengurusId) return null;
@@ -176,17 +228,21 @@ export default function PengurusDetailDialog({
                   </div>
                 </div>
               </div>
-              {onEdit && (
-                <button onClick={onEdit} className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold">
-                  <Edit className="w-3.5 h-3.5" /> Edit
+              {/* Action buttons — di bawah header info, tidak absolute */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                <button
+                  onClick={() => setShowGantiJabatanDialog(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/80 hover:bg-violet-500 rounded-lg text-xs font-semibold"
+                >
+                  <Award className="w-3.5 h-3.5" /> Ganti Jabatan
                 </button>
-              )}
-              <button
-                onClick={() => setShowGantiJabatanDialog(true)}
-                className="absolute bottom-4 right-24 inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/80 hover:bg-violet-500 rounded-lg text-xs font-semibold"
-              >
-                <Award className="w-3.5 h-3.5" /> Ganti Jabatan
-              </button>
+                <button
+                  onClick={openEditForm}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold"
+                >
+                  <Edit className="w-3.5 h-3.5" /> Edit Biodata
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}
@@ -439,42 +495,6 @@ export default function PengurusDetailDialog({
                     </div>
                   )}
 
-                  {/* ANGGOTA */}
-                  {activeTab === "anggota" && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-slate-50 border-b border-slate-200">
-                          <tr>
-                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">NIP</th>
-                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
-                            <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Angkatan</th>
-                            <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {data.anggotaList?.map((a: any) => (
-                            <tr key={a.id} onClick={() => onViewAnggota?.(a.id)} className="hover:bg-slate-50 cursor-pointer">
-                              <td className="px-3 py-2 text-xs font-mono text-blue-600">{a.nia}</td>
-                              <td className="px-3 py-2 text-sm font-medium text-slate-800">{a.namaLengkap}</td>
-                              <td className="px-3 py-2 text-center text-xs text-slate-500">{a.angkatan || "-"}</td>
-                              <td className="px-3 py-2 text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold ${
-                                  a.status === "AKTIF" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-                                }`}>{a.status}</span>
-                              </td>
-                            </tr>
-                          ))}
-                          {(!data.anggotaList || data.anggotaList.length === 0) && (
-                            <tr><td colSpan={4} className="px-3 py-8 text-center text-sm text-slate-400">Belum ada anggota di wilayah ini</td></tr>
-                          )}
-                        </tbody>
-                      </table>
-                      {data.anggotaList?.length > 0 && (
-                        <p className="text-xs text-slate-400 mt-3 text-center">Menampilkan {data.anggotaList.length} dari {data.totalAnggota} anggota</p>
-                      )}
-                    </div>
-                  )}
-
                   {/* DOKUMEN */}
                   {activeTab === "dokumen" && (
                     <div className="space-y-2">
@@ -678,6 +698,124 @@ export default function PengurusDetailDialog({
                   <>
                     <Award className="w-4 h-4" />
                     Ganti Jabatan
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Biodata Dialog */}
+      {showEditForm && (
+        <div
+          className="fixed inset-0 z-[310] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setShowEditForm(false)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative bg-gradient-to-r from-blue-600 to-sky-500 p-5 text-white">
+              <button
+                onClick={() => setShowEditForm(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Edit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold">Edit Biodata Pengurus</h2>
+                  <p className="text-xs text-blue-100">{p?.namaLengkap}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nama Lengkap *</label>
+                <input
+                  type="text"
+                  value={editForm.namaLengkap}
+                  onChange={(e) => setEditForm({ ...editForm, namaLengkap: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tempat Lahir *</label>
+                  <input
+                    type="text"
+                    value={editForm.tempatLahir}
+                    onChange={(e) => setEditForm({ ...editForm, tempatLahir: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Lahir *</label>
+                  <input
+                    type="date"
+                    value={editForm.tanggalLahir}
+                    onChange={(e) => setEditForm({ ...editForm, tanggalLahir: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Alamat *</label>
+                <textarea
+                  value={editForm.alamat}
+                  onChange={(e) => setEditForm({ ...editForm, alamat: e.target.value })}
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none resize-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email *</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">No. HP *</label>
+                  <input
+                    type="tel"
+                    value={editForm.hp}
+                    onChange={(e) => setEditForm({ ...editForm, hp: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
+              <button
+                onClick={() => setShowEditForm(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={editLoading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {editLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <Edit className="w-4 h-4" />
+                    Simpan Perubahan
                   </>
                 )}
               </button>
