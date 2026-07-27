@@ -154,6 +154,19 @@ export default function PendaftaranAnggota() {
         return;
       }
 
+      // Lookup kode Kemendagri dari master-wilayah berdasarkan nama yang dipilih
+      const provMaster = MASTER_PROVINSI.find((p) => p.nama === form.provinsi);
+      const kabMaster = provMaster
+        ? MASTER_KABUPATEN.find((k) => k.nama === form.kabupaten && k.provinsiKode === provMaster.kode)
+        : undefined;
+
+      if (!provMaster || !kabMaster) {
+        setSubmitError("Provinsi/Kabupaten tidak valid. Silakan pilih ulang.");
+        setStep(1);
+        setSubmitting(false);
+        return;
+      }
+
       const payload = {
         namaLengkap: form.namaLengkap,
         nik: form.nik,
@@ -165,8 +178,12 @@ export default function PendaftaranAnggota() {
         pekerjaan: form.pekerjaan,
         statusPribadi: form.status,
         alamat: form.alamat,
-        provinsiId: form.provinsi, // akan di-map ke id di API jika perlu
-        kabupatenId: form.kabupaten,
+        // Kirim kode Kemendagri (2-digit provinsi, 4-digit kabupaten)
+        // API akan lookup ke DB untuk dapatkan id asli
+        provinsiKode: provMaster.kode,
+        kabupatenKode: kabMaster.kode,
+        provinsiNama: provMaster.nama,
+        kabupatenNama: kabMaster.nama,
         kecamatan: form.kecamatan,
         desa: form.desa,
         kodePos: form.kodePos,
