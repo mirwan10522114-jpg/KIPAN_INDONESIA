@@ -23,13 +23,13 @@ import {
   ArrowUpDown,
   Inbox,
   Users,
-  KeyRound,
   Ban,
   Trash2,
   ExternalLink,
   CalendarClock,
   Landmark,
   MapPin,
+  X,
 } from "lucide-react";
 import { PENGURUS_LIST, PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 import type { Pengurus } from "@/lib/admin-data";
@@ -64,6 +64,16 @@ export default function PengurusPage({
   const [detailId, setDetailId] = useState<number | null>(null);
   const [actionMenuId, setActionMenuId] = useState<number | null>(null);
   const [showFormDialog, setShowFormDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    status: "Aktif",
+    nomorSK: "",
+    tanggalMulai: "",
+    tanggalSelesai: "",
+    fileSK: "",
+  });
+  const [editSaving, setEditSaving] = useState(false);
   const [apiData, setApiData] = useState<any[]>([]);
   const [useApiData, setUseApiData] = useState(false);
 
@@ -98,7 +108,6 @@ export default function PengurusPage({
   const canCreate = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
   const canDelete = userRole === "SUPER_ADMIN";
   const canEdit = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
-  const canResetPassword = ["SUPER_ADMIN", "ADMIN_NASIONAL"].includes(userRole);
 
   // Stat cards
   // Map API data to Pengurus format — normalize level to Title Case
@@ -297,25 +306,97 @@ export default function PengurusPage({
     fetchData();
   };
 
+  const handleEdit = (item: any) => {
+    setEditItem(item);
+    setEditForm({
+      status: item.status || "Aktif",
+      nomorSK: item.nomorSK || "",
+      tanggalMulai: item.tanggalMulai ? new Date(item.tanggalMulai).toISOString().split("T")[0] : "",
+      tanggalSelesai: item.tanggalSelesai ? new Date(item.tanggalSelesai).toISOString().split("T")[0] : "",
+      fileSK: item.fileSK || "",
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editItem) return;
+    setEditSaving(true);
+    try {
+      const res = await fetch(`/api/pengurus/${editItem.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(json.message);
+        setShowEditDialog(false);
+        setEditItem(null);
+        fetchData();
+      } else {
+        toast.error(json.error || "Gagal menyimpan");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleNonaktifkan = async (item: any) => {
+    if (!window.confirm(`Yakin nonaktifkan pengurus "${item.nama}"? Status akan diubah menjadi "Diberhentikan".`)) return;
+    try {
+      const res = await fetch(`/api/pengurus/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Diberhentikan", tanggalSelesai: new Date().toISOString().split("T")[0] }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(`Pengurus "${item.nama}" telah dinonaktifkan`);
+        fetchData();
+      } else {
+        toast.error(json.error || "Gagal menonaktifkan");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleHapus = async (item: any) => {
+    if (!window.confirm(`Yakin hapus pengurus "${item.nama}"? Data tidak dihapus permanen, hanya status diubah menjadi "Diberhentikan".`)) return;
+    try {
+      const res = await fetch(`/api/pengurus/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Diberhentikan", tanggalSelesai: new Date().toISOString().split("T")[0] }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(`Pengurus "${item.nama}" telah dinonaktifkan (soft delete)`);
+        fetchData();
+      } else {
+        toast.error(json.error || "Gagal menghapus");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   const actions = [
     { label: "Detail", icon: Eye, action: (item: any) => setDetailId(item.id), show: true },
-    { label: "Edit", icon: Edit, action: (item: any) => { setActionMenuId(null); toast.info("Form edit pengurus akan dibuka"); }, show: canEdit },
-    { label: "Lihat Anggota", icon: Users, action: () => { setActionMenuId(null); onNavigate?.("anggota"); }, show: true },
-    { label: "Reset Password", icon: KeyRound, action: (item: any) => {
+    { label: "Edit", icon: Edit, action: (item: any) => {
       setActionMenuId(null);
-      toast.success(`Link reset password dikirim ke ${item.email}`);
-    }, show: canResetPassword },
+      handleEdit(item);
+    }, show: canEdit },
+    { label: "Kelola Pengurus", icon: UserCog, action: () => { setActionMenuId(null); onNavigate?.("pengurus"); }, show: false },
     { label: "Nonaktifkan", icon: Ban, action: (item: any) => {
       setActionMenuId(null);
-      toast.success(`Pengurus ${item.nama} dinonaktifkan`);
-      fetchData();
-    }, show: canDelete, danger: false },
+      handleNonaktifkan(item);
+    }, show: canEdit, danger: false },
     { label: "Hapus", icon: Trash2, action: (item: any) => {
       setActionMenuId(null);
-      if (window.confirm(`Yakin hapus pengurus "${item.nama}"?`)) {
-        toast.success(`Pengurus ${item.nama} dihapus`);
-        fetchData();
-      }
+      handleHapus(item);
     }, show: canDelete, danger: true },
   ];
 
@@ -743,6 +824,131 @@ export default function PengurusPage({
       {actionMenuId !== null && (
         <div className="fixed inset-0 z-[5]" onClick={() => setActionMenuId(null)} />
       )}
+
+      {/* Edit Pengurus Dialog */}
+      <AnimatePresence>
+        {showEditDialog && editItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowEditDialog(false)}
+            className="fixed inset-0 z-[300] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl max-w-md w-full"
+            >
+              <div className="relative bg-gradient-to-r from-blue-600 to-sky-500 p-5 text-white">
+                <button onClick={() => setShowEditDialog(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Edit className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Edit Pengurus</h2>
+                    <p className="text-xs text-blue-100">{editItem.nama} • {editItem.jabatan}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Status</label>
+                    <select
+                      value={editForm.status}
+                      onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    >
+                      <option value="Aktif">Aktif</option>
+                      <option value="Selesai">Selesai</option>
+                      <option value="Diberhentikan">Diberhentikan</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nomor SK</label>
+                    <input
+                      type="text"
+                      value={editForm.nomorSK}
+                      onChange={(e) => setEditForm({ ...editForm, nomorSK: e.target.value })}
+                      placeholder="SK-001/..."
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Mulai Menjabat</label>
+                    <input
+                      type="date"
+                      value={editForm.tanggalMulai}
+                      onChange={(e) => setEditForm({ ...editForm, tanggalMulai: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Selesai Menjabat</label>
+                    <input
+                      type="date"
+                      value={editForm.tanggalSelesai}
+                      onChange={(e) => setEditForm({ ...editForm, tanggalSelesai: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Upload SK (PDF/Image)</label>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 1024 * 1024 * 2) {
+                        toast.error("File SK maksimal 2MB");
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        setEditForm((prev) => ({ ...prev, fileSK: reader.result as string }));
+                        toast.success("SK terupload");
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  {editForm.fileSK && <span className="text-[10px] text-emerald-600 mt-0.5 block">✓ SK terupload</span>}
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
+                <button onClick={() => setShowEditDialog(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">
+                  Batal
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={editSaving}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {editSaving ? (
+                    <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+                  ) : (
+                    <><Edit className="w-4 h-4" /> Simpan</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
