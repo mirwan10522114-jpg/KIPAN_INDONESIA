@@ -71,7 +71,7 @@ export default function AnggotaDetailDialog({
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-mono bg-white/20 px-2 py-0.5 rounded">{a?.nia}</span>
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                      a?.status === "AKTIF" ? "bg-emerald-500 text-white" : "bg-slate-500 text-white"
+                      a?.status === "Aktif" ? "bg-emerald-500 text-white" : "bg-slate-500 text-white"
                     }`}>{a?.status}</span>
                   </div>
                   <h2 className="text-2xl font-bold">{a?.namaLengkap}</h2>

@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
           cv: body.cv || null,
           suratPernyataan: body.suratPernyataan || null,
           suratSehat: body.suratSehat || null,
-          status: "AKTIF",
+          status: "Aktif",
           angkatan: body.angkatan || "XII",
           tanggalAngkat: new Date(),
         },

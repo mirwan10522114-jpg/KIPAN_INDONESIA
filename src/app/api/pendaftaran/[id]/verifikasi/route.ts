@@ -106,7 +106,7 @@ export async function PATCH(
             cv: pendaftaran.cv,
             suratPernyataan: pendaftaran.suratPernyataan,
             suratSehat: pendaftaran.suratSehat,
-            status: "AKTIF",
+            status: "Aktif",
             angkatan: "XII",
             tanggalAngkat: new Date(),
             tanggalDaftar: pendaftaran.createdAt,

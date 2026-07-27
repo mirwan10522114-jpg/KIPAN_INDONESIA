@@ -250,8 +250,8 @@ export function exportAnggotaPdf(data: any[], filters?: { search?: string; statu
   if (filters?.provinsi && filters.provinsi !== "Semua") subtitleParts.push(`Provinsi: ${filters.provinsi}`);
   const subtitle = subtitleParts.length > 0 ? `${subtitleParts.join(" • ")} • ${new Date().toLocaleDateString("id-ID")}` : `Semua data • ${new Date().toLocaleDateString("id-ID")}`;
 
-  const aktifCount = data.filter((d) => d.status === "AKTIF").length;
-  const nonaktifCount = data.filter((d) => d.status !== "AKTIF").length;
+  const aktifCount = data.filter((d) => d.status === "Aktif").length;
+  const nonaktifCount = data.filter((d) => d.status !== "Aktif").length;
   const provinsiCount = new Set(data.map((d) => d.provinsi?.nama).filter(Boolean)).size;
   const kabupatenCount = new Set(data.map((d) => d.kabupaten?.nama).filter(Boolean)).size;
 
@@ -287,7 +287,7 @@ export function exportAnggotaPdf(data: any[], filters?: { search?: string; statu
       angkatan: d.angkatan || "-",
       email: d.email || "-",
       hp: d.hp || "-",
-      status: d.status === "AKTIF" ? "Aktif" : d.status === "NONAKTIF" ? "Nonaktif" : d.status || "-",
+      status: d.status || "-",
     })),
   });
 }

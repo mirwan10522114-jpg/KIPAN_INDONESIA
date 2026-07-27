@@ -272,8 +272,8 @@ export default function PengurusPage({
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
       Aktif: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      Nonaktif: "bg-slate-100 text-slate-600 border-slate-200",
-      Dibekukan: "bg-rose-100 text-rose-700 border-rose-200",
+      Selesai: "bg-slate-100 text-slate-600 border-slate-200",
+      Diberhentikan: "bg-rose-100 text-rose-700 border-rose-200",
     };
     return styles[status] || "bg-slate-100 text-slate-600 border-slate-200";
   };
@@ -544,8 +544,8 @@ export default function PengurusPage({
         >
           <option value="Semua">Semua Status</option>
           <option value="Aktif">Aktif</option>
-          <option value="Nonaktif">Nonaktif</option>
-          <option value="Dibekukan">Dibekukan</option>
+          <option value="Selesai">Selesai</option>
+          <option value="Diberhentikan">Diberhentikan</option>
         </select>
         <select
           value={masaJabatanFilter}
@@ -617,7 +617,7 @@ export default function PengurusPage({
             <SumCard label="Provinsi" value={filterSummary.provinsi} color="text-blue-600" bg="bg-sky-50" />
             <SumCard label="Kabupaten" value={filterSummary.kabupaten} color="text-cyan-600" bg="bg-cyan-50" />
             <SumCard label="Aktif" value={filterSummary.aktif} color="text-emerald-600" bg="bg-emerald-50" />
-            <SumCard label="Nonaktif" value={filterSummary.nonaktif} color="text-slate-600" bg="bg-slate-100" />
+            <SumCard label="Non-Aktif" value={filterSummary.nonaktif} color="text-slate-600" bg="bg-slate-100" />
             <SumCard label="Akan Berakhir" value={filterSummary.akanBerakhir} color="text-amber-600" bg="bg-amber-50" />
           </div>
         </div>

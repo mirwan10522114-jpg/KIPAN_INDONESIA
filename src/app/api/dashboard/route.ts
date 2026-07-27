@@ -20,7 +20,7 @@ export async function GET() {
       anggotaByStatus,
     ] = await Promise.all([
       db.anggota.count(),
-      db.anggota.count({ where: { status: "AKTIF" } }),
+      db.anggota.count({ where: { status: "Aktif" } }),
       db.anggota.count({
         where: {
           tanggalAngkat: {

@@ -195,11 +195,11 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
 
   // Status distribution
   const statusDistribution = [
-    { label: "Aktif", value: data.anggotaByStatus.AKTIF || 0, color: "bg-emerald-500", dot: "bg-emerald-500", textColor: "text-emerald-700" },
-    { label: "Nonaktif", value: data.anggotaByStatus.NONAKTIF || 0, color: "bg-slate-400", dot: "bg-slate-400", textColor: "text-slate-700" },
-    { label: "Mengundurkan Diri", value: data.anggotaByStatus.MENGUNDURKAN_DIRI || 0, color: "bg-amber-500", dot: "bg-amber-500", textColor: "text-amber-700" },
-    { label: "Diberhentikan", value: data.anggotaByStatus.DIBERHENTIKAN || 0, color: "bg-rose-500", dot: "bg-rose-500", textColor: "text-rose-700" },
-    { label: "Meninggal", value: data.anggotaByStatus.MENINGGAL || 0, color: "bg-slate-600", dot: "bg-slate-600", textColor: "text-slate-800" },
+    { label: "Aktif", value: data.anggotaByStatus.Aktif || 0, color: "bg-emerald-500", dot: "bg-emerald-500", textColor: "text-emerald-700" },
+    { label: "Nonaktif", value: data.anggotaByStatus.Nonaktif || 0, color: "bg-slate-400", dot: "bg-slate-400", textColor: "text-slate-700" },
+    { label: "Mengundurkan Diri", value: data.anggotaByStatus["Mengundurkan Diri"] || 0, color: "bg-amber-500", dot: "bg-amber-500", textColor: "text-amber-700" },
+    { label: "Diberhentikan", value: data.anggotaByStatus.Diberhentikan || 0, color: "bg-rose-500", dot: "bg-rose-500", textColor: "text-rose-700" },
+    { label: "Meninggal", value: data.anggotaByStatus.Meninggal || 0, color: "bg-slate-600", dot: "bg-slate-600", textColor: "text-slate-800" },
   ];
 
   // Pendaftaran status summary

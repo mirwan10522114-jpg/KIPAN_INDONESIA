@@ -125,7 +125,7 @@ const SCHEMA_INFO: Record<string, { name: string; description: string; columns: 
       { name: "hp", type: "String" },
       { name: "whatsapp", type: "String?" },
       { name: "foto", type: "String?" },
-      { name: "status", type: "String", description: "AKTIF | NONAKTIF | MENGUNDURKAN_DIRI | DIBERHENTIKAN | MENINGGAL" },
+      { name: "status", type: "String", description: "Aktif | Nonaktif | Mengundurkan Diri | Diberhentikan | Meninggal" },
       { name: "angkatan", type: "String?" },
       { name: "tanggalDaftar", type: "DateTime" },
       { name: "tanggalAngkat", type: "DateTime?" },

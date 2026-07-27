@@ -160,8 +160,8 @@ export default function PengurusDetailDialog({
   const statusBadge = (status: string) => {
     const styles: Record<string, string> = {
       Aktif: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      Nonaktif: "bg-slate-100 text-slate-600 border-slate-200",
-      Dibekukan: "bg-rose-100 text-rose-700 border-rose-200",
+      Selesai: "bg-slate-100 text-slate-600 border-slate-200",
+      Diberhentikan: "bg-rose-100 text-rose-700 border-rose-200",
     };
     return styles[status] || "bg-slate-100 text-slate-600 border-slate-200";
   };
