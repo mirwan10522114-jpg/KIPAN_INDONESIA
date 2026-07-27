@@ -38,6 +38,11 @@ export default function PengurusFormDialog({
     tanggalLahir: "",
     jenisKelamin: "L",
     alamat: "",
+    foto: "",
+    ktp: "",
+    cv: "",
+    suratPernyataan: "",
+    suratSehat: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -60,6 +65,7 @@ export default function PengurusFormDialog({
       setManualData({
         namaLengkap: "", nik: "", email: "", hp: "", tempatLahir: "",
         tanggalLahir: "", jenisKelamin: "L", alamat: "",
+        foto: "", ktp: "", cv: "", suratPernyataan: "", suratSehat: "",
       });
       // Fetch anggota, jabatan, wilayah
       Promise.all([
@@ -359,6 +365,73 @@ export default function PengurusFormDialog({
                         rows={2}
                         className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none resize-none"
                       />
+                    </div>
+
+                    {/* Upload Dokumen */}
+                    <div className="border-t border-slate-200 pt-3 mt-2">
+                      <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Upload Dokumen</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { key: "foto", label: "Pas Foto", accept: "image/*" },
+                          { key: "ktp", label: "KTP", accept: "image/*,.pdf" },
+                          { key: "cv", label: "CV/Resume", accept: "image/*,.pdf" },
+                          { key: "suratPernyataan", label: "Surat Pernyataan", accept: "image/*,.pdf" },
+                          { key: "suratSehat", label: "Surat Sehat", accept: "image/*,.pdf" },
+                        ].map((doc) => (
+                          <div key={doc.key}>
+                            <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">{doc.label}</label>
+                            <input
+                              type="file"
+                              accept={doc.accept}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (file.size > 1024 * 1024 * 2) {
+                                  toast.error("File maksimal 2MB");
+                                  return;
+                                }
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  setManualData((prev) => ({ ...prev, [doc.key]: reader.result as string }));
+                                  toast.success(`${doc.label} terupload`);
+                                };
+                                reader.readAsDataURL(file);
+                              }}
+                              className="w-full text-[10px] border border-slate-200 rounded-lg px-1.5 py-1 file:mr-1.5 file:py-0.5 file:px-1.5 file:rounded file:border-0 file:text-[10px] file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                            />
+                            {manualData[doc.key as keyof typeof manualData] && (
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[9px] text-emerald-600">✓ {doc.label} terupload</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setManualData((prev) => ({ ...prev, [doc.key]: "" }))}
+                                  className="text-[9px] text-rose-500 hover:text-rose-700 underline"
+                                >
+                                  Hapus
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const url = manualData[doc.key as keyof typeof manualData] as string;
+                                    const w = window.open();
+                                    if (w) {
+                                      if (url.startsWith("data:image/")) {
+                                        w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
+                                      } else if (url.startsWith("data:application/pdf")) {
+                                        w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0"><iframe src="${url}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
+                                      }
+                                      w.document.close();
+                                    }
+                                  }}
+                                  className="text-[9px] text-blue-600 hover:text-blue-700 underline"
+                                >
+                                  Lihat
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
