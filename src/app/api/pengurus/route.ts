@@ -35,8 +35,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    if (!body.anggotaId || !body.jabatanId) {
-      return NextResponse.json({ success: false, error: "Pengurus wajib memiliki jabatan. Pilih anggota dan jabatan terlebih dahulu." }, { status: 400 });
+    // Validasi: jabatanId wajib
+    if (!body.jabatanId) {
+      return NextResponse.json({ success: false, error: "Jabatan wajib dipilih." }, { status: 400 });
+    }
+
+    // Validasi: anggotaId wajib (kecuali mode manual orang baru)
+    const isManualMode = body.isNewAnggota === true && body.newAnggotaData;
+    if (!isManualMode && !body.anggotaId) {
+      return NextResponse.json({ success: false, error: "Anggota wajib dipilih dari database, atau gunakan mode Input Manual untuk orang baru." }, { status: 400 });
     }
 
     // Validasi: jabatanId harus ada di database
@@ -45,12 +52,67 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Jabatan tidak ditemukan. Pilih jabatan yang valid." }, { status: 400 });
     }
 
+    // ===== MODE MANUAL: auto-create anggota baru =====
+    let anggotaIdToUse: number;
+    if (isManualMode) {
+      const nd = body.newAnggotaData;
+      if (!nd.namaLengkap || !nd.namaLengkap.trim()) {
+        return NextResponse.json({ success: false, error: "Nama lengkap wajib diisi untuk orang baru." }, { status: 400 });
+      }
+      // Validasi level & wilayah
+      if (body.level === "PROVINSI" && !body.provinsiId) {
+        return NextResponse.json({ success: false, error: "Provinsi penempatan wajib dipilih." }, { status: 400 });
+      }
+      if (body.level === "KABUPATEN" && (!body.provinsiId || !body.kabupatenId)) {
+        return NextResponse.json({ success: false, error: "Provinsi & Kabupaten/Kota wajib dipilih." }, { status: 400 });
+      }
+
+      // Generate NIA
+      const prov = await db.provinsi.findUnique({ where: { id: parseInt(body.provinsiId) } });
+      const kab = body.kabupatenId ? await db.kabupaten.findUnique({ where: { id: parseInt(body.kabupatenId) } }) : null;
+      const tahun = new Date().getFullYear();
+      const countThisYear = await db.anggota.count({
+        where: {
+          provinsiId: parseInt(body.provinsiId),
+          ...(body.kabupatenId ? { kabupatenId: parseInt(body.kabupatenId) } : {}),
+          tanggalAngkat: { gte: new Date(tahun, 0, 1) },
+        },
+      });
+      const seq = String(countThisYear + 1).padStart(5, "0");
+      const kabKode = kab?.kode || "0000";
+      const nia = `KIPAN-${prov?.kode || "XX"}-${kabKode}-${tahun}-${seq}`;
+
+      // Create anggota baru
+      const newAnggota = await db.anggota.create({
+        data: {
+          nia,
+          namaLengkap: nd.namaLengkap.trim(),
+          nik: nd.nik || "",
+          tempatLahir: nd.tempatLahir || "",
+          tanggalLahir: nd.tanggalLahir ? new Date(nd.tanggalLahir) : new Date("2000-01-01"),
+          jenisKelamin: nd.jenisKelamin || "L",
+          alamat: nd.alamat || "",
+          provinsiId: parseInt(body.provinsiId),
+          ...(body.kabupatenId ? { kabupatenId: parseInt(body.kabupatenId) } : {}),
+          email: nd.email || "",
+          hp: nd.hp || "",
+          whatsapp: nd.hp || null,
+          status: "AKTIF",
+          angkatan: "XII",
+          tanggalAngkat: new Date(),
+        },
+      });
+      anggotaIdToUse = newAnggota.id;
+    } else {
+      anggotaIdToUse = parseInt(body.anggotaId);
+    }
+
     // Rule: 1 orang hanya boleh pegang 1 jabatan aktif di satu waktu.
     // Jika user sudah punya jabatan aktif lain, OTOMATIS akhiri jabatan lama
     // (karier bisa naik: misal dari Anggota Divisi Kabupaten → Ketua Nasional)
     const existingActiveList = await db.pengurus.findMany({
       where: {
-        anggotaId: parseInt(body.anggotaId),
+        anggotaId: anggotaIdToUse,
         status: "Aktif",
       },
       include: { jabatan: true },
@@ -61,7 +123,7 @@ export async function POST(req: NextRequest) {
       // Akhiri semua jabatan aktif lama
       await db.pengurus.updateMany({
         where: {
-          anggotaId: parseInt(body.anggotaId),
+          anggotaId: anggotaIdToUse,
           status: "Aktif",
         },
         data: {
@@ -74,7 +136,7 @@ export async function POST(req: NextRequest) {
     }
 
     const data: any = {
-      anggotaId: parseInt(body.anggotaId),
+      anggotaId: anggotaIdToUse,
       jabatanId: parseInt(body.jabatanId),
       level: body.level,
       status: body.status || "Aktif",

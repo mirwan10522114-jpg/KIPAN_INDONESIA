@@ -26,6 +26,19 @@ export default function PengurusFormDialog({
     nomorSK: "",
     fileSK: "",
   });
+  // Toggle mode: "database" = pilih dari existing, "manual" = input orang baru
+  const [inputMode, setInputMode] = useState<"database" | "manual">("database");
+  // Data untuk mode manual (orang baru)
+  const [manualData, setManualData] = useState({
+    namaLengkap: "",
+    nik: "",
+    email: "",
+    hp: "",
+    tempatLahir: "",
+    tanggalLahir: "",
+    jenisKelamin: "L",
+    alamat: "",
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [anggotaList, setAnggotaList] = useState<any[]>([]);
@@ -43,6 +56,11 @@ export default function PengurusFormDialog({
         tanggalSelesai: "", nomorSK: "", fileSK: "",
       });
       setSearchAnggota("");
+      setInputMode("database");
+      setManualData({
+        namaLengkap: "", nik: "", email: "", hp: "", tempatLahir: "",
+        tanggalLahir: "", jenisKelamin: "L", alamat: "",
+      });
       // Fetch anggota, jabatan, wilayah
       Promise.all([
         fetch("/api/anggota", { cache: "no-store" }).then((r) => r.json()),
@@ -79,9 +97,22 @@ export default function PengurusFormDialog({
   const bidangNames = Object.keys(jabatanGrouped).sort();
 
   const handleSave = async () => {
-    if (!form.anggotaId || !form.jabatanId) {
-      setError("Anggota dan jabatan wajib dipilih");
+    if (!form.jabatanId) {
+      setError("Jabatan wajib dipilih");
       return;
+    }
+    // Validasi anggota berdasarkan mode
+    if (inputMode === "database") {
+      if (!form.anggotaId) {
+        setError("Anggota wajib dipilih dari database");
+        return;
+      }
+    } else {
+      // Mode manual: nama wajib
+      if (!manualData.namaLengkap.trim()) {
+        setError("Nama lengkap wajib diisi untuk orang baru");
+        return;
+      }
     }
     if (form.level === "PROVINSI" && !form.provinsiId) {
       setError("Provinsi penempatan wajib dipilih untuk level Provinsi");
@@ -94,7 +125,15 @@ export default function PengurusFormDialog({
     setSaving(true);
     setError("");
     try {
-      await onSave(form);
+      // Kirim data sesuai mode
+      const payload: any = { ...form };
+      if (inputMode === "manual") {
+        // Tandai bahwa ini orang baru, kirim data manual juga
+        payload.isNewAnggota = true;
+        payload.newAnggotaData = manualData;
+        payload.anggotaId = null; // clear anggotaId
+      }
+      await onSave(payload);
       onClose();
     } catch (e: any) {
       setError(e.message || "Gagal menyimpan");
@@ -142,40 +181,167 @@ export default function PengurusFormDialog({
                 </div>
               )}
 
-              {/* Pilih Anggota */}
+              {/* Pilih Anggota — Toggle Mode */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Pilih Anggota *</label>
-                <div className="relative mb-2">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchAnggota}
-                    onChange={(e) => setSearchAnggota(e.target.value)}
-                    placeholder="Cari anggota..."
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-                  />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-semibold text-slate-700">Pilih Anggota *</label>
+                  <div className="flex gap-1 bg-slate-100 p-0.5 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setInputMode("database")}
+                      className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                        inputMode === "database" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      📋 Dari Database
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInputMode("manual")}
+                      className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                        inputMode === "manual" ? "bg-emerald-600 text-white" : "text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      ✏️ Input Manual (Orang Baru)
+                    </button>
+                  </div>
                 </div>
-                <select
-                  value={form.anggotaId}
-                  onChange={(e) => {
-                    const a = anggotaList.find((x) => x.id === parseInt(e.target.value));
-                    setForm({
-                      ...form,
-                      anggotaId: e.target.value,
-                      provinsiId: a?.provinsiId ? String(a.provinsiId) : "",
-                      kabupatenId: a?.kabupatenId ? String(a.kabupatenId) : "",
-                    });
-                  }}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-                  size={5}
-                >
-                  <option value="">— Pilih Anggota —</option>
-                  {filteredAnggota.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.nia} — {a.namaLengkap} ({a.kabupaten?.nama || "-"})
-                    </option>
-                  ))}
-                </select>
+
+                {/* MODE DATABASE: pilih dari existing anggota */}
+                {inputMode === "database" && (
+                  <>
+                    <div className="relative mb-2">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={searchAnggota}
+                        onChange={(e) => setSearchAnggota(e.target.value)}
+                        placeholder="Cari nama atau NIA anggota yang sudah terdaftar..."
+                        className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                      />
+                    </div>
+                    <select
+                      value={form.anggotaId}
+                      onChange={(e) => {
+                        const a = anggotaList.find((x) => x.id === parseInt(e.target.value));
+                        setForm({
+                          ...form,
+                          anggotaId: e.target.value,
+                          provinsiId: a?.provinsiId ? String(a.provinsiId) : "",
+                          kabupatenId: a?.kabupatenId ? String(a.kabupatenId) : "",
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                      size={5}
+                    >
+                      <option value="">— Pilih Anggota —</option>
+                      {filteredAnggota.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.nia} — {a.namaLengkap} ({a.kabupaten?.nama || "-"})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      💡 Pilih anggota yang sudah terdaftar di database. Jika orang belum terdaftar, gunakan mode "Input Manual".
+                    </p>
+                  </>
+                )}
+
+                {/* MODE MANUAL: input orang baru */}
+                {inputMode === "manual" && (
+                  <div className="space-y-3 bg-emerald-50/50 border border-emerald-200 rounded-lg p-3">
+                    <p className="text-[11px] text-emerald-700 font-medium">
+                      ✨ Input data orang baru — sistem akan otomatis membuat record anggota saat disimpan
+                    </p>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nama Lengkap *</label>
+                      <input
+                        type="text"
+                        value={manualData.namaLengkap}
+                        onChange={(e) => setManualData({ ...manualData, namaLengkap: e.target.value })}
+                        placeholder="Contoh: Mirwan Kholid"
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">NIK</label>
+                        <input
+                          type="text"
+                          maxLength={16}
+                          value={manualData.nik}
+                          onChange={(e) => setManualData({ ...manualData, nik: e.target.value.replace(/\D/g, "") })}
+                          placeholder="16 digit NIK"
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Jenis Kelamin</label>
+                        <select
+                          value={manualData.jenisKelamin}
+                          onChange={(e) => setManualData({ ...manualData, jenisKelamin: e.target.value })}
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                        >
+                          <option value="L">Laki-laki</option>
+                          <option value="P">Perempuan</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tempat Lahir</label>
+                        <input
+                          type="text"
+                          value={manualData.tempatLahir}
+                          onChange={(e) => setManualData({ ...manualData, tempatLahir: e.target.value })}
+                          placeholder="Contoh: Bandung"
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Lahir</label>
+                        <input
+                          type="date"
+                          value={manualData.tanggalLahir}
+                          onChange={(e) => setManualData({ ...manualData, tanggalLahir: e.target.value })}
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email</label>
+                        <input
+                          type="email"
+                          value={manualData.email}
+                          onChange={(e) => setManualData({ ...manualData, email: e.target.value })}
+                          placeholder="email@contoh.com"
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">No. HP</label>
+                        <input
+                          type="tel"
+                          value={manualData.hp}
+                          onChange={(e) => setManualData({ ...manualData, hp: e.target.value })}
+                          placeholder="08xxxxxxxxxx"
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Alamat</label>
+                      <input
+                        type="text"
+                        value={manualData.alamat}
+                        onChange={(e) => setManualData({ ...manualData, alamat: e.target.value })}
+                        placeholder="Alamat lengkap"
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Level — Card-style selector with clear placement info */}
