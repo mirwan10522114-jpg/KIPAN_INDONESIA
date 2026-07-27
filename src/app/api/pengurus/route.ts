@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Jabatan tidak ditemukan. Pilih jabatan yang valid." }, { status: 400 });
     }
 
-    // ===== MODE MANUAL: auto-create anggota baru =====
+    // ===== MODE MANUAL: auto-create anggota baru (dalam transaction) =====
     let anggotaIdToUse: number;
     if (isManualMode) {
       const nd = body.newAnggotaData;
@@ -79,54 +79,58 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: "Provinsi & Kabupaten/Kota wajib dipilih." }, { status: 400 });
       }
 
-      // Create anggota baru dulu TANPA nia (nia akan di-generate setelah dapat ID)
-      const newAnggota = await db.anggota.create({
-        data: {
-          nia: "TEMP-" + Date.now(), // placeholder, akan di-update
-          namaLengkap: nd.namaLengkap.trim(),
-          nik: nd.nik || "",
-          tempatLahir: nd.tempatLahir || "",
-          tanggalLahir: nd.tanggalLahir ? new Date(nd.tanggalLahir) : new Date("2000-01-01"),
-          jenisKelamin: nd.jenisKelamin || "L",
-          alamat: nd.alamat || "",
+      // Transaction: create anggota → generate NIP → update NIP
+      const result = await db.$transaction(async (tx) => {
+        // 1. Create anggota dengan NIP placeholder
+        const newAnggota = await tx.anggota.create({
+          data: {
+            nia: "TEMP-" + Date.now(),
+            namaLengkap: nd.namaLengkap.trim(),
+            nik: nd.nik || "",
+            tempatLahir: nd.tempatLahir || "",
+            tanggalLahir: nd.tanggalLahir ? new Date(nd.tanggalLahir) : new Date("2000-01-01"),
+            jenisKelamin: nd.jenisKelamin || "L",
+            alamat: nd.alamat || "",
+            provinsiId: parseInt(body.provinsiId),
+            ...(body.kabupatenId ? { kabupatenId: parseInt(body.kabupatenId) } : {}),
+            email: nd.email || "",
+            hp: nd.hp || "",
+            whatsapp: nd.hp || null,
+            foto: nd.foto || null,
+            ktp: nd.ktp || null,
+            cv: nd.cv || null,
+            suratPernyataan: nd.suratPernyataan || null,
+            suratSehat: nd.suratSehat || null,
+            status: "AKTIF",
+            angkatan: "XII",
+            tanggalAngkat: new Date(),
+          },
+        });
+
+        // 2. Generate NIP dengan global sequence
+        const tahun = new Date().getFullYear();
+        const nia = await generateNIP(newAnggota.id, {
           provinsiId: parseInt(body.provinsiId),
-          ...(body.kabupatenId ? { kabupatenId: parseInt(body.kabupatenId) } : {}),
-          email: nd.email || "",
-          hp: nd.hp || "",
-          whatsapp: nd.hp || null,
-          foto: nd.foto || null,
-          ktp: nd.ktp || null,
-          cv: nd.cv || null,
-          suratPernyataan: nd.suratPernyataan || null,
-          suratSehat: nd.suratSehat || null,
-          status: "AKTIF",
-          angkatan: "XII",
-          tanggalAngkat: new Date(),
-        },
+          kabupatenId: body.kabupatenId ? parseInt(body.kabupatenId) : null,
+          tahun,
+        }, tx);
+
+        // 3. Update anggota dengan NIP yang benar
+        await tx.anggota.update({
+          where: { id: newAnggota.id },
+          data: { nia },
+        });
+
+        return newAnggota.id;
       });
 
-      // Generate NIP dengan global sequence (pakai newAnggota.id)
-      const tahun = new Date().getFullYear();
-      const nia = await generateNIP(newAnggota.id, {
-        provinsiId: parseInt(body.provinsiId),
-        kabupatenId: body.kabupatenId ? parseInt(body.kabupatenId) : null,
-        tahun,
-      });
-
-      // Update anggota dengan NIP yang benar
-      await db.anggota.update({
-        where: { id: newAnggota.id },
-        data: { nia },
-      });
-
-      anggotaIdToUse = newAnggota.id;
+      anggotaIdToUse = result;
     } else {
       anggotaIdToUse = parseInt(body.anggotaId);
     }
 
     // Rule: 1 orang hanya boleh pegang 1 jabatan aktif di satu waktu.
     // Jika user sudah punya jabatan aktif lain, OTOMATIS akhiri jabatan lama
-    // (karier bisa naik: misal dari Anggota Divisi Kabupaten → Ketua Nasional)
     const existingActiveList = await db.pengurus.findMany({
       where: {
         anggotaId: anggotaIdToUse,
@@ -137,7 +141,6 @@ export async function POST(req: NextRequest) {
 
     let endedOldJabatan = "";
     if (existingActiveList.length > 0) {
-      // Akhiri semua jabatan aktif lama
       await db.pengurus.updateMany({
         where: {
           anggotaId: anggotaIdToUse,

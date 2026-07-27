@@ -34,16 +34,19 @@ export interface NIPInput {
  *
  * @param anggotaId - ID anggota dari database (auto-increment, global unik)
  * @param input - Data wilayah & tahun
+ * @param tx - Optional Prisma transaction client (untuk use dalam $transaction)
  * @returns NIP string, contoh: "KIPAN-JB-3204-2026-00001"
  */
 export async function generateNIP(
   anggotaId: number,
-  input: NIPInput
+  input: NIPInput,
+  tx?: any
 ): Promise<string> {
+  const client = tx || db;
   const { provinsiId, kabupatenId, tahun = new Date().getFullYear() } = input;
 
   // Get provinsi kode dari master data
-  const provinsi = await db.provinsi.findUnique({
+  const provinsi = await client.provinsi.findUnique({
     where: { id: provinsiId },
     select: { kode: true, nama: true },
   });
@@ -54,7 +57,7 @@ export async function generateNIP(
   // Get kabupaten kode (4 digit Kemendagri) dari master data
   let kabKode = "0000";
   if (kabupatenId) {
-    const kabupaten = await db.kabupaten.findUnique({
+    const kabupaten = await client.kabupaten.findUnique({
       where: { id: kabupatenId },
       select: { kode: true, nama: true },
     });

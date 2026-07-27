@@ -51,53 +51,7 @@ export async function PATCH(
 
     // Jika disetujui, buat record Anggota (data person) + Pengurus (jabatan)
     if (status === "DISETUJUI") {
-      // 1. Buat record Anggota (data person) dengan NIP placeholder
-      const newAnggota = await db.anggota.create({
-        data: {
-          nia: "TEMP-" + Date.now(), // placeholder, akan di-update setelah dapat ID
-          namaLengkap: pendaftaran.namaLengkap,
-          nik: pendaftaran.nik,
-          tempatLahir: pendaftaran.tempatLahir,
-          tanggalLahir: pendaftaran.tanggalLahir,
-          jenisKelamin: pendaftaran.jenisKelamin,
-          agama: pendaftaran.agama,
-          pendidikan: pendaftaran.pendidikan,
-          pekerjaan: pendaftaran.pekerjaan,
-          alamat: pendaftaran.alamat,
-          provinsiId: pendaftaran.provinsiId,
-          kabupatenId: pendaftaran.kabupatenId,
-          kecamatan: pendaftaran.kecamatan,
-          desa: pendaftaran.desa,
-          kodePos: pendaftaran.kodePos,
-          email: pendaftaran.email,
-          hp: pendaftaran.hp,
-          whatsapp: pendaftaran.whatsapp,
-          foto: pendaftaran.foto,
-          ktp: pendaftaran.ktp,
-          cv: pendaftaran.cv,
-          suratPernyataan: pendaftaran.suratPernyataan,
-          suratSehat: pendaftaran.suratSehat,
-          status: "AKTIF",
-          angkatan: "XII",
-          tanggalAngkat: new Date(),
-          tanggalDaftar: pendaftaran.createdAt,
-        },
-      });
-
-      // Generate NIP dengan global sequence (pakai newAnggota.id)
-      const tahun = new Date().getFullYear();
-      const nia = await generateNIP(newAnggota.id, {
-        provinsiId: pendaftaran.provinsiId,
-        kabupatenId: pendaftaran.kabupatenId,
-        tahun,
-      });
-      // Update anggota dengan NIP yang benar
-      await db.anggota.update({
-        where: { id: newAnggota.id },
-        data: { nia },
-      });
-
-      // 2. Tentukan jabatanId — default ke "Anggota" di "Divisi Organisasi dan Keanggotaan" level Kabupaten
+      // Tentukan jabatanId SEBELUM transaction (default ke "Anggota" di "Divisi Organisasi dan Keanggotaan")
       let finalJabatanId = jabatanId;
       if (!finalJabatanId) {
         const defaultJabatan = await db.jabatan.findFirst({
@@ -108,7 +62,6 @@ export async function PATCH(
           },
         });
         if (!defaultJabatan) {
-          // Fallback: cari jabatan "Anggota" pertama di level Kabupaten
           const fallback = await db.jabatan.findFirst({
             where: { nama: "Anggota", level: "Kabupaten" },
           });
@@ -125,36 +78,78 @@ export async function PATCH(
         );
       }
 
-      // 3. Cek apakah anggota sudah punya jabatan aktif (di level mana pun)
-      // Aturan: 1 orang hanya boleh pegang 1 jabatan aktif (tidak boleh double jabatan antar level)
-      const existingPengurus = await db.pengurus.findFirst({
-        where: {
-          anggotaId: newAnggota.id,
-          status: "Aktif",
-        },
-        include: { jabatan: true },
-      });
-
-      if (existingPengurus) {
-        // Sudah punya jabatan aktif — skip membuat record baru, tapi tetap set status pendaftaran
-        console.log(`Pengurus ${newAnggota.namaLengkap} sudah punya jabatan aktif: ${existingPengurus.jabatan?.nama} di level ${existingPengurus.level}. Skip buat record baru.`);
-      }
-
-      if (!existingPengurus) {
-        // 4. Buat record Pengurus dengan jabatan "Anggota" di divisi pilihan
-        await db.pengurus.create({
+      // Transaction: create anggota → generate NIP → update NIP → create pengurus
+      const { nia, newAnggotaId } = await db.$transaction(async (tx) => {
+        // 1. Create anggota dengan NIP placeholder
+        const newAnggota = await tx.anggota.create({
           data: {
-            anggotaId: newAnggota.id,
-            jabatanId: parseInt(finalJabatanId),
-            level: "KABUPATEN",
+            nia: "TEMP-" + Date.now(),
+            namaLengkap: pendaftaran.namaLengkap,
+            nik: pendaftaran.nik,
+            tempatLahir: pendaftaran.tempatLahir,
+            tanggalLahir: pendaftaran.tanggalLahir,
+            jenisKelamin: pendaftaran.jenisKelamin,
+            agama: pendaftaran.agama,
+            pendidikan: pendaftaran.pendidikan,
+            pekerjaan: pendaftaran.pekerjaan,
+            alamat: pendaftaran.alamat,
             provinsiId: pendaftaran.provinsiId,
             kabupatenId: pendaftaran.kabupatenId,
-            status: "Aktif",
-            tanggalMulai: new Date(),
-            nomorSK: `SK-AUTO/${nia}/${tahun}`,
+            kecamatan: pendaftaran.kecamatan,
+            desa: pendaftaran.desa,
+            kodePos: pendaftaran.kodePos,
+            email: pendaftaran.email,
+            hp: pendaftaran.hp,
+            whatsapp: pendaftaran.whatsapp,
+            foto: pendaftaran.foto,
+            ktp: pendaftaran.ktp,
+            cv: pendaftaran.cv,
+            suratPernyataan: pendaftaran.suratPernyataan,
+            suratSehat: pendaftaran.suratSehat,
+            status: "AKTIF",
+            angkatan: "XII",
+            tanggalAngkat: new Date(),
+            tanggalDaftar: pendaftaran.createdAt,
           },
         });
-      }
+
+        // 2. Generate NIP dengan global sequence
+        const tahun = new Date().getFullYear();
+        const nia = await generateNIP(newAnggota.id, {
+          provinsiId: pendaftaran.provinsiId,
+          kabupatenId: pendaftaran.kabupatenId,
+          tahun,
+        }, tx);
+
+        // 3. Update anggota dengan NIP yang benar
+        await tx.anggota.update({
+          where: { id: newAnggota.id },
+          data: { nia },
+        });
+
+        // 4. Cek apakah anggota sudah punya jabatan aktif
+        const existingPengurus = await tx.pengurus.findFirst({
+          where: { anggotaId: newAnggota.id, status: "Aktif" },
+        });
+
+        if (!existingPengurus) {
+          // 5. Create record Pengurus dengan jabatan pilihan
+          await tx.pengurus.create({
+            data: {
+              anggotaId: newAnggota.id,
+              jabatanId: parseInt(finalJabatanId),
+              level: "KABUPATEN",
+              provinsiId: pendaftaran.provinsiId,
+              kabupatenId: pendaftaran.kabupatenId,
+              status: "Aktif",
+              tanggalMulai: new Date(),
+              nomorSK: `SK-AUTO/${nia}/${tahun}`,
+            },
+          });
+        }
+
+        return { nia, newAnggotaId: newAnggota.id };
+      });
 
       await db.pendaftaranRiwayat.create({
         data: {

@@ -65,59 +65,60 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Provinsi atau kabupaten tidak ditemukan" }, { status: 400 });
     }
 
-    // Create anggota dulu TANPA nia (placeholder), lalu generate NIP pakai anggota.id
-    const anggota = await db.anggota.create({
-      data: {
-        nia: "TEMP-" + Date.now(), // placeholder, akan di-update
-        namaLengkap: body.namaLengkap,
-        nik: body.nik,
-        tempatLahir: body.tempatLahir || "",
-        tanggalLahir: body.tanggalLahir ? new Date(body.tanggalLahir) : new Date("2000-01-01"),
-        jenisKelamin: body.jenisKelamin || "L",
-        agama: body.agama || null,
-        pendidikan: body.pendidikan || null,
-        pekerjaan: body.pekerjaan || null,
-        alamat: body.alamat || "",
+    // Transaction: create anggota → generate NIP → update NIP
+    const updated = await db.$transaction(async (tx) => {
+      // 1. Create anggota dengan NIP placeholder
+      const newAnggota = await tx.anggota.create({
+        data: {
+          nia: "TEMP-" + Date.now(),
+          namaLengkap: body.namaLengkap,
+          nik: body.nik,
+          tempatLahir: body.tempatLahir || "",
+          tanggalLahir: body.tanggalLahir ? new Date(body.tanggalLahir) : new Date("2000-01-01"),
+          jenisKelamin: body.jenisKelamin || "L",
+          agama: body.agama || null,
+          pendidikan: body.pendidikan || null,
+          pekerjaan: body.pekerjaan || null,
+          alamat: body.alamat || "",
+          provinsiId: parseInt(body.provinsiId),
+          kabupatenId: parseInt(body.kabupatenId),
+          kecamatan: body.kecamatan || null,
+          email: body.email || "",
+          hp: body.hp || "",
+          whatsapp: body.whatsapp || null,
+          foto: body.foto || null,
+          ktp: body.ktp || null,
+          cv: body.cv || null,
+          suratPernyataan: body.suratPernyataan || null,
+          suratSehat: body.suratSehat || null,
+          status: "AKTIF",
+          angkatan: body.angkatan || "XII",
+          tanggalAngkat: new Date(),
+        },
+      });
+
+      // 2. Generate NIP dengan global sequence
+      const tahun = new Date().getFullYear();
+      const nia = await generateNIP(newAnggota.id, {
         provinsiId: parseInt(body.provinsiId),
         kabupatenId: parseInt(body.kabupatenId),
-        kecamatan: body.kecamatan || null,
-        email: body.email || "",
-        hp: body.hp || "",
-        whatsapp: body.whatsapp || null,
-        foto: body.foto || null,
-        ktp: body.ktp || null,
-        cv: body.cv || null,
-        suratPernyataan: body.suratPernyataan || null,
-        suratSehat: body.suratSehat || null,
-        status: "AKTIF",
-        angkatan: body.angkatan || "XIII",
-        tanggalAngkat: new Date(),
-      },
-      include: {
-        provinsi: { select: { nama: true, kode: true } },
-        kabupaten: { select: { nama: true, kode: true } },
-      },
+        tahun,
+      }, tx);
+
+      // 3. Update anggota dengan NIP yang benar
+      const result = await tx.anggota.update({
+        where: { id: newAnggota.id },
+        data: { nia },
+        include: {
+          provinsi: { select: { nama: true, kode: true } },
+          kabupaten: { select: { nama: true, kode: true } },
+        },
+      });
+
+      return { anggota: result, nia };
     });
 
-    // Generate NIP dengan global sequence (pakai anggota.id)
-    const tahun = new Date().getFullYear();
-    const nia = await generateNIP(anggota.id, {
-      provinsiId: parseInt(body.provinsiId),
-      kabupatenId: parseInt(body.kabupatenId),
-      tahun,
-    });
-
-    // Update anggota dengan NIP yang benar
-    const updated = await db.anggota.update({
-      where: { id: anggota.id },
-      data: { nia },
-      include: {
-        provinsi: { select: { nama: true, kode: true } },
-        kabupaten: { select: { nama: true, kode: true } },
-      },
-    });
-
-    return NextResponse.json({ success: true, data: updated, message: `Pengurus berhasil ditambahkan dengan NIP: ${nia}` });
+    return NextResponse.json({ success: true, data: updated.anggota, message: `Pengurus berhasil ditambahkan dengan NIP: ${updated.nia}` });
   } catch (error) {
     console.error("POST /api/anggota error:", error);
     return NextResponse.json({ success: false, error: "Gagal menambahkan anggota" }, { status: 500 });
