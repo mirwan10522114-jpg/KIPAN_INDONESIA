@@ -52,6 +52,23 @@ export async function PATCH(
       });
     }
 
+    // Cek apakah anggota ini punya jabatan aktif LAIN (di level lain / id lain)
+    // Aturan: 1 orang hanya boleh pegang 1 jabatan aktif
+    const otherActiveJabatan = await db.pengurus.findFirst({
+      where: {
+        anggotaId: currentPengurus.anggotaId,
+        status: "Aktif",
+        id: { not: id }, // exclude current pengurus record
+      },
+      include: { jabatan: true },
+    });
+    if (otherActiveJabatan) {
+      return NextResponse.json({
+        success: false,
+        error: `Pengurus ini masih memiliki jabatan aktif lain sebagai "${otherActiveJabatan.jabatan?.nama}" (${otherActiveJabatan.jabatan?.bidang}) di level ${otherActiveJabatan.level} (pengurus ID: ${otherActiveJabatan.id}). Akhiri jabatan tersebut terlebih dahulu. Aturan: 1 orang hanya boleh pegang 1 jabatan aktif.`,
+      }, { status: 400 });
+    }
+
     // 1. Tutup jabatan lama: set status=Selesai & tanggalSelesai=now
     await db.pengurus.update({
       where: { id },

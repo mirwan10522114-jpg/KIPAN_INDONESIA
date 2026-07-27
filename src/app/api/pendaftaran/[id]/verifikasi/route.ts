@@ -127,14 +127,20 @@ export async function PATCH(
         );
       }
 
-      // 3. Cek apakah anggota sudah punya jabatan aktif di level Kabupaten
+      // 3. Cek apakah anggota sudah punya jabatan aktif (di level mana pun)
+      // Aturan: 1 orang hanya boleh pegang 1 jabatan aktif (tidak boleh double jabatan antar level)
       const existingPengurus = await db.pengurus.findFirst({
         where: {
           anggotaId: newAnggota.id,
           status: "Aktif",
-          level: "KABUPATEN",
         },
+        include: { jabatan: true },
       });
+
+      if (existingPengurus) {
+        // Sudah punya jabatan aktif — skip membuat record baru, tapi tetap set status pendaftaran
+        console.log(`Pengurus ${newAnggota.namaLengkap} sudah punya jabatan aktif: ${existingPengurus.jabatan?.nama} di level ${existingPengurus.level}. Skip buat record baru.`);
+      }
 
       if (!existingPengurus) {
         // 4. Buat record Pengurus dengan jabatan "Anggota" di divisi pilihan

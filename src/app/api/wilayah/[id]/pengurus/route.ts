@@ -4,7 +4,11 @@ import { db } from "@/lib/db";
 // ============================================================
 // GET /api/wilayah/[id]/pengurus?type=provinsi|kabupaten
 // Returns: list of pengurus in this wilayah (active only by default)
-// Used for: dropdown ketua wilayah di WilayahFormDialog
+// Aturan: HANYA tampilkan pengurus yang level-nya sesuai dengan wilayah:
+//   - type=provinsi → hanya pengurus dengan level="PROVINSI" & provinsiId=id
+//   - type=kabupaten → hanya pengurus dengan level="KABUPATEN" & kabupatenId=id
+// JANGAN tampilkan pengurus level lebih tinggi (misal: saat klik provinsi Bali,
+// jangan tampilkan pengurus Nasional meskipun mereka punya provinsiId=Bali)
 // ============================================================
 export async function GET(
   req: NextRequest,
@@ -20,8 +24,10 @@ export async function GET(
     const where: any = {};
     if (type === "provinsi") {
       where.provinsiId = id;
+      where.level = "PROVINSI"; // PENTING: hanya pengurus level Provinsi
     } else if (type === "kabupaten") {
       where.kabupatenId = id;
+      where.level = "KABUPATEN"; // PENTING: hanya pengurus level Kabupaten
     }
     if (!includeAll) where.status = "Aktif";
 

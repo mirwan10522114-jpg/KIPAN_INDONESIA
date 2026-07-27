@@ -45,17 +45,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Jabatan tidak ditemukan. Pilih jabatan yang valid." }, { status: 400 });
     }
 
-    // Rule 2: Check if anggota already has active jabatan at same level
+    // Rule 2: Check if anggota already has ANY active jabatan (di level mana pun)
+    // Aturan: 1 orang hanya boleh pegang 1 jabatan aktif (tidak boleh double jabatan antar level)
     const existingActive = await db.pengurus.findFirst({
       where: {
         anggotaId: parseInt(body.anggotaId),
         status: "Aktif",
-        level: body.level,
       },
+      include: { jabatan: true },
     });
 
     if (existingActive) {
-      return NextResponse.json({ success: false, error: "Pengurus ini sudah memiliki jabatan aktif di level yang sama. Akhiri jabatan lama atau ganti jabatan." }, { status: 400 });
+      return NextResponse.json({
+        success: false,
+        error: `Pengurus ini sudah memiliki jabatan aktif sebagai "${existingActive.jabatan?.nama}" (${existingActive.jabatan?.bidang}) di level ${existingActive.level}. Akhiri jabatan lama terlebih dahulu sebelum menunjuk jabatan baru. Aturan: 1 orang hanya boleh pegang 1 jabatan aktif.`,
+      }, { status: 400 });
     }
 
     const data: any = {

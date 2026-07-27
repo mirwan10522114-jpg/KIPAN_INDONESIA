@@ -52,9 +52,9 @@ export async function GET(
         return NextResponse.json({ success: false, error: "Provinsi tidak ditemukan" }, { status: 404 });
       }
 
-      // Statistik — hanya pengurus
-      const totalPengurus = await db.pengurus.count({ where: { provinsiId: id } });
-      const pengurusAktif = await db.pengurus.count({ where: { provinsiId: id, status: "Aktif" } });
+      // Statistik — HANYA pengurus level PROVINSI di provinsi ini
+      const totalPengurus = await db.pengurus.count({ where: { provinsiId: id, level: "PROVINSI" } });
+      const pengurusAktif = await db.pengurus.count({ where: { provinsiId: id, level: "PROVINSI", status: "Aktif" } });
       const totalKabupaten = await db.kabupaten.count({ where: { provinsiId: id } });
 
       // Monthly growth (last 6 months) — count pengurus baru
@@ -95,21 +95,24 @@ export async function GET(
             status: k.status,
             jumlahPengurus: k._count.pengurus,
           })),
-          pengurusList: provinsi.pengurus.map((p) => ({
-            id: p.id,
-            namaLengkap: p.anggota?.namaLengkap || "-",
-            jabatan: p.jabatan?.nama || "-",
-            bidang: p.jabatan?.bidang || "-",
-            level: p.level,
-            foto: p.anggota?.foto,
-            email: p.anggota?.email,
-            hp: p.anggota?.hp,
-            status: p.status,
-            tanggalMulai: p.tanggalMulai,
-            tanggalSelesai: p.tanggalSelesai,
-            nomorSK: p.nomorSK,
-            wilayah: p.kabupaten?.nama || provinsi.nama,
-          })),
+          // FILTER: hanya tampilkan pengurus level PROVINSI (bukan Nasional yang kebetulan punya provinsiId)
+          pengurusList: provinsi.pengurus
+            .filter((p) => p.level === "PROVINSI")
+            .map((p) => ({
+              id: p.id,
+              namaLengkap: p.anggota?.namaLengkap || "-",
+              jabatan: p.jabatan?.nama || "-",
+              bidang: p.jabatan?.bidang || "-",
+              level: p.level,
+              foto: p.anggota?.foto,
+              email: p.anggota?.email,
+              hp: p.anggota?.hp,
+              status: p.status,
+              tanggalMulai: p.tanggalMulai,
+              tanggalSelesai: p.tanggalSelesai,
+              nomorSK: p.nomorSK,
+              wilayah: p.kabupaten?.nama || provinsi.nama,
+            })),
           statistik: {
             totalPengurus,
             pengurusAktif,
