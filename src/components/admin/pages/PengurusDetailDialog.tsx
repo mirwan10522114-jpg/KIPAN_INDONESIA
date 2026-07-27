@@ -25,10 +25,11 @@ interface PengurusDetailProps {
   onClose: () => void;
   onEdit?: () => void;
   onViewAnggota?: (id: number) => void;
+  onPengurusIdChanged?: (newId: number) => void;
 }
 
 export default function PengurusDetailDialog({
-  pengurusId, onClose, onEdit, onViewAnggota,
+  pengurusId, onClose, onEdit, onViewAnggota, onPengurusIdChanged,
 }: PengurusDetailProps) {
   const [activeTab, setActiveTab] = useState("profil");
   const [data, setData] = useState<any>(null);
@@ -100,12 +101,12 @@ export default function PengurusDetailDialog({
       if (json.success) {
         toast.success(json.message);
         setShowGantiJabatanDialog(false);
-        // Refresh data untuk update jabatan di dialog
-        fetchData();
-        // Jika ganti jabatan membuat record pengurus baru, update pengurusId
+        // Jika ganti jabatan membuat record pengurus baru, update pengurusId via callback
         if (json.data?.id && json.data.id !== pengurusId) {
-          // Parent perlu tahu ID baru — tapi untuk sekarang, reload saja
-          window.location.reload();
+          onPengurusIdChanged?.(json.data.id);
+        } else {
+          // ID tidak berubah, just refresh data
+          fetchData();
         }
       } else {
         toast.error(json.error || "Gagal ganti jabatan");

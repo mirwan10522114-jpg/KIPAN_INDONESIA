@@ -810,7 +810,11 @@ export default function PengurusPage({
         pengurusId={detailId}
         onClose={() => setDetailId(null)}
         onEdit={canEdit ? () => { setDetailId(null); } : undefined}
-        onViewAnggota={(id) => { setDetailId(null); onNavigate?.("anggota"); }}
+        onViewAnggota={(id) => { setDetailId(null); onNavigate?.("pengurus"); }}
+        onPengurusIdChanged={(newId) => {
+          setDetailId(newId);
+          fetchData();
+        }}
       />
 
       {/* Form Dialog */}

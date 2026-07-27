@@ -44,6 +44,23 @@ export async function PATCH(
       );
     }
 
+    // Validasi: level jabatan baru harus cocok dengan level pengurus
+    const levelMap: Record<string, string> = {
+      NASIONAL: "Nasional",
+      PROVINSI: "Provinsi",
+      KABUPATEN: "Kabupaten",
+    };
+    const pengurusLevelName = levelMap[currentPengurus.level] || currentPengurus.level;
+    if (newJabatan.level !== pengurusLevelName) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Level jabatan tidak sesuai. Pengurus ini berada di level ${pengurusLevelName}, jabatan yang dipilih berada di level ${newJabatan.level}.`,
+        },
+        { status: 400 }
+      );
+    }
+
     // Jika jabatan sama, tidak perlu perubahan
     if (currentPengurus.jabatanId === parseInt(jabatanId)) {
       return NextResponse.json({
@@ -53,7 +70,6 @@ export async function PATCH(
     }
 
     // OTOMATIS akhiri SEMUA jabatan aktif lain yang dimiliki anggota ini
-    // (termasuk yang di level lain — karier bisa naik/turun level)
     const otherActiveList = await db.pengurus.findMany({
       where: {
         anggotaId: currentPengurus.anggotaId,
@@ -80,7 +96,13 @@ export async function PATCH(
       endedInfo = ` Jabatan lama (${otherNames}) otomatis diakhiri.`;
     }
 
-    // 2. Buat record pengurus baru dengan jabatan baru
+    // Generate nomorSK yang clean
+    const tahun = new Date().getFullYear();
+    const skNumber = currentPengurus.nomorSK && currentPengurus.nomorSK.trim()
+      ? `SK-GANTI/${currentPengurus.nomorSK}/${tahun}`
+      : `SK/${tahun}/${currentPengurus.id}`;
+
+    // Buat record pengurus baru dengan jabatan baru
     const newPengurus = await db.pengurus.create({
       data: {
         anggotaId: currentPengurus.anggotaId,
@@ -90,7 +112,7 @@ export async function PATCH(
         kabupatenId: currentPengurus.kabupatenId,
         status: "Aktif",
         tanggalMulai: new Date(),
-        nomorSK: `SK-GANTI/${currentPengurus.nomorSK || "NOSK"}/${new Date().getFullYear()}`,
+        nomorSK: skNumber,
       },
       include: {
         anggota: {
