@@ -37,6 +37,7 @@ import PengurusDetailDialog from "./PengurusDetailDialog";
 import PengurusFormDialog from "./PengurusFormDialog";
 import { exportPengurusPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
+import { fetchJson } from "@/lib/fetch-helper";
 
 type SortDir = "asc" | "desc" | null;
 
@@ -355,13 +356,11 @@ export default function PengurusPage({
   };
 
   const handleSavePengurus = async (data: any) => {
-    const res = await fetch("/api/pengurus", {
+    const json: any = await fetchJson("/api/pengurus", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error);
     toast.success(json.message);
     refreshData();
   };

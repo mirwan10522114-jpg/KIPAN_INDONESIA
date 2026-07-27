@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/api-error";
 
 // ============================================================
 // GET /api/jabatan — List semua jabatan, optional grouped by bidang
@@ -36,8 +37,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: jabatan });
   } catch (error) {
-    console.error("GET /api/jabatan error:", error);
-    return NextResponse.json({ success: false, error: "Gagal mengambil jabatan" }, { status: 500 });
+    return handleApiError(error, "GET /api/jabatan", "Gagal mengambil jabatan");
   }
 }
 
@@ -105,7 +105,6 @@ export async function POST(req: NextRequest) {
       message: `Jabatan "${body.nama}" di bidang "${body.bidang}" (${body.level}) berhasil ditambahkan`,
     });
   } catch (error) {
-    console.error("POST /api/jabatan error:", error);
-    return NextResponse.json({ success: false, error: "Gagal menambahkan jabatan" }, { status: 500 });
+    return handleApiError(error, "POST /api/jabatan", "Gagal menambahkan jabatan");
   }
 }

@@ -205,10 +205,15 @@ export default function PendaftaranAnggota() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
+      let data: any;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error(`Server merespons HTTP ${res.status} (body bukan JSON). Coba refresh halaman dan ulangi.`);
+      }
 
       if (!data.success) {
-        throw new Error(data.error || "Gagal submit pendaftaran");
+        throw new Error(data.error || `Gagal submit pendaftaran (HTTP ${res.status})`);
       }
       setSubmitted(true);
     } catch (e: any) {

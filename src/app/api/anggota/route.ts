@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateNIP } from "@/lib/nip";
+import { handleApiError, safeParseInt } from "@/lib/api-error";
 
 export async function GET(req: NextRequest) {
   try {
@@ -47,8 +48,7 @@ export async function GET(req: NextRequest) {
       totalPages,
     });
   } catch (error) {
-    console.error("GET /api/anggota error:", error);
-    return NextResponse.json({ success: false, error: "Gagal mengambil data anggota" }, { status: 500 });
+    return handleApiError(error, "GET /api/anggota", "Gagal mengambil data anggota");
   }
 }
 
@@ -99,8 +99,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Validasi provinsi & kabupaten
-    const prov = await db.provinsi.findUnique({ where: { id: parseInt(body.provinsiId) } });
-    const kab = await db.kabupaten.findUnique({ where: { id: parseInt(body.kabupatenId) } });
+    const provIdNum = safeParseInt(body.provinsiId);
+    const kabIdNum = safeParseInt(body.kabupatenId);
+    if (provIdNum === null || kabIdNum === null) {
+      return NextResponse.json({ success: false, error: "Provinsi atau kabupaten tidak valid" }, { status: 400 });
+    }
+    const prov = await db.provinsi.findUnique({ where: { id: provIdNum } });
+    const kab = await db.kabupaten.findUnique({ where: { id: kabIdNum } });
 
     if (!prov || !kab) {
       return NextResponse.json({ success: false, error: "Provinsi atau kabupaten tidak ditemukan" }, { status: 400 });
@@ -121,8 +126,8 @@ export async function POST(req: NextRequest) {
           pendidikan: body.pendidikan || null,
           pekerjaan: body.pekerjaan || null,
           alamat: body.alamat || "",
-          provinsiId: parseInt(body.provinsiId),
-          kabupatenId: parseInt(body.kabupatenId),
+          provinsiId: provIdNum,
+          kabupatenId: kabIdNum,
           kecamatan: body.kecamatan || null,
           email: body.email || "",
           hp: body.hp || "",
@@ -141,8 +146,8 @@ export async function POST(req: NextRequest) {
       // 2. Generate NIP dengan global sequence
       const tahun = new Date().getFullYear();
       const nia = await generateNIP(newAnggota.id, {
-        provinsiId: parseInt(body.provinsiId),
-        kabupatenId: parseInt(body.kabupatenId),
+        provinsiId: provIdNum,
+        kabupatenId: kabIdNum,
         tahun,
       }, tx);
 
@@ -161,7 +166,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: updated.anggota, message: `Pengurus berhasil ditambahkan dengan NIP: ${updated.nia}` });
   } catch (error) {
-    console.error("POST /api/anggota error:", error);
-    return NextResponse.json({ success: false, error: "Gagal menambahkan anggota" }, { status: 500 });
+    return handleApiError(error, "POST /api/anggota", "Gagal menambahkan anggota");
   }
 }

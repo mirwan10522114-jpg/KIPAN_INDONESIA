@@ -30,3 +30,50 @@ Stage Summary:
   * src/components/sections/PendaftaranAnggota.tsx (payload construction)
   * src/app/api/pendaftaran/route.ts (lookup + auto-create + error handling)
 - Pendaftaran anggota sekarang berfungsi untuk semua 38 provinsi dan 514 kabupaten di Indonesia
+
+---
+Task ID: FIX-MULTI-MODULE-SUBMIT
+Agent: main (Super Z)
+Task: Thorough testing & fix bug "gagal menyimpan" pada modul pendaftaran dashboard, wilayah, pengurus, bidang & jabatan
+
+Work Log:
+- Audit 5 API route: pendaftaran, wilayah, pengurus, jabatan (incl bulk-create-bidang), anggota
+- Audit 4 frontend: PendaftaranAnggota, WilayahPage+WilayahFormDialog, PengurusPage+PengurusFormDialog, AnggotaPage, JabatanPage
+- Ditemukan pattern bug serupa: API menggunakan parseInt() langsung tanpa validasi NaN, sehingga string kosong / string non-numerik menyebabkan Prisma error generik yang tidak informatif
+- Ditemukan bug spesifik di API pengurus mode manual level NASIONAL: provinsiIdNum dipaksa non-null (!) padahal null, menyebabkan error "Argument id must not be null"
+- Ditemukan bug di Anggota schema: provinsiId & kabupatenId NOT NULL, tapi PengurusFormDialog untuk level NASIONAL tidak meminta wilayah → anggota create pasti gagal untuk orang baru di level NASIONAL
+- Ditemukan bug di frontend: handleSavePengurus, handleSave (WilayahPage), AnggotaPage POST handler, PendaftaranAnggota handleSubmit — semua tidak handle response non-JSON/HTTP 500 dengan baik, error asli tidak ditampilkan ke user
+
+Files modified:
+1. src/lib/api-error.ts (NEW) — helper terpusat handle Prisma error (ValidationError, KnownRequestError P2002/P2003/P2025/P2014) + safeParseInt
+2. src/lib/fetch-helper.ts (NEW) — helper frontend fetchJson & fetchJsonSafe untuk handle response non-JSON/HTTP error
+3. src/app/api/pendaftaran/route.ts — sudah difix di task sebelumnya
+4. src/app/api/pengurus/route.ts — pakai safeParseInt untuk jabatanId/anggotaId/provinsiId/kabupatenId; fix bug NASIONAL+manual (validasi provinsi/kabupaten domisili wajib); pakai handleApiError
+5. src/app/api/wilayah/route.ts — pakai safeParseInt untuk id/provinsiId di POST/PUT; pakai handleApiError
+6. src/app/api/jabatan/route.ts — pakai handleApiError
+7. src/app/api/jabatan/bulk-create-bidang/route.ts — pakai handleApiError
+8. src/app/api/anggota/route.ts — pakai safeParseInt + handleApiError
+9. src/components/admin/pages/PengurusPage.tsx — pakai fetchJson (throw error asli ke UI)
+10. src/components/admin/pages/WilayahPage.tsx — pakai fetchJson
+11. src/components/admin/pages/AnggotaPage.tsx — pakai fetchJsonSafe
+12. src/components/admin/pages/PengurusFormDialog.tsx — tambah validasi: mode manual wajib isi provinsi/kabupaten domisili; tambah UI domisili anggota untuk level NASIONAL+manual
+13. src/components/sections/PendaftaranAnggota.tsx — handle response non-JSON
+
+Test scripts created:
+- scripts/e2e-test.sh — 15 test case end-to-end untuk 5 modul (pendaftaran, wilayah, jabatan, pengurus, anggota)
+- scripts/cleanup-e2e-test.js — cleanup test data (handle FK constraint)
+
+Stage Summary:
+- 15/15 test end-to-end LULUS:
+  * Pendaftaran: valid (200), kabupaten baru auto-create (200), invalid provinsi (400 dengan pesan jelas)
+  * Wilayah: GET (200), POST kabupaten baru (200), POST duplikat (400 dengan pesan jelas)
+  * Jabatan: GET (200), POST baru (200), POST bulk-create-bidang (200)
+  * Pengurus: GET (200), POST mode manual (200), POST jabatan kosong (400 jelas), POST jabatanId NaN (400 jelas)
+  * Anggota: GET (200), POST valid (200)
+- Typecheck: file yang dimodifikasi semua bersih (tidak ada error TS baru)
+- Pendaftaran anggota publik berfungsi untuk semua 38 provinsi + 514 kabupaten Indonesia
+- Penambahan pengurus di dashboard admin berfungsi untuk semua level (Nasional/Provinsi/Kabupaten) + mode (database/manual)
+- Penambahan wilayah (provinsi/kabupaten) berfungsi, dengan validasi duplikat
+- Penambahan jabatan & bidang (individual + bulk) berfungsi
+- Penambahan anggota berfungsi
+- Error handling sekarang konsisten: error asli Prisma (P2002 duplikat, P2003 FK invalid, dst) diteruskan ke user dengan pesan Indonesia yang jelas, bukan generic "Gagal menyimpan"

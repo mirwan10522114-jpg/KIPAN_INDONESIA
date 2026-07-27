@@ -148,6 +148,12 @@ export default function PengurusFormDialog({
       setError("Provinsi & Kabupaten/Kota penempatan wajib dipilih untuk level Kabupaten");
       return;
     }
+    // Untuk mode manual (orang baru), provinsi & kabupaten WAJIB diisi terlepas dari level
+    // karena Anggota schema membutuhkan keduanya sebagai data domisili anggota
+    if (inputMode === "manual" && (!form.provinsiId || !form.kabupatenId)) {
+      setError("Provinsi & Kabupaten/Kota domisili anggota wajib diisi untuk orang baru (sebagai data biodata, terlepas dari level penempatan)");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -482,7 +488,50 @@ export default function PengurusFormDialog({
               {/* Wilayah Penempatan — conditional on level */}
               {form.level === "NASIONAL" && (
                 <div className="bg-violet-50 border border-violet-200 rounded-lg p-3 text-xs text-violet-800">
-                  📌 <strong>Penempatan:</strong> Pengurus Tingkat Nasional (Indonesia). Tidak perlu pilih wilayah.
+                  📌 <strong>Penempatan:</strong> Pengurus Tingkat Nasional (Indonesia). Tidak perlu pilih wilayah penempatan.
+                </div>
+              )}
+              {/* Untuk mode manual + level NASIONAL: tetap perlu Provinsi & Kabupaten sebagai DOMISILI anggota
+                  (Anggota schema require keduanya), terpisah dari penempatan pengurus */}
+              {inputMode === "manual" && form.level === "NASIONAL" && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                  <p className="text-[11px] font-semibold text-emerald-800 mb-2">
+                    🏠 Domisili Anggota (untuk data biodata)
+                  </p>
+                  <p className="text-[10px] text-emerald-700 mb-2">
+                    Wajib diisi karena setiap anggota harus terdaftar dengan domisili, terlepas dari level penempatan pengurus.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Provinsi Domisili *</label>
+                      <select
+                        value={form.provinsiId}
+                        onChange={(e) => setForm({ ...form, provinsiId: e.target.value, kabupatenId: "" })}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                      >
+                        <option value="">— Pilih —</option>
+                        {provinsiList.map((p) => (
+                          <option key={p.id} value={p.id}>{p.nama}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Kabupaten/Kota Domisili *</label>
+                      <select
+                        value={form.kabupatenId}
+                        onChange={(e) => setForm({ ...form, kabupatenId: e.target.value })}
+                        disabled={!form.provinsiId}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none disabled:bg-slate-50"
+                      >
+                        <option value="">— Pilih —</option>
+                        {kabupatenList
+                          .filter(k => !form.provinsiId || k.provinsiId === parseInt(form.provinsiId))
+                          .map((k) => (
+                            <option key={k.id} value={k.id}>{k.nama}</option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               )}
               {form.level === "PROVINSI" && (

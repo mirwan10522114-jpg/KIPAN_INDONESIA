@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/api-error";
 
 // POST /api/jabatan/bulk-create-bidang
 // Body: { bidang: string, levels: string[] }
@@ -68,7 +69,6 @@ export async function POST(req: NextRequest) {
       message: `Bidang "${bidang.trim()}" dibuat dengan ${result.created} jabatan baru (${result.skipped} di-skip karena sudah ada).`,
     });
   } catch (error) {
-    console.error("POST /api/jabatan/bulk-create-bidang error:", error);
-    return NextResponse.json({ success: false, error: "Gagal membuat bidang baru" }, { status: 500 });
+    return handleApiError(error, "POST /api/jabatan/bulk-create-bidang", "Gagal membuat bidang baru");
   }
 }

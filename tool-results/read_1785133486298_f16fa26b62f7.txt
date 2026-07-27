@@ -636,7 +636,7 @@
    636→                  onChange={async (e) => {
    637→                    const file = e.target.files?.[0];
    638→                    if (!file) return;
-   639→                    if (file.size > 1024 * 1024 * 2) return;
+   639→                    if (file.size > 1024 * 1024 * 2) { toast.error("File SK maksimal 2MB"); return; }
    640→                    const reader = new FileReader();
    641→                    reader.onload = () => {
    642→                      setForm((prev) => ({ ...prev, fileSK: reader.result as string }));

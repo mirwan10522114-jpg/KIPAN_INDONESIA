@@ -6,6 +6,7 @@ import { Search, Eye, Download, X, QrCode, CreditCard, RefreshCw, Plus, UserPlus
 import { toast } from "sonner";
 import AnggotaDetailDialog from "./AnggotaDetailDialog";
 import { exportAnggotaPdf } from "@/lib/pdf-export";
+import { fetchJsonSafe } from "@/lib/fetch-helper";
 
 export default function AnggotaPage({
   initialFilter,
@@ -480,22 +481,21 @@ export default function AnggotaPage({
                     }
                     setSaving(true);
                     try {
-                      const res = await fetch("/api/anggota", {
+                      const result = await fetchJsonSafe<any>("/api/anggota", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(addForm),
                       });
-                      const json = await res.json();
-                      if (json.success) {
-                        toast.success(json.message);
+                      if (result.ok) {
+                        toast.success(result.data.message);
                         setShowAddDialog(false);
                         fetchData();
                         setAddForm({ namaLengkap: "", nik: "", tempatLahir: "", tanggalLahir: "", jenisKelamin: "L", alamat: "", provinsiId: "", kabupatenId: "", email: "", hp: "", pekerjaan: "" });
                       } else {
-                        toast.error(json.error);
+                        toast.error(result.error || "Gagal menambahkan anggota");
                       }
-                    } catch (e) {
-                      toast.error("Gagal menambahkan anggota");
+                    } catch (e: any) {
+                      toast.error(e?.message || "Gagal menambahkan anggota");
                     } finally {
                       setSaving(false);
                     }

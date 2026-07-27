@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { handleApiError, safeParseInt } from "@/lib/api-error";
 
 // GET /api/wilayah — List provinsi & kabupaten
 // Penting: count pengurus HANYA untuk level yang sesuai:
@@ -72,8 +73,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: { provinsi: provinsiWithCount, kabupaten: kabupatenWithCount } });
   } catch (error) {
-    console.error("GET /api/wilayah error:", error);
-    return NextResponse.json({ success: false, error: "Gagal mengambil data wilayah" }, { status: 500 });
+    return handleApiError(error, "GET /api/wilayah", "Gagal mengambil data wilayah");
   }
 }
 
@@ -119,11 +119,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: "Kode kabupaten sudah ada" }, { status: 400 });
       }
 
+      const provinsiIdNum = safeParseInt(body.provinsiId);
+      if (provinsiIdNum === null) {
+        return NextResponse.json({ success: false, error: "Provinsi tidak valid" }, { status: 400 });
+      }
+
       const kabupaten = await db.kabupaten.create({
         data: {
           kode: body.kode,
           nama: body.nama,
-          provinsiId: parseInt(body.provinsiId),
+          provinsiId: provinsiIdNum,
           status: body.status || "Aktif",
           ketua: body.ketua || null,
         },
@@ -138,8 +143,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: "Type tidak valid" }, { status: 400 });
   } catch (error) {
-    console.error("POST /api/wilayah error:", error);
-    return NextResponse.json({ success: false, error: "Gagal menambahkan wilayah" }, { status: 500 });
+    return handleApiError(error, "POST /api/wilayah", "Gagal menambahkan wilayah");
   }
 }
 
@@ -149,8 +153,12 @@ export async function PUT(req: NextRequest) {
     const body = await req.json();
 
     if (body.type === "provinsi") {
+      const provId = safeParseInt(body.id);
+      if (provId === null) {
+        return NextResponse.json({ success: false, error: "ID tidak valid" }, { status: 400 });
+      }
       const provinsi = await db.provinsi.update({
-        where: { id: parseInt(body.id) },
+        where: { id: provId },
         data: {
           nama: body.nama,
           status: body.status,
@@ -164,11 +172,16 @@ export async function PUT(req: NextRequest) {
     }
 
     if (body.type === "kabupaten") {
+      const kabId = safeParseInt(body.id);
+      const provIdNum = safeParseInt(body.provinsiId);
+      if (kabId === null || provIdNum === null) {
+        return NextResponse.json({ success: false, error: "ID atau provinsiId tidak valid" }, { status: 400 });
+      }
       const kabupaten = await db.kabupaten.update({
-        where: { id: parseInt(body.id) },
+        where: { id: kabId },
         data: {
           nama: body.nama,
-          provinsiId: parseInt(body.provinsiId),
+          provinsiId: provIdNum,
           status: body.status,
           ketua: body.ketua || null,
         },
@@ -182,8 +195,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: "Type tidak valid" }, { status: 400 });
   } catch (error) {
-    console.error("PUT /api/wilayah error:", error);
-    return NextResponse.json({ success: false, error: "Gagal memperbarui wilayah" }, { status: 500 });
+    return handleApiError(error, "PUT /api/wilayah", "Gagal memperbarui wilayah");
   }
 }
 
@@ -210,7 +222,6 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: false, error: "Type tidak valid" }, { status: 400 });
   } catch (error) {
-    console.error("DELETE /api/wilayah error:", error);
-    return NextResponse.json({ success: false, error: "Gagal menghapus wilayah" }, { status: 500 });
+    return handleApiError(error, "DELETE /api/wilayah", "Gagal menghapus wilayah");
   }
 }

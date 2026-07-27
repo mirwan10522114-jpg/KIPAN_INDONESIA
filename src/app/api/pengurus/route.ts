@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateNIP } from "@/lib/nip";
+import { handleApiError, safeParseInt } from "@/lib/api-error";
 
 export async function GET(req: NextRequest) {
   try {
@@ -64,8 +65,7 @@ export async function GET(req: NextRequest) {
       totalPages,
     });
   } catch (error) {
-    console.error("GET /api/pengurus error:", error);
-    return NextResponse.json({ success: false, error: "Gagal mengambil data pengurus" }, { status: 500 });
+    return handleApiError(error, "GET /api/pengurus", "Gagal mengambil data pengurus");
   }
 }
 
@@ -73,19 +73,21 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Validasi: jabatanId wajib
-    if (!body.jabatanId) {
+    // Validasi: jabatanId wajib dan harus numeric valid
+    const jabatanIdNum = safeParseInt(body.jabatanId);
+    if (!body.jabatanId || jabatanIdNum === null) {
       return NextResponse.json({ success: false, error: "Jabatan wajib dipilih." }, { status: 400 });
     }
 
     // Validasi: anggotaId wajib (kecuali mode manual orang baru)
     const isManualMode = body.isNewAnggota === true && body.newAnggotaData;
-    if (!isManualMode && !body.anggotaId) {
+    let anggotaIdNum: number | null = safeParseInt(body.anggotaId);
+    if (!isManualMode && (!body.anggotaId || anggotaIdNum === null)) {
       return NextResponse.json({ success: false, error: "Anggota wajib dipilih dari database, atau gunakan mode Input Manual untuk orang baru." }, { status: 400 });
     }
 
     // Validasi: jabatanId harus ada di database
-    const jabatanExists = await db.jabatan.findUnique({ where: { id: parseInt(body.jabatanId) } });
+    const jabatanExists = await db.jabatan.findUnique({ where: { id: jabatanIdNum } });
     if (!jabatanExists) {
       return NextResponse.json({ success: false, error: "Jabatan tidak ditemukan. Pilih jabatan yang valid." }, { status: 400 });
     }
@@ -109,11 +111,16 @@ export async function POST(req: NextRequest) {
         }
       }
       // Validasi level & wilayah
-      if (body.level === "PROVINSI" && !body.provinsiId) {
-        return NextResponse.json({ success: false, error: "Provinsi penempatan wajib dipilih." }, { status: 400 });
+      const provinsiIdNum = safeParseInt(body.provinsiId);
+      const kabupatenIdNum = safeParseInt(body.kabupatenId);
+      // Untuk mode manual, provinsiId & kabupatenId WAJIB (karena Anggota schema require keduanya),
+      // terlepas dari level pengurus (NASIONAL/PROVINSI/KABUPATEN).
+      // Wilayah ini adalah domisili anggota, bukan penempatan pengurus.
+      if (provinsiIdNum === null) {
+        return NextResponse.json({ success: false, error: "Provinsi domisili anggota wajib dipilih (untuk data biodata anggota)." }, { status: 400 });
       }
-      if (body.level === "KABUPATEN" && (!body.provinsiId || !body.kabupatenId)) {
-        return NextResponse.json({ success: false, error: "Provinsi & Kabupaten/Kota wajib dipilih." }, { status: 400 });
+      if (kabupatenIdNum === null) {
+        return NextResponse.json({ success: false, error: "Kabupaten/Kota domisili anggota wajib dipilih (untuk data biodata anggota)." }, { status: 400 });
       }
 
       // Validasi format email
@@ -146,15 +153,17 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Validasi provinsiId exists
-      const provExists = await db.provinsi.findUnique({ where: { id: parseInt(body.provinsiId) } });
-      if (!provExists) {
-        return NextResponse.json({ success: false, error: "Provinsi tidak ditemukan di database." }, { status: 400 });
+      // Validasi provinsiId exists (hanya untuk level PROVINSI & KABUPATEN)
+      if ((body.level === "PROVINSI" || body.level === "KABUPATEN") && provinsiIdNum !== null) {
+        const provExists = await db.provinsi.findUnique({ where: { id: provinsiIdNum } });
+        if (!provExists) {
+          return NextResponse.json({ success: false, error: "Provinsi tidak ditemukan di database." }, { status: 400 });
+        }
       }
 
       // Validasi kabupatenId exists (jika level KABUPATEN)
-      if (body.level === "KABUPATEN" && body.kabupatenId) {
-        const kabExists = await db.kabupaten.findUnique({ where: { id: parseInt(body.kabupatenId) } });
+      if (body.level === "KABUPATEN" && kabupatenIdNum !== null) {
+        const kabExists = await db.kabupaten.findUnique({ where: { id: kabupatenIdNum } });
         if (!kabExists) {
           return NextResponse.json({ success: false, error: "Kabupaten/Kota tidak ditemukan di database." }, { status: 400 });
         }
@@ -163,36 +172,38 @@ export async function POST(req: NextRequest) {
       // Transaction: create anggota → generate NIP → update NIP
       const result = await db.$transaction(async (tx) => {
         // 1. Create anggota dengan NIP placeholder
+        const anggotaData: any = {
+          nia: "TEMP-" + Date.now(),
+          namaLengkap: nd.namaLengkap.trim(),
+          nik: nd.nik || "",
+          tempatLahir: nd.tempatLahir || "",
+          tanggalLahir: nd.tanggalLahir ? new Date(nd.tanggalLahir) : new Date("2000-01-01"),
+          jenisKelamin: nd.jenisKelamin || "L",
+          alamat: nd.alamat || "",
+          provinsiId: provinsiIdNum!,
+          email: nd.email || "",
+          hp: nd.hp || "",
+          whatsapp: nd.hp || null,
+          foto: nd.foto || null,
+          ktp: nd.ktp || null,
+          cv: nd.cv || null,
+          suratPernyataan: nd.suratPernyataan || null,
+          suratSehat: nd.suratSehat || null,
+          status: "Aktif",
+          angkatan: body.angkatan || "XII",
+          tanggalAngkat: new Date(),
+        };
+        if (kabupatenIdNum !== null) anggotaData.kabupatenId = kabupatenIdNum;
+
         const newAnggota = await tx.anggota.create({
-          data: {
-            nia: "TEMP-" + Date.now(),
-            namaLengkap: nd.namaLengkap.trim(),
-            nik: nd.nik || "",
-            tempatLahir: nd.tempatLahir || "",
-            tanggalLahir: nd.tanggalLahir ? new Date(nd.tanggalLahir) : new Date("2000-01-01"),
-            jenisKelamin: nd.jenisKelamin || "L",
-            alamat: nd.alamat || "",
-            provinsiId: parseInt(body.provinsiId),
-            ...(body.kabupatenId ? { kabupatenId: parseInt(body.kabupatenId) } : {}),
-            email: nd.email || "",
-            hp: nd.hp || "",
-            whatsapp: nd.hp || null,
-            foto: nd.foto || null,
-            ktp: nd.ktp || null,
-            cv: nd.cv || null,
-            suratPernyataan: nd.suratPernyataan || null,
-            suratSehat: nd.suratSehat || null,
-            status: "Aktif",
-            angkatan: body.angkatan || "XII",
-            tanggalAngkat: new Date(),
-          },
+          data: anggotaData,
         });
 
         // 2. Generate NIP dengan global sequence
         const tahun = new Date().getFullYear();
         const nia = await generateNIP(newAnggota.id, {
-          provinsiId: parseInt(body.provinsiId),
-          kabupatenId: body.kabupatenId ? parseInt(body.kabupatenId) : null,
+          provinsiId: provinsiIdNum!,
+          kabupatenId: kabupatenIdNum,
           tahun,
         }, tx);
 
@@ -207,7 +218,7 @@ export async function POST(req: NextRequest) {
 
       anggotaIdToUse = result;
     } else {
-      anggotaIdToUse = parseInt(body.anggotaId);
+      anggotaIdToUse = anggotaIdNum!;
     }
 
     // Rule: 1 orang hanya boleh pegang 1 jabatan aktif di satu waktu.
@@ -238,7 +249,7 @@ export async function POST(req: NextRequest) {
 
     const data: any = {
       anggotaId: anggotaIdToUse,
-      jabatanId: parseInt(body.jabatanId),
+      jabatanId: jabatanIdNum,
       level: body.level,
       status: body.status || "Aktif",
       tanggalMulai: body.tanggalMulai ? new Date(body.tanggalMulai) : new Date(),
@@ -246,8 +257,14 @@ export async function POST(req: NextRequest) {
       nomorSK: body.nomorSK || "",
       fileSK: body.fileSK || null,
     };
-    if (body.provinsiId) data.provinsiId = parseInt(body.provinsiId);
-    if (body.kabupatenId) data.kabupatenId = parseInt(body.kabupatenId);
+    if (body.level === "PROVINSI" || body.level === "KABUPATEN") {
+      const provNum = safeParseInt(body.provinsiId);
+      if (provNum !== null) data.provinsiId = provNum;
+    }
+    if (body.level === "KABUPATEN") {
+      const kabNum = safeParseInt(body.kabupatenId);
+      if (kabNum !== null) data.kabupatenId = kabNum;
+    }
 
     const pengurus = await db.pengurus.create({
       data,
@@ -271,7 +288,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: pengurus, message: `Pengurus berhasil ditambahkan dengan jabatan "${jabatanExists.nama}" di bidang "${jabatanExists.bidang}".${endedOldJabatan}` });
   } catch (error) {
-    console.error("POST /api/pengurus error:", error);
-    return NextResponse.json({ success: false, error: "Gagal menambahkan pengurus" }, { status: 500 });
+    return handleApiError(error, "POST /api/pengurus", "Gagal menambahkan pengurus");
   }
 }

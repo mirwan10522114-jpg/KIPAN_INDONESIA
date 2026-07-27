@@ -31,6 +31,7 @@ import WilayahDetailDialog from "./WilayahDetailDialog";
 import WilayahFormDialog, { type WilayahFormData } from "./WilayahFormDialog";
 import { exportWilayahPdf } from "@/lib/pdf-export";
 import { toast } from "sonner";
+import { fetchJson } from "@/lib/fetch-helper";
 
 type SortDir = "asc" | "desc" | null;
 
@@ -270,13 +271,11 @@ export default function WilayahPage({
 
   const handleSave = async (data: WilayahFormData) => {
     const method = data.id ? "PUT" : "POST";
-    const res = await fetch("/api/wilayah", {
+    const json: any = await fetchJson("/api/wilayah", {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    const json = await res.json();
-    if (!json.success) throw new Error(json.error);
     toast.success(json.message);
     fetchData();
   };
