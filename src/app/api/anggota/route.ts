@@ -57,6 +57,31 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Validasi format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(body.email)) {
+      return NextResponse.json({ success: false, error: "Format email tidak valid. Contoh: nama@domain.com" }, { status: 400 });
+    }
+
+    // Validasi format HP Indonesia
+    const hpRegex = /^08\d{8,12}$/;
+    if (!hpRegex.test(String(body.hp).replace(/[\s-]/g, ""))) {
+      return NextResponse.json({ success: false, error: "Format No. HP tidak valid. Gunakan format: 08xxxxxxxxxx (8-13 digit setelah 08)" }, { status: 400 });
+    }
+
+    // Validasi NIK 16 digit numeric (wajib)
+    if (!body.nik || String(body.nik).length !== 16 || !/^\d{16}$/.test(String(body.nik))) {
+      return NextResponse.json({ success: false, error: "NIK wajib diisi dengan tepat 16 digit angka." }, { status: 400 });
+    }
+
+    // Validasi tanggalLahir: tidak boleh future date
+    if (body.tanggalLahir) {
+      const lahir = new Date(body.tanggalLahir);
+      if (lahir > new Date()) {
+        return NextResponse.json({ success: false, error: "Tanggal lahir tidak boleh di masa depan." }, { status: 400 });
+      }
+    }
+
     // Validasi provinsi & kabupaten
     const prov = await db.provinsi.findUnique({ where: { id: parseInt(body.provinsiId) } });
     const kab = await db.kabupaten.findUnique({ where: { id: parseInt(body.kabupatenId) } });

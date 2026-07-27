@@ -79,6 +79,50 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: "Provinsi & Kabupaten/Kota wajib dipilih." }, { status: 400 });
       }
 
+      // Validasi format email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(nd.email)) {
+        return NextResponse.json({ success: false, error: "Format email tidak valid. Contoh: nama@domain.com" }, { status: 400 });
+      }
+
+      // Validasi format HP Indonesia
+      const hpRegex = /^08\d{8,12}$/;
+      if (!hpRegex.test(nd.hp.replace(/[\s-]/g, ""))) {
+        return NextResponse.json({ success: false, error: "Format No. HP tidak valid. Gunakan format: 08xxxxxxxxxx (8-13 digit setelah 08)" }, { status: 400 });
+      }
+
+      // Validasi NIK 16 digit numeric (jika diisi)
+      if (nd.nik && nd.nik.length !== 16) {
+        return NextResponse.json({ success: false, error: "NIK harus tepat 16 digit angka." }, { status: 400 });
+      }
+
+      // Validasi tanggalLahir: tidak boleh future date, minimum umur 16 tahun
+      if (nd.tanggalLahir) {
+        const lahir = new Date(nd.tanggalLahir);
+        const now = new Date();
+        if (lahir > now) {
+          return NextResponse.json({ success: false, error: "Tanggal lahir tidak boleh di masa depan." }, { status: 400 });
+        }
+        const umur = now.getFullYear() - lahir.getFullYear();
+        if (umur < 16) {
+          return NextResponse.json({ success: false, error: "Umur minimal 16 tahun untuk menjadi pengurus." }, { status: 400 });
+        }
+      }
+
+      // Validasi provinsiId exists
+      const provExists = await db.provinsi.findUnique({ where: { id: parseInt(body.provinsiId) } });
+      if (!provExists) {
+        return NextResponse.json({ success: false, error: "Provinsi tidak ditemukan di database." }, { status: 400 });
+      }
+
+      // Validasi kabupatenId exists (jika level KABUPATEN)
+      if (body.level === "KABUPATEN" && body.kabupatenId) {
+        const kabExists = await db.kabupaten.findUnique({ where: { id: parseInt(body.kabupatenId) } });
+        if (!kabExists) {
+          return NextResponse.json({ success: false, error: "Kabupaten/Kota tidak ditemukan di database." }, { status: 400 });
+        }
+      }
+
       // Transaction: create anggota → generate NIP → update NIP
       const result = await db.$transaction(async (tx) => {
         // 1. Create anggota dengan NIP placeholder
