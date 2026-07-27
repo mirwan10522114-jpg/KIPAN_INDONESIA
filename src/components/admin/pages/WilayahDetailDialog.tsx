@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, MapPin, Building2, UserCog, Info, BarChart3,
-  Edit, TrendingUp, Activity, CheckCircle2,
+  Edit, TrendingUp, Activity, CheckCircle2, ExternalLink,
 } from "lucide-react";
 import SafeImage from "@/components/ui/safe-image";
 
@@ -24,10 +24,11 @@ interface WilayahDetailProps {
   onViewPengurus?: (id: number) => void;
   onViewAnggota?: (id: number) => void;
   onAddAnggota?: () => void;
+  onNavigateToPengurus?: (filter: { provinsiNama?: string; kabupatenNama?: string; level?: string }) => void;
 }
 
 export default function WilayahDetailDialog({
-  wilayahId, type, onClose, onEdit, onViewPengurus,
+  wilayahId, type, onClose, onEdit, onViewPengurus, onNavigateToPengurus,
 }: WilayahDetailProps) {
   const [activeTab, setActiveTab] = useState("informasi");
   const [data, setData] = useState<any>(null);
@@ -152,34 +153,56 @@ export default function WilayahDetailDialog({
 
                   {/* KABUPATEN (provinsi only) */}
                   {activeTab === "kabupaten" && type === "provinsi" && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-slate-50 border-b border-slate-200">
-                          <tr>
-                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Kode</th>
-                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
-                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Ketua</th>
-                            <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Pengurus</th>
-                            <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {data.kabupatenList?.map((k: any) => (
-                            <tr key={k.id} className="hover:bg-slate-50">
-                              <td className="px-3 py-2 text-xs font-mono text-slate-600">{k.kode}</td>
-                              <td className="px-3 py-2 text-sm font-semibold text-blue-950">{k.nama}</td>
-                              <td className="px-3 py-2 text-sm text-slate-600">{k.ketua || "-"}</td>
-                              <td className="px-3 py-2 text-center text-sm font-bold text-violet-600">{k.jumlahPengurus}</td>
-                              <td className="px-3 py-2 text-center">
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold border ${statusBadge(k.status)}`}>{k.status}</span>
-                              </td>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-3 bg-blue-50 border border-blue-100 rounded-lg p-2">
+                        💡 Klik nama kabupaten/kota untuk melihat daftar pengurus di wilayah tersebut
+                      </p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Kode</th>
+                              <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
+                              <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Ketua</th>
+                              <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Pengurus</th>
+                              <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Status</th>
+                              <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Aksi</th>
                             </tr>
-                          ))}
-                          {(!data.kabupatenList || data.kabupatenList.length === 0) && (
-                            <tr><td colSpan={5} className="px-3 py-8 text-center text-sm text-slate-400">Belum ada kabupaten/kota</td></tr>
-                          )}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {data.kabupatenList?.map((k: any) => (
+                              <tr key={k.id} className="hover:bg-slate-50">
+                                <td className="px-3 py-2 text-xs font-mono text-slate-600">{k.kode}</td>
+                                <td className="px-3 py-2 text-sm font-semibold text-blue-950">{k.nama}</td>
+                                <td className="px-3 py-2 text-sm text-slate-600">{k.ketua || "-"}</td>
+                                <td className="px-3 py-2 text-center text-sm font-bold text-violet-600">{k.jumlahPengurus}</td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold border ${statusBadge(k.status)}`}>{k.status}</span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <button
+                                    onClick={() => {
+                                      onClose();
+                                      onNavigateToPengurus?.({
+                                        provinsiNama: w?.nama,
+                                        kabupatenNama: k.nama,
+                                        level: "Kabupaten",
+                                      });
+                                    }}
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-md border border-blue-200"
+                                    title={`Lihat pengurus di ${k.nama}`}
+                                  >
+                                    <ExternalLink className="w-3 h-3" /> Lihat Pengurus
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                            {(!data.kabupatenList || data.kabupatenList.length === 0) && (
+                              <tr><td colSpan={6} className="px-3 py-8 text-center text-sm text-slate-400">Belum ada kabupaten/kota</td></tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
                   {activeTab === "kabupaten" && type === "kabupaten" && (

@@ -715,6 +715,11 @@ export default function WilayahPage({
         onAddAnggota={() => {
           onNavigate?.("pengurus");
         }}
+        onNavigateToPengurus={(filter) => {
+          setDetailId(null);
+          // Navigate to pengurus page with filter applied
+          onNavigate?.("pengurus", filter);
+        }}
       />
 
       {/* Form Dialog for Add/Edit */}

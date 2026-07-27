@@ -89,6 +89,7 @@ export default function PengurusPage({
     if (initialFilter) {
       if (initialFilter.provinsiNama) setProvinsiFilter(initialFilter.provinsiNama);
       if (initialFilter.kabupatenNama) setKabupatenFilter(initialFilter.kabupatenNama);
+      if (initialFilter.level) setLevelFilter(initialFilter.level);
     }
     fetchData();
   }, []);
