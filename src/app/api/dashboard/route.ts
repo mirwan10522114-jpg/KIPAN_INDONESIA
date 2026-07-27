@@ -58,14 +58,56 @@ export async function GET() {
       select: { id: true, nama: true, kode: true },
     });
 
-    const anggotaPerProvinsi = anggotaByProvinsi.map((a) => {
-      const prov = provinsiList.find((p) => p.id === a.provinsiId);
-      return {
-        nama: prov?.nama || "Unknown",
-        kode: prov?.kode || "",
-        jumlah: a._count,
-      };
-    }).sort((a, b) => b.jumlah - a.jumlah);
+    // PERBAIKAN: Hitung pengurus per provinsi berdasarkan LEVEL pengurus (bukan provinsiId anggota)
+    // - Pengurus level PROVINSI: dihitung di provinsi tsb
+    // - Pengurus level KABUPATEN: dihitung di provinsi tempat kabupaten tsb berada
+    // - Pengurus level NASIONAL: TIDAK dihitung di provinsi mana pun (mereka tingkat pusat)
+    const pengurusPerProvinsiRaw = await db.pengurus.findMany({
+      where: {
+        status: "Aktif",
+        OR: [
+          { level: "PROVINSI" },
+          { level: "KABUPATEN" },
+        ],
+      },
+      select: {
+        level: true,
+        provinsiId: true,
+        kabupaten: { select: { provinsiId: true } },
+      },
+    });
+    const pengurusPerProvinsiMap: Record<number, number> = {};
+    let pengurusNasionalCount = 0;
+    for (const p of pengurusPerProvinsiRaw) {
+      let provId = null;
+      if (p.level === "PROVINSI") provId = p.provinsiId;
+      else if (p.level === "KABUPATEN") provId = p.kabupaten?.provinsiId;
+      if (provId) {
+        pengurusPerProvinsiMap[provId] = (pengurusPerProvinsiMap[provId] || 0) + 1;
+      }
+    }
+    // Tambah count pengurus Nasional (untuk konsistensi total = 78)
+    pengurusNasionalCount = await db.pengurus.count({
+      where: { status: "Aktif", level: "NASIONAL" },
+    });
+    const anggotaPerProvinsi = Object.entries(pengurusPerProvinsiMap)
+      .map(([provIdStr, jumlah]) => {
+        const prov = provinsiList.find((p) => p.id === parseInt(provIdStr));
+        return {
+          nama: prov?.nama || "Unknown",
+          kode: prov?.kode || "",
+          jumlah,
+        };
+      })
+      .sort((a, b) => b.jumlah - a.jumlah);
+    // Tambahkan "Nasional (Pusat)" di awal list
+    if (pengurusNasionalCount > 0) {
+      anggotaPerProvinsi.unshift({
+        nama: "Nasional (Pusat)",
+        kode: "PUSAT",
+        jumlah: pengurusNasionalCount,
+      });
+    }
 
     // Recent activities (pendaftaran terbaru)
     const recentPendaftaran = await db.pendaftaran.findMany({
