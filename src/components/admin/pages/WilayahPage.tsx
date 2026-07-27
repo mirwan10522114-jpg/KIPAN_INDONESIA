@@ -25,6 +25,9 @@ import {
   ArrowUpDown,
   Inbox,
   CheckCircle2,
+  Landmark,
+  Users,
+  Award,
 } from "lucide-react";
 import { PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 import WilayahDetailDialog from "./WilayahDetailDialog";
@@ -41,7 +44,7 @@ export default function WilayahPage({
   onNavigate?: (page: string, filter?: Record<string, string>) => void;
   userRole?: string;
 }) {
-  const [tab, setTab] = useState<"provinsi" | "kabupaten">("provinsi");
+  const [tab, setTab] = useState<"nasional" | "provinsi" | "kabupaten">("nasional");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
   const [provinsiFilter, setProvinsiFilter] = useState("Semua");
@@ -58,6 +61,8 @@ export default function WilayahPage({
   const [apiProvinsi, setApiProvinsi] = useState<any[]>([]);
   const [apiKabupaten, setApiKabupaten] = useState<any[]>([]);
   const [useApiData, setUseApiData] = useState(false);
+  const [pengurusNasional, setPengurusNasional] = useState<any[]>([]);
+  const [loadingNasional, setLoadingNasional] = useState(false);
 
   // Fetch from API
   const fetchData = async () => {
@@ -77,10 +82,34 @@ export default function WilayahPage({
     }
   };
 
+  // Fetch pengurus level Nasional
+  const fetchPengurusNasional = async () => {
+    setLoadingNasional(true);
+    try {
+      const res = await fetch("/api/pengurus?level=NASIONAL", { cache: "no-store" });
+      const json = await res.json();
+      if (json.success) {
+        setPengurusNasional(json.data || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch pengurus nasional:", e);
+    } finally {
+      setLoadingNasional(false);
+    }
+  };
+
   // Initial load
   useEffect(() => {
     fetchData();
+    fetchPengurusNasional();
   }, []);
+
+  // Refresh pengurus nasional when switch to nasional tab
+  useEffect(() => {
+    if (tab === "nasional") {
+      fetchPengurusNasional();
+    }
+  }, [tab]);
 
   // Permission check
   const canCreateProvinsi = userRole === "SUPER_ADMIN";
@@ -209,7 +238,7 @@ export default function WilayahPage({
     return <ArrowUpDown className="w-3 h-3 text-slate-300" />;
   };
 
-  const switchTab = (newTab: "provinsi" | "kabupaten") => {
+  const switchTab = (newTab: "nasional" | "provinsi" | "kabupaten") => {
     if (newTab === tab) return;
     setLoading(true);
     setTab(newTab);
@@ -344,6 +373,15 @@ export default function WilayahPage({
       <div className="flex items-center justify-between">
         <div className="flex gap-2 bg-white p-1 rounded-xl border border-slate-200">
           <button
+            onClick={() => switchTab("nasional")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              tab === "nasional" ? "bg-violet-600 text-white" : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            <Landmark className="w-4 h-4 inline mr-1.5" />
+            Nasional ({pengurusNasional.filter(p => p.status === "Aktif").length})
+          </button>
+          <button
             onClick={() => switchTab("provinsi")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               tab === "provinsi" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
@@ -380,7 +418,23 @@ export default function WilayahPage({
         )}
       </div>
 
-      {/* Toolbar */}
+      {/* ============ TAB NASIONAL — Tampilkan struktur pengurus level Nasional ============ */}
+      {tab === "nasional" && (
+        <NasionalPengurusView
+          pengurusList={pengurusNasional}
+          loading={loadingNasional}
+          search={search}
+          onRefresh={fetchPengurusNasional}
+          onViewPengurus={(id) => {
+            // Navigate to pengurus page with filter, or show detail
+            onNavigate?.("pengurus");
+          }}
+        />
+      )}
+
+      {/* Toolbar (only for provinsi & kabupaten) */}
+      {tab !== "nasional" && (
+      <>
       <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -694,6 +748,7 @@ export default function WilayahPage({
           </div>
         )}
       </div>
+      </>)}{/* end of tab !== "nasional" wrapper */}
 
       {/* Detail Dialog */}
       <WilayahDetailDialog
@@ -733,6 +788,198 @@ export default function WilayahPage({
           className="fixed inset-0 z-[5]"
           onClick={() => setActionMenuId(null)}
         />
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// NasionalPengurusView — Tampilkan struktur pengurus level Nasional
+// dikelompokkan per BIDANG (Pengurus Harian, Divisi-divisi)
+// ============================================================
+function NasionalPengurusView({
+  pengurusList,
+  loading,
+  search,
+  onRefresh,
+  onViewPengurus,
+}: {
+  pengurusList: any[];
+  loading: boolean;
+  search: string;
+  onRefresh: () => void;
+  onViewPengurus?: (id: number) => void;
+}) {
+  // Filter by search
+  const filtered = pengurusList.filter((p) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      p.anggota?.namaLengkap?.toLowerCase().includes(q) ||
+      p.jabatan?.nama?.toLowerCase().includes(q) ||
+      p.jabatan?.bidang?.toLowerCase().includes(q)
+    );
+  });
+
+  // Group by bidang
+  const grouped: Record<string, any[]> = {};
+  for (const p of filtered) {
+    const bidang = p.jabatan?.bidang || "Lainnya";
+    if (!grouped[bidang]) grouped[bidang] = [];
+    grouped[bidang].push(p);
+  }
+  // Sort urutan within each bidang
+  for (const b of Object.keys(grouped)) {
+    grouped[b].sort((a, b) => (a.jabatan?.urutan || 0) - (b.jabatan?.urutan || 0));
+  }
+  const bidangNames = Object.keys(grouped).sort((a, b) => {
+    // Pengurus Harian first, then alphabetical
+    if (a === "Pengurus Harian") return -1;
+    if (b === "Pengurus Harian") return 1;
+    return a.localeCompare(b);
+  });
+
+  // Stats
+  const totalPengurus = pengurusList.filter(p => p.status === "Aktif").length;
+  const totalBidang = bidangNames.length;
+  const totalAktif = filtered.filter(p => p.status === "Aktif").length;
+  const totalSelesai = filtered.filter(p => p.status !== "Aktif").length;
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
+        <div className="w-8 h-8 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm text-slate-500">Memuat struktur pengurus Nasional...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header banner */}
+      <div className="bg-gradient-to-r from-violet-600 to-purple-500 rounded-2xl p-6 text-white shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
+              <Landmark className="w-7 h-7" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Pengurus Tingkat Nasional</h2>
+              <p className="text-sm text-violet-100 mt-0.5">
+                KIPAN Indonesia — Struktur kepengurusan tingkat pusat
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onRefresh}
+            className="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold"
+          >
+            <RefreshCw className="w-4 h-4 inline mr-1" /> Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl p-4 border border-slate-100">
+          <div className="text-2xl font-extrabold text-violet-600">{totalPengurus}</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Total Pengurus Aktif</div>
+        </div>
+        <div className="bg-white rounded-xl p-4 border border-slate-100">
+          <div className="text-2xl font-extrabold text-blue-600">{totalBidang}</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Total Bidang/Divisi</div>
+        </div>
+        <div className="bg-white rounded-xl p-4 border border-slate-100">
+          <div className="text-2xl font-extrabold text-emerald-600">{totalAktif}</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Aktif (filtered)</div>
+        </div>
+        <div className="bg-white rounded-xl p-4 border border-slate-100">
+          <div className="text-2xl font-extrabold text-slate-500">{totalSelesai}</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">Selesai/Diberhentikan</div>
+        </div>
+      </div>
+
+      {/* Pengurus list grouped by bidang */}
+      {bidangNames.length === 0 ? (
+        <div className="bg-white rounded-2xl p-12 text-center border border-slate-100">
+          <Inbox className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-sm text-slate-500 mb-1">
+            {search ? "Tidak ada pengurus yang sesuai pencarian." : "Belum ada pengurus level Nasional."}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {bidangNames.map((bidang) => {
+            const items = grouped[bidang];
+            const isPengurusHarian = bidang === "Pengurus Harian";
+            return (
+              <div key={bidang} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                {/* Bidang header */}
+                <div className={`px-5 py-3 flex items-center justify-between ${
+                  isPengurusHarian
+                    ? "bg-gradient-to-r from-violet-50 to-purple-50 border-b border-violet-100"
+                    : "bg-gradient-to-r from-blue-50 to-sky-50 border-b border-blue-100"
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                      isPengurusHarian ? "bg-violet-500" : "bg-blue-500"
+                    }`}>
+                      {isPengurusHarian ? <Award className="w-5 h-5 text-white" /> : <Users className="w-5 h-5 text-white" />}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-800">{bidang}</h3>
+                      <p className="text-[10px] text-slate-500">
+                        {items.length} pengurus • {items.filter(i => i.status === "Aktif").length} aktif
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {/* Pengurus list */}
+                <div className="divide-y divide-slate-50">
+                  {items.map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => onViewPengurus?.(p.id)}
+                      className="flex items-center gap-3 p-3 hover:bg-slate-50 cursor-pointer transition-colors"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500 shrink-0">
+                        {(p.jabatan?.urutan || 0)}
+                      </div>
+                      <img
+                        src={p.anggota?.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80"}
+                        alt={p.anggota?.namaLengkap || ""}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-violet-100 shrink-0"
+                        onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80"; }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-blue-950 truncate">
+                          {p.anggota?.namaLengkap || "-"}
+                        </div>
+                        <div className="text-xs text-slate-500 truncate">
+                          {p.jabatan?.nama || "-"}
+                          {p.anggota?.email && ` • ${p.anggota.email}`}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] text-slate-400 font-mono hidden sm:block">
+                          {p.anggota?.nia}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-semibold ${
+                          p.status === "Aktif"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}>
+                          {p.status}
+                        </span>
+                        <Eye className="w-4 h-4 text-slate-300" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
