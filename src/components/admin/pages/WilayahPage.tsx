@@ -335,7 +335,7 @@ export default function WilayahPage({
       else filter.kabupatenNama = item.nama;
       onNavigate?.("pengurus", filter);
     }, show: true },
-    { label: item.status === "Aktif" ? "Nonaktifkan" : "Aktifkan", icon: Ban, action: (item: any) => {
+    { label: "Ubah Status", icon: Ban, action: (item: any) => {
       setActionMenuId(null);
       handleToggleStatus(item);
     }, show: canEdit, danger: false },

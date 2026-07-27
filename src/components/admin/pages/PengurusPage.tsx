@@ -590,7 +590,6 @@ export default function PengurusPage({
                   <Th onClick={() => handleSort("bidang")} icon={getSortIcon("bidang")}>Bidang</Th>
                   <Th onClick={() => handleSort("level")} icon={getSortIcon("level")}>Level</Th>
                   <Th onClick={() => handleSort("wilayah")} icon={getSortIcon("wilayah")}>Wilayah</Th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Masa Jabatan</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Nomor SK</th>
                   <Th onClick={() => handleSort("status")} icon={getSortIcon("status")}>Status</Th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Aksi</th>
@@ -623,9 +622,6 @@ export default function PengurusPage({
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">{item.wilayah}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600">
-                      {formatMasaJabatan(item.tanggalMulai, item.tanggalSelesai)}
-                    </td>
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <a
                         href={item.fileSK || "#"}
