@@ -1,0 +1,841 @@
+     1→     1→"use client";
+     2→     2→
+     3→     3→import { useState, useEffect, useMemo } from "react";
+     4→     4→import { motion, AnimatePresence } from "framer-motion";
+     5→     5→import {
+     6→     6→  MapPin,
+     7→     7→  Building2,
+     8→     8→  UserCog,
+     9→     9→  Plus,
+    10→    10→  Search,
+    11→    11→  RefreshCw,
+    12→    12→  Download,
+    13→    13→  FileText,
+    14→    14→  Eye,
+    15→    15→  Edit,
+    16→    16→  MoreVertical,
+    17→    17→  ChevronLeft,
+    18→    18→  ChevronRight,
+    19→    19→  ChevronsUpDown,
+    20→    20→  ChevronUp,
+    21→    21→  ChevronDown,
+    22→    22→  MapPinned,
+    23→    23→  Ban,
+    24→    24→  Trash2,
+    25→    25→  ArrowUpDown,
+    26→    26→  Inbox,
+    27→    27→  CheckCircle2,
+    28→    28→} from "lucide-react";
+    29→    29→import { PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
+    30→    30→import WilayahDetailDialog from "./WilayahDetailDialog";
+    31→    31→import WilayahFormDialog, { type WilayahFormData } from "./WilayahFormDialog";
+    32→    32→import { exportWilayahPdf } from "@/lib/pdf-export";
+    33→    33→import { toast } from "sonner";
+    34→    34→
+    35→    35→type SortDir = "asc" | "desc" | null;
+    36→    36→
+    37→    37→export default function WilayahPage({
+    38→    38→  onNavigate,
+    39→    39→  userRole = "SUPER_ADMIN",
+    40→    40→}: {
+    41→    41→  onNavigate?: (page: string, filter?: Record<string, string>) => void;
+    42→    42→  userRole?: string;
+    43→    43→}) {
+    44→    44→  const [tab, setTab] = useState<"provinsi" | "kabupaten">("provinsi");
+    45→    45→  const [search, setSearch] = useState("");
+    46→    46→  const [statusFilter, setStatusFilter] = useState("Semua");
+    47→    47→  const [provinsiFilter, setProvinsiFilter] = useState("Semua");
+    48→    48→  const [loading, setLoading] = useState(true);
+    49→    49→  const [sortBy, setSortBy] = useState<string | null>(null);
+    50→    50→  const [sortDir, setSortDir] = useState<SortDir>(null);
+    51→    51→  const [page, setPage] = useState(1);
+    52→    52→  const [rowsPerPage, setRowsPerPage] = useState(10);
+    53→    53→  const [detailId, setDetailId] = useState<number | null>(null);
+    54→    54→  const [detailType, setDetailType] = useState<"provinsi" | "kabupaten">("provinsi");
+    55→    55→  const [actionMenuId, setActionMenuId] = useState<number | null>(null);
+    56→    56→  const [showFormDialog, setShowFormDialog] = useState(false);
+    57→    57→  const [formData, setFormData] = useState<WilayahFormData | null>(null);
+    58→    58→  const [apiProvinsi, setApiProvinsi] = useState<any[]>([]);
+    59→    59→  const [apiKabupaten, setApiKabupaten] = useState<any[]>([]);
+    60→    60→  const [useApiData, setUseApiData] = useState(false);
+    61→    61→  const [totalAllPengurus, setTotalAllPengurus] = useState(0);
+    62→    62→
+    63→    63→  // Fetch from API
+    64→    64→  const fetchData = async () => {
+    65→    65→    setLoading(true);
+    66→    66→    try {
+    67→    67→      const [wilRes, pengRes] = await Promise.all([
+    68→    68→        fetch("/api/wilayah", { cache: "no-store" }),
+    69→    69→        fetch("/api/pengurus", { cache: "no-store" }),
+    70→    70→      ]);
+    71→    71→      const wilJson = await wilRes.json();
+    72→    72→      const pengJson = await pengRes.json();
+    73→    73→      if (wilJson.success) {
+    74→    74→        setApiProvinsi(wilJson.data.provinsi || []);
+    75→    75→        setApiKabupaten(wilJson.data.kabupaten || []);
+    76→    76→        setUseApiData(true);
+    77→    77→      }
+    78→    78→      if (pengJson.success) {
+    79→    79→        setTotalAllPengurus(pengJson.total || 0);
+    80→    80→      }
+    81→    81→    } catch (e) {
+    82→    82→      console.error("Failed to fetch wilayah:", e);
+    83→    83→    } finally {
+    84→    84→      setLoading(false);
+    85→    85→    }
+    86→    86→  };
+    87→    87→
+    88→    88→  // Auto-fill ketua wilayah dari pengurus dengan jabatan Ketua Umum
+    89→    89→  const autoFillKetua = async () => {
+    90→    90→    try {
+    91→    91→      const res = await fetch("/api/wilayah/auto-fill-ketua", { method: "POST" });
+    92→    92→      const json = await res.json();
+    93→    93→      if (json.success) {
+    94→    94→        toast.success(json.message);
+    95→    95→        fetchData();
+    96→    96→      } else {
+    97→    97→        toast.error(json.error || "Gagal auto-fill ketua");
+    98→    98→      }
+    99→    99→    } catch (e) {
+   100→   100→      toast.error("Gagal auto-fill ketua");
+   101→   101→    }
+   102→   102→  };
+   103→   103→
+   104→   104→  // Initial load — auto-fill ketua dulu, lalu fetch data
+   105→   105→  useEffect(() => {
+   106→   106→    fetch("/api/wilayah/auto-fill-ketua", { method: "POST" })
+   107→   107→      .then(() => fetchData())
+   108→   108→      .catch(() => fetchData());
+   109→   109→  }, []);
+   110→   110→
+   111→   111→  // Permission check
+   112→   112→  const canCreateProvinsi = userRole === "SUPER_ADMIN";
+   113→   113→  const canCreateKabupaten = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
+   114→   114→  const canDelete = userRole === "SUPER_ADMIN";
+   115→   115→  const canEdit = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
+   116→   116→
+   117→   117→  // Use API data if available, fallback to mock data
+   118→   118→  const provData = useApiData ? apiProvinsi.map((p: any) => ({
+   119→   119→    id: p.id,
+   120→   120→    kode: p.kode,
+   121→   121→    nama: p.nama,
+   122→   122→    status: p.status,
+   123→   123→    ketua: p.ketua || "",
+   124→   124→    jumlahKabupaten: p._count?.kabupaten || 0,
+   125→   125→    jumlahPengurus: p._count?.pengurus || 0,
+   126→   126→    createdAt: p.createdAt,
+   127→   127→    updatedAt: p.updatedAt,
+   128→   128→  })) : PROVINSI_LIST;
+   129→   129→
+   130→   130→  const kabData = useApiData ? apiKabupaten.map((k: any) => ({
+   131→   131→    id: k.id,
+   132→   132→    kode: k.kode,
+   133→   133→    nama: k.nama,
+   134→   134→    provinsiNama: k.provinsi?.nama || "",
+   135→   135→    status: k.status,
+   136→   136→    ketua: k.ketua || "",
+   137→   137→    jumlahPengurus: k._count?.pengurus || 0,
+   138→   138→    createdAt: k.createdAt,
+   139→   139→    updatedAt: k.updatedAt,
+   140→   140→  })) : KABUPATEN_LIST;
+   141→   141→
+   142→   142→  // Stat cards — use API data for consistency with dashboard
+   143→   143→  const statCards = [
+   144→   144→    { label: "Total Provinsi", value: provData.length, total: 38, icon: MapPin, color: "from-blue-500 to-sky-500", targetPage: null },
+   145→   145→    { label: "Total Kabupaten/Kota", value: kabData.length, total: 514, icon: Building2, color: "from-sky-500 to-cyan-500", targetPage: null },
+   146→   146→    { label: "Total Pengurus", value: totalAllPengurus, total: null, icon: UserCog, color: "from-violet-500 to-purple-500", targetPage: "pengurus" },
+   147→   147→  ];
+   148→   148→
+   149→   149→  // Filter data
+   150→   150→  const filteredProv = useMemo(() => {
+   151→   151→    let result = provData.filter((p: any) => {
+   152→   152→      const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
+   153→   153→        p.kode.toLowerCase().includes(search.toLowerCase()) ||
+   154→   154→        (p.ketua || "").toLowerCase().includes(search.toLowerCase());
+   155→   155→      const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
+   156→   156→      return matchSearch && matchStatus;
+   157→   157→    });
+   158→   158→    if (sortBy && sortDir) {
+   159→   159→      result = [...result].sort((a: any, b: any) => {
+   160→   160→        const aVal = a[sortBy];
+   161→   161→        const bVal = b[sortBy];
+   162→   162→        if (typeof aVal === "string") {
+   163→   163→          return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+   164→   164→        }
+   165→   165→        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+   166→   166→      });
+   167→   167→    }
+   168→   168→    return result;
+   169→   169→  }, [provData, search, statusFilter, sortBy, sortDir]);
+   170→   170→
+   171→   171→  const filteredKab = useMemo(() => {
+   172→   172→    let result = kabData.filter((k: any) => {
+   173→   173→      const matchSearch = k.nama.toLowerCase().includes(search.toLowerCase()) ||
+   174→   174→        k.kode.toLowerCase().includes(search.toLowerCase());
+   175→   175→      const matchStatus = statusFilter === "Semua" || k.status === statusFilter;
+   176→   176→      const matchProv = provinsiFilter === "Semua" || k.provinsiNama === provinsiFilter;
+   177→   177→      return matchSearch && matchStatus && matchProv;
+   178→   178→    });
+   179→   179→    if (sortBy && sortDir) {
+   180→   180→      result = [...result].sort((a: any, b: any) => {
+   181→   181→        const aVal = a[sortBy];
+   182→   182→        const bVal = b[sortBy];
+   183→   183→        if (typeof aVal === "string") {
+   184→   184→          return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+   185→   185→        }
+   186→   186→        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+   187→   187→      });
+   188→   188→    }
+   189→   189→    return result;
+   190→   190→  }, [kabData, search, statusFilter, provinsiFilter, sortBy, sortDir]);
+   191→   191→
+   192→   192→  const currentData = tab === "provinsi" ? filteredProv : filteredKab;
+   193→   193→  const totalData = currentData.length;
+   194→   194→  const totalPages = Math.ceil(totalData / rowsPerPage) || 1;
+   195→   195→  const currentPage = Math.min(page, totalPages);
+   196→   196→  const startIdx = (currentPage - 1) * rowsPerPage;
+   197→   197→  const endIdx = Math.min(startIdx + rowsPerPage, totalData);
+   198→   198→  const pageData = currentData.slice(startIdx, endIdx);
+   199→   199→
+   200→   200→  // Summary stats from filtered data
+   201→   201→  const filterSummary = tab === "provinsi" ? {
+   202→   202→    total: filteredProv.length,
+   203→   203→    aktif: filteredProv.filter((p: any) => p.status === "Aktif").length,
+   204→   204→    pembentukan: filteredProv.filter((p: any) => p.status === "Pembentukan").length,
+   205→   205→    nonaktif: filteredProv.filter((p: any) => p.status === "Nonaktif").length,
+   206→   206→    totalPengurus: filteredProv.reduce((a: number, b: any) => a + (b.jumlahPengurus || 0), 0),
+   207→   207→    totalKabupaten: filteredProv.reduce((a: number, b: any) => a + (b.jumlahKabupaten || 0), 0),
+   208→   208→  } : {
+   209→   209→    total: filteredKab.length,
+   210→   210→    aktif: filteredKab.filter((k: any) => k.status === "Aktif").length,
+   211→   211→    pembentukan: filteredKab.filter((k: any) => k.status === "Pembentukan").length,
+   212→   212→    nonaktif: filteredKab.filter((k: any) => k.status === "Nonaktif").length,
+   213→   213→    totalPengurus: filteredKab.reduce((a: number, b: any) => a + (b.jumlahPengurus || 0), 0),
+   214→   214→    totalKabupaten: 0,
+   215→   215→  };
+   216→   216→  const hasActiveFilters = search !== "" || statusFilter !== "Semua" || provinsiFilter !== "Semua";
+   217→   217→
+   218→   218→  const handleSort = (col: string) => {
+   219→   219→    if (sortBy === col) {
+   220→   220→      setSortDir(sortDir === "asc" ? "desc" : sortDir === "desc" ? null : "asc");
+   221→   221→      if (sortDir === "desc") {
+   222→   222→        setSortBy(null);
+   223→   223→        setSortDir(null);
+   224→   224→      }
+   225→   225→    } else {
+   226→   226→      setSortBy(col);
+   227→   227→      setSortDir("asc");
+   228→   228→    }
+   229→   229→  };
+   230→   230→
+   231→   231→  const getSortIcon = (col: string) => {
+   232→   232→    if (sortBy !== col) return <ArrowUpDown className="w-3 h-3 text-slate-300" />;
+   233→   233→    if (sortDir === "asc") return <ChevronUp className="w-3 h-3 text-blue-600" />;
+   234→   234→    if (sortDir === "desc") return <ChevronDown className="w-3 h-3 text-blue-600" />;
+   235→   235→    return <ArrowUpDown className="w-3 h-3 text-slate-300" />;
+   236→   236→  };
+   237→   237→
+   238→   238→  const switchTab = (newTab: "provinsi" | "kabupaten") => {
+   239→   239→    if (newTab === tab) return;
+   240→   240→    setLoading(true);
+   241→   241→    setTab(newTab);
+   242→   242→    setPage(1);
+   243→   243→    setTimeout(() => setLoading(false), 600);
+   244→   244→  };
+   245→   245→
+   246→   246→  const handleRefresh = () => {
+   247→   247→    setLoading(true);
+   248→   248→    setSearch("");
+   249→   249→    setStatusFilter("Semua");
+   250→   250→    setProvinsiFilter("Semua");
+   251→   251→    setSortBy(null);
+   252→   252→    setSortDir(null);
+   253→   253→    setPage(1);
+   254→   254→    setTimeout(() => setLoading(false), 600);
+   255→   255→  };
+   256→   256→
+   257→   257→  const statusBadge = (status: string) => {
+   258→   258→    const styles: Record<string, string> = {
+   259→   259→      Aktif: "bg-emerald-100 text-emerald-700 border-emerald-200",
+   260→   260→      Pembentukan: "bg-amber-100 text-amber-700 border-amber-200",
+   261→   261→      Nonaktif: "bg-slate-100 text-slate-600 border-slate-200",
+   262→   262→      Dibekukan: "bg-rose-100 text-rose-700 border-rose-200",
+   263→   263→    };
+   264→   264→    return styles[status] || "bg-slate-100 text-slate-600 border-slate-200";
+   265→   265→  };
+   266→   266→
+   267→   267→  const showDetail = (item: any, type: "provinsi" | "kabupaten") => {
+   268→   268→    setDetailType(type);
+   269→   269→    setDetailId(item.id);
+   270→   270→    setActionMenuId(null);
+   271→   271→  };
+   272→   272→
+   273→   273→  const handleSave = async (data: WilayahFormData) => {
+   274→   274→    const method = data.id ? "PUT" : "POST";
+   275→   275→    const res = await fetch("/api/wilayah", {
+   276→   276→      method,
+   277→   277→      headers: { "Content-Type": "application/json" },
+   278→   278→      body: JSON.stringify(data),
+   279→   279→    });
+   280→   280→    const json = await res.json();
+   281→   281→    if (!json.success) throw new Error(json.error);
+   282→   282→    toast.success(json.message);
+   283→   283→    fetchData();
+   284→   284→  };
+   285→   285→
+   286→   286→  const handleDelete = async (item: any) => {
+   287→   287→    // Soft delete: ubah status menjadi Nonaktif (data tidak hilang)
+   288→   288→    const res = await fetch("/api/wilayah", {
+   289→   289→      method: "PUT",
+   290→   290→      headers: { "Content-Type": "application/json" },
+   291→   291→      body: JSON.stringify({ id: item.id, type: tab, nama: item.nama, status: "Nonaktif", ketua: item.ketua }),
+   292→   292→    });
+   293→   293→    const json = await res.json();
+   294→   294→    if (json.success) {
+   295→   295→      toast.success(`${item.nama} dinonaktifkan (data tidak dihapus)`);
+   296→   296→      fetchData();
+   297→   297→    } else {
+   298→   298→      toast.error(json.error || "Gagal menonaktifkan");
+   299→   299→    }
+   300→   300→  };
+   301→   301→
+   302→   302→  const handleToggleStatus = async (item: any) => {
+   303→   303→    const newStatus = item.status === "Aktif" ? "Nonaktif" : "Aktif";
+   304→   304→    const res = await fetch("/api/wilayah", {
+   305→   305→      method: "PUT",
+   306→   306→      headers: { "Content-Type": "application/json" },
+   307→   307→      body: JSON.stringify({ id: item.id, type: tab, nama: item.nama, status: newStatus, ketua: item.ketua }),
+   308→   308→    });
+   309→   309→    const json = await res.json();
+   310→   310→    if (json.success) {
+   311→   311→      toast.success(`Status diubah menjadi ${newStatus}`);
+   312→   312→      fetchData();
+   313→   313→    } else {
+   314→   314→      toast.error(json.error || "Gagal mengubah status");
+   315→   315→    }
+   316→   316→  };
+   317→   317→
+   318→   318→  const openEditForm = (item: any) => {
+   319→   319→    setFormData({
+   320→   320→      id: item.id,
+   321→   321→      type: tab,
+   322→   322→      kode: item.kode,
+   323→   323→      nama: item.nama,
+   324→   324→      status: item.status,
+   325→   325→      ketua: item.ketua || "",
+   326→   326→      provinsiId: tab === "kabupaten" ? String(apiProvinsi.find((p: any) => p.nama === item.provinsiNama)?.id || "") : undefined,
+   327→   327→      masterProvinsiKode: tab === "kabupaten" ? apiProvinsi.find((p: any) => p.nama === item.provinsiNama)?.kode : undefined,
+   328→   328→      masterKabupatenKode: item.kode,
+   329→   329→    });
+   330→   330→    setShowFormDialog(true);
+   331→   331→  };
+   332→   332→
+   333→   333→  const actions = [
+   334→   334→    { label: "Detail", icon: Eye, action: (item: any) => showDetail(item, tab), show: true },
+   335→   335→    { label: "Edit", icon: Edit, action: (item: any) => {
+   336→   336→      setActionMenuId(null);
+   337→   337→      openEditForm(item);
+   338→   338→    }, show: canEdit },
+   339→   339→    { label: "Kelola Pengurus", icon: UserCog, action: (item: any) => {
+   340→   340→      setActionMenuId(null);
+   341→   341→      const filter: Record<string, string> = {};
+   342→   342→      if (tab === "provinsi") filter.provinsiNama = item.nama;
+   343→   343→      else filter.kabupatenNama = item.nama;
+   344→   344→      onNavigate?.("pengurus", filter);
+   345→   345→    }, show: true },
+   346→   346→    { label: "Ubah Status", icon: Ban, action: (item: any) => {
+   347→   347→      setActionMenuId(null);
+   348→   348→      handleToggleStatus(item);
+   349→   349→    }, show: canEdit, danger: false },
+   350→   350→    { label: "Hapus (Nonaktifkan)", icon: Trash2, action: (item: any) => {
+   351→   351→      setActionMenuId(null);
+   352→   352→      if (window.confirm(`Yakin nonaktifkan ${item.nama}? Data tidak akan dihapus permanen, hanya status diubah menjadi Nonaktif.`)) {
+   353→   353→        handleDelete(item);
+   354→   354→      }
+   355→   355→    }, show: canDelete, danger: true },
+   356→   356→  ];
+   357→   357→
+   358→   358→  return (
+   359→   359→    <div className="space-y-6">
+   360→   360→      {/* Header */}
+   361→   361→      <div className="flex items-center justify-between">
+   362→   362→        <div>
+   363→   363→          <h1 className="text-2xl font-bold text-blue-950">Master Wilayah</h1>
+   364→   364→          <p className="text-slate-500 text-sm mt-1">
+   365→   365→            Kelola data wilayah organisasi KIPAN: Nasional → Provinsi → Kabupaten/Kota
+   366→   366→          </p>
+   367→   367→        </div>
+   368→   368→      </div>
+   369→   369→
+   370→   370→      {/* Stat Cards */}
+   371→   371→      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+   372→   372→        {statCards.map((s, idx) => {
+   373→   373→          const Icon = s.icon;
+   374→   374→          return (
+   375→   375→            <motion.div
+   376→   376→              key={idx}
+   377→   377→              initial={{ opacity: 0, y: 20 }}
+   378→   378→              animate={{ opacity: 1, y: 0 }}
+   379→   379→              transition={{ delay: idx * 0.08 }}
+   380→   380→              whileHover={{ y: -3 }}
+   381→   381→              onClick={() => s.targetPage && onNavigate?.(s.targetPage)}
+   382→   382→              className={`bg-white rounded-2xl p-5 shadow-sm border border-slate-100 ${s.targetPage ? "cursor-pointer hover:border-blue-200" : ""}`}
+   383→   383→            >
+   384→   384→              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${s.color} flex items-center justify-center shadow-md mb-3`}>
+   385→   385→                <Icon className="w-6 h-6 text-white" />
+   386→   386→              </div>
+   387→   387→              <div className="text-3xl font-extrabold text-blue-950">
+   388→   388→                {s.value.toLocaleString("id-ID")}
+   389→   389→                {s.total && <span className="text-base text-slate-400">/{s.total}</span>}
+   390→   390→              </div>
+   391→   391→              <div className="text-sm text-slate-500 mt-1">{s.label}</div>
+   392→   392→            </motion.div>
+   393→   393→          );
+   394→   394→        })}
+   395→   395→      </div>
+   396→   396→
+   397→   397→      {/* Tabs */}
+   398→   398→      <div className="flex items-center justify-between">
+   399→   399→        <div className="flex gap-2 bg-white p-1 rounded-xl border border-slate-200">
+   400→   400→          <button
+   401→   401→            onClick={() => switchTab("provinsi")}
+   402→   402→            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+   403→   403→              tab === "provinsi" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+   404→   404→            }`}
+   405→   405→          >
+   406→   406→            <MapPin className="w-4 h-4 inline mr-1.5" />
+   407→   407→            Provinsi ({provData.length})
+   408→   408→          </button>
+   409→   409→          <button
+   410→   410→            onClick={() => switchTab("kabupaten")}
+   411→   411→            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+   412→   412→              tab === "kabupaten" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+   413→   413→            }`}
+   414→   414→          >
+   415→   415→            <Building2 className="w-4 h-4 inline mr-1.5" />
+   416→   416→            Kabupaten/Kota ({kabData.length})
+   417→   417→          </button>
+   418→   418→        </div>
+   419→   419→        {/* Tambah Provinsi disabled — all 38 provinsi already registered */}
+   420→   420→        {tab === "provinsi" && (
+   421→   421→          <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-500 text-sm font-medium rounded-lg border border-slate-200">
+   422→   422→            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+   423→   423→            Semua 38 provinsi sudah terdaftar
+   424→   424→          </div>
+   425→   425→        )}
+   426→   426→        {tab === "kabupaten" && canCreateKabupaten && (
+   427→   427→          <button
+   428→   428→            onClick={() => { setFormData({ type: "kabupaten", kode: "", nama: "", status: "Aktif", ketua: "" }); setShowFormDialog(true); }}
+   429→   429→            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+   430→   430→          >
+   431→   431→            <Plus className="w-4 h-4" />
+   432→   432→            Tambah Kabupaten/Kota
+   433→   433→          </button>
+   434→   434→        )}
+   435→   435→      </div>
+   436→   436→
+   437→   437→      {/* Toolbar */}
+   438→   438→      <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap items-center gap-3">
+   439→   439→        <div className="relative flex-1 min-w-[200px]">
+   440→   440→          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+   441→   441→          <input
+   442→   442→            type="text"
+   443→   443→            value={search}
+   444→   444→            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+   445→   445→            placeholder={tab === "provinsi" ? "Cari nama, kode, atau ketua provinsi..." : "Cari nama atau kode kabupaten..."}
+   446→   446→            className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+   447→   447→          />
+   448→   448→        </div>
+   449→   449→        {tab === "kabupaten" && (
+   450→   450→          <select
+   451→   451→            value={provinsiFilter}
+   452→   452→            onChange={(e) => { setProvinsiFilter(e.target.value); setPage(1); }}
+   453→   453→            className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   454→   454→          >
+   455→   455→            <option value="Semua">Semua Provinsi</option>
+   456→   456→            {[...new Set(kabData.map((k: any) => k.provinsiNama))].map((p) => (
+   457→   457→              <option key={p}>{p}</option>
+   458→   458→            ))}
+   459→   459→          </select>
+   460→   460→        )}
+   461→   461→        <select
+   462→   462→          value={statusFilter}
+   463→   463→          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+   464→   464→          className="px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   465→   465→        >
+   466→   466→          <option value="Semua">Semua Status</option>
+   467→   467→          <option value="Aktif">Aktif</option>
+   468→   468→          <option value="Pembentukan">Pembentukan</option>
+   469→   469→          <option value="Nonaktif">Nonaktif</option>
+   470→   470→          <option value="Dibekukan">Dibekukan</option>
+   471→   471→        </select>
+   472→   472→        <div className="flex items-center gap-1">
+   473→   473→          <button
+   474→   474→            onClick={handleRefresh}
+   475→   475→            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+   476→   476→            title="Refresh"
+   477→   477→          >
+   478→   478→            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+   479→   479→          </button>
+   480→   480→          <button
+   481→   481→            onClick={autoFillKetua}
+   482→   482→            className="p-2 text-slate-500 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-colors"
+   483→   483→            title="Auto-fill Ketua dari Pengurus"
+   484→   484→          >
+   485→   485→            <UserCog className="w-4 h-4" />
+   486→   486→          </button>
+   487→   487→          <button
+   488→   488→            onClick={() => toast.info("Export Excel akan segera hadir")}
+   489→   489→            className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+   490→   490→            title="Export Excel (segera hadir)"
+   491→   491→          >
+   492→   492→            <Download className="w-4 h-4" />
+   493→   493→          </button>
+   494→   494→          <button
+   495→   495→            onClick={() => {
+   496→   496→              const dataToExport = tab === "provinsi" ? filteredProv : filteredKab;
+   497→   497→              if (dataToExport.length === 0) {
+   498→   498→                toast.error("Tidak ada data untuk di-export");
+   499→   499→                return;
+   500→   500→              }
+   501→   501→              try {
+   502→   502→                exportWilayahPdf(dataToExport, tab, { search, status: statusFilter, provinsi: provinsiFilter });
+   503→   503→                toast.success(`PDF berhasil di-export (${dataToExport.length} data)`);
+   504→   504→              } catch (e: any) {
+   505→   505→                console.error(e);
+   506→   506→                toast.error("Gagal export PDF: " + e.message);
+   507→   507→              }
+   508→   508→            }}
+   509→   509→            className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+   510→   510→            title="Export PDF"
+   511→   511→          >
+   512→   512→            <FileText className="w-4 h-4" />
+   513→   513→          </button>
+   514→   514→        </div>
+   515→   515→      </div>
+   516→   516→
+   517→   517→      {/* Filter Summary */}
+   518→   518→      {totalData > 0 && (
+   519→   519→        <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-100 rounded-2xl p-4">
+   520→   520→          <div className="flex items-center gap-2 mb-3">
+   521→   521→            <div className="w-1 h-4 bg-blue-600 rounded-full" />
+   522→   522→            <h3 className="text-xs font-bold text-blue-950 uppercase tracking-wider">
+   523→   523→              Ringkasan Hasil Filter
+   524→   524→            </h3>
+   525→   525→            {hasActiveFilters && (
+   526→   526→              <span className="text-[10px] text-blue-500 bg-white px-2 py-0.5 rounded-full border border-blue-200">
+   527→   527→                {totalData} dari {tab === "provinsi" ? provData.length : kabData.length} data
+   528→   528→              </span>
+   529→   529→            )}
+   530→   530→          </div>
+   531→   531→          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+   532→   532→            <SummaryCard label={`Total ${tab === "provinsi" ? "Provinsi" : "Kabupaten"}`} value={filterSummary.total} color="text-blue-600" bg="bg-blue-50" />
+   533→   533→            <SummaryCard label="Aktif" value={filterSummary.aktif} color="text-emerald-600" bg="bg-emerald-50" />
+   534→   534→            <SummaryCard label="Pembentukan" value={filterSummary.pembentukan} color="text-amber-600" bg="bg-amber-50" />
+   535→   535→            <SummaryCard label="Nonaktif" value={filterSummary.nonaktif} color="text-slate-600" bg="bg-slate-100" />
+   536→   536→            <SummaryCard label="Total Pengurus" value={filterSummary.totalPengurus} color="text-violet-600" bg="bg-violet-50" />
+   537→   537→          </div>
+   538→   538→        </div>
+   539→   539→      )}
+   540→   540→
+   541→   541→      {/* Table */}
+   542→   542→      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+   543→   543→        {loading ? (
+   544→   544→          /* Skeleton Loading */
+   545→   545→          <div className="p-6 space-y-4">
+   546→   546→            {[1, 2, 3, 4, 5].map((i) => (
+   547→   547→              <div key={i} className="flex items-center gap-4">
+   548→   548→                <div className="w-12 h-4 bg-slate-200 animate-pulse rounded" />
+   549→   549→                <div className="flex-1 h-4 bg-slate-200 animate-pulse rounded" />
+   550→   550→                <div className="w-20 h-4 bg-slate-200 animate-pulse rounded" />
+   551→   551→                <div className="w-16 h-4 bg-slate-200 animate-pulse rounded" />
+   552→   552→                <div className="w-24 h-4 bg-slate-200 animate-pulse rounded" />
+   553→   553→                <div className="w-20 h-4 bg-slate-200 animate-pulse rounded" />
+   554→   554→                <div className="w-8 h-4 bg-slate-200 animate-pulse rounded" />
+   555→   555→              </div>
+   556→   556→            ))}
+   557→   557→          </div>
+   558→   558→        ) : pageData.length === 0 ? (
+   559→   559→          /* Empty State */
+   560→   560→          <div className="p-16 text-center">
+   561→   561→            <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+   562→   562→              <Inbox className="w-10 h-10 text-slate-300" />
+   563→   563→            </div>
+   564→   564→            <h3 className="text-lg font-bold text-slate-700 mb-1">Belum ada data wilayah</h3>
+   565→   565→            <p className="text-sm text-slate-500 mb-4">
+   566→   566→              {search || statusFilter !== "Semua" || provinsiFilter !== "Semua"
+   567→   567→                ? "Tidak ada data yang sesuai dengan filter. Coba ubah filter atau kata kunci pencarian."
+   568→   568→                : `Belum ada ${tab === "provinsi" ? "provinsi" : "kabupaten/kota"} yang terdaftar.`}
+   569→   569→            </p>
+   570→   570→            {tab === "kabupaten" && canCreateKabupaten && !search && statusFilter === "Semua" && provinsiFilter === "Semua" && (
+   571→   571→              <button
+   572→   572→                onClick={() => { setFormData({ type: "kabupaten", kode: "", nama: "", status: "Aktif", ketua: "" }); setShowFormDialog(true); }}
+   573→   573→                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700"
+   574→   574→              >
+   575→   575→                <Plus className="w-4 h-4" />
+   576→   576→                Tambah Kabupaten/Kota
+   577→   577→              </button>
+   578→   578→            )}
+   579→   579→          </div>
+   580→   580→        ) : (
+   581→   581→          <div className="overflow-x-auto">
+   582→   582→            <table className="w-full">
+   583→   583→              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+   584→   584→                {tab === "provinsi" ? (
+   585→   585→                  <tr>
+   586→   586→                    <Th onClick={() => handleSort("kode")} icon={getSortIcon("kode")}>Kode</Th>
+   587→   587→                    <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama Provinsi</Th>
+   588→   588→                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Kab/Kota</th>
+   589→   589→                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Pengurus</th>
+   590→   590→                    <Th onClick={() => handleSort("ketua")} icon={getSortIcon("ketua")}>Ketua</Th>
+   591→   591→                    <Th onClick={() => handleSort("status")} icon={getSortIcon("status")}>Status</Th>
+   592→   592→                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Aksi</th>
+   593→   593→                  </tr>
+   594→   594→                ) : (
+   595→   595→                  <tr>
+   596→   596→                    <Th onClick={() => handleSort("kode")} icon={getSortIcon("kode")}>Kode</Th>
+   597→   597→                    <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama Kabupaten/Kota</Th>
+   598→   598→                    <Th onClick={() => handleSort("provinsiNama")} icon={getSortIcon("provinsiNama")}>Provinsi</Th>
+   599→   599→                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Pengurus</th>
+   600→   600→                    <Th onClick={() => handleSort("ketua")} icon={getSortIcon("ketua")}>Ketua</Th>
+   601→   601→                    <Th onClick={() => handleSort("status")} icon={getSortIcon("status")}>Status</Th>
+   602→   602→                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Aksi</th>
+   603→   603→                  </tr>
+   604→   604→                )}
+   605→   605→              </thead>
+   606→   606→              <tbody className="divide-y divide-slate-100">
+   607→   607→                {pageData.map((item: any) => (
+   608→   608→                  <tr
+   609→   609→                    key={item.id}
+   610→   610→                    className="hover:bg-slate-50 cursor-pointer transition-colors"
+   611→   611→                    onClick={() => showDetail(item, tab)}
+   612→   612→                  >
+   613→   613→                    <td className="px-4 py-3 text-sm font-mono text-slate-600">{item.kode}</td>
+   614→   614→                    <td className="px-4 py-3 text-sm font-semibold text-blue-950">{item.nama}</td>
+   615→   615→                    {tab === "provinsi" && (
+   616→   616→                      <td className="px-4 py-3 text-center">
+   617→   617→                        <button
+   618→   618→                          onClick={(e) => {
+   619→   619→                            e.stopPropagation();
+   620→   620→                            switchTab("kabupaten");
+   621→   621→                            setProvinsiFilter(item.nama);
+   622→   622→                            setPage(1);
+   623→   623→                          }}
+   624→   624→                          className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline"
+   625→   625→                          title="Lihat kabupaten di provinsi ini"
+   626→   626→                        >
+   627→   627→                          {item.jumlahKabupaten}
+   628→   628→                        </button>
+   629→   629→                      </td>
+   630→   630→                    )}
+   631→   631→                    {tab === "kabupaten" && (
+   632→   632→                      <td className="px-4 py-3 text-sm text-slate-600">{item.provinsiNama}</td>
+   633→   633→                    )}
+   634→   634→                    <td className="px-4 py-3 text-center">
+   635→   635→                      <button
+   636→   636→                        onClick={(e) => {
+   637→   637→                          e.stopPropagation();
+   638→   638→                          onNavigate?.("pengurus", { wilayah: item.nama });
+   639→   639→                        }}
+   640→   640→                        className="text-sm font-bold text-violet-600 hover:text-violet-700 hover:underline"
+   641→   641→                        title="Lihat daftar pengurus"
+   642→   642→                      >
+   643→   643→                        {item.jumlahPengurus}
+   644→   644→                      </button>
+   645→   645→                    </td>
+   646→   646→                    <td className="px-4 py-3 text-sm text-slate-600">{item.ketua || "-"}</td>
+   647→   647→                    <td className="px-4 py-3 text-center">
+   648→   648→                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusBadge(item.status)}`}>
+   649→   649→                        {item.status}
+   650→   650→                      </span>
+   651→   651→                    </td>
+   652→   652→                    <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+   653→   653→                      <div className="relative inline-block">
+   654→   654→                        <button
+   655→   655→                          onClick={() => setActionMenuId(actionMenuId === item.id ? null : item.id)}
+   656→   656→                          className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
+   657→   657→                          title="Menu aksi"
+   658→   658→                        >
+   659→   659→                          <MoreVertical className="w-4 h-4" />
+   660→   660→                        </button>
+   661→   661→                        <AnimatePresence>
+   662→   662→                          {actionMenuId === item.id && (
+   663→   663→                            <motion.div
+   664→   664→                              initial={{ opacity: 0, y: -5, scale: 0.95 }}
+   665→   665→                              animate={{ opacity: 1, y: 0, scale: 1 }}
+   666→   666→                              exit={{ opacity: 0, y: -5, scale: 0.95 }}
+   667→   667→                              transition={{ duration: 0.15 }}
+   668→   668→                              className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-2xl border border-slate-100 py-1 z-20"
+   669→   669→                            >
+   670→   670→                              {actions.filter((a) => a.show).map((action, idx) => {
+   671→   671→                                const Icon = action.icon;
+   672→   672→                                return (
+   673→   673→                                  <button
+   674→   674→                                    key={idx}
+   675→   675→                                    onClick={() => {
+   676→   676→                                      action.action(item);
+   677→   677→                                      setActionMenuId(null);
+   678→   678→                                    }}
+   679→   679→                                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-slate-50 transition-colors ${
+   680→   680→                                      action.danger ? "text-rose-600" : "text-slate-700"
+   681→   681→                                    }`}
+   682→   682→                                  >
+   683→   683→                                    <Icon className="w-3.5 h-3.5" />
+   684→   684→                                    {action.label}
+   685→   685→                                  </button>
+   686→   686→                                );
+   687→   687→                              })}
+   688→   688→                            </motion.div>
+   689→   689→                          )}
+   690→   690→                        </AnimatePresence>
+   691→   691→                      </div>
+   692→   692→                    </td>
+   693→   693→                  </tr>
+   694→   694→                ))}
+   695→   695→              </tbody>
+   696→   696→            </table>
+   697→   697→          </div>
+   698→   698→        )}
+   699→   699→
+   700→   700→        {/* Pagination */}
+   701→   701→        {!loading && pageData.length > 0 && (
+   702→   702→          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-t border-slate-100">
+   703→   703→            <div className="flex items-center gap-3 text-xs text-slate-500">
+   704→   704→              <span>Rows per page:</span>
+   705→   705→              <select
+   706→   706→                value={rowsPerPage}
+   707→   707→                onChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(1); }}
+   708→   708→                className="px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   709→   709→              >
+   710→   710→                {[10, 25, 50, 100].map((r) => (
+   711→   711→                  <option key={r} value={r}>{r}</option>
+   712→   712→                ))}
+   713→   713→              </select>
+   714→   714→              <span className="ml-2">
+   715→   715→                Menampilkan {startIdx + 1}-{endIdx} dari {totalData} data
+   716→   716→              </span>
+   717→   717→            </div>
+   718→   718→            <div className="flex items-center gap-1">
+   719→   719→              <button
+   720→   720→                onClick={() => setPage(1)}
+   721→   721→                disabled={currentPage === 1}
+   722→   722→                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+   723→   723→                title="Halaman pertama"
+   724→   724→              >
+   725→   725→                <ChevronsUpDown className="w-4 h-4 rotate-90" />
+   726→   726→              </button>
+   727→   727→              <button
+   728→   728→                onClick={() => setPage(Math.max(1, currentPage - 1))}
+   729→   729→                disabled={currentPage === 1}
+   730→   730→                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+   731→   731→                title="Halaman sebelumnya"
+   732→   732→              >
+   733→   733→                <ChevronLeft className="w-4 h-4" />
+   734→   734→              </button>
+   735→   735→              <span className="text-xs font-medium text-slate-600 px-3 py-1">
+   736→   736→                {currentPage} / {totalPages}
+   737→   737→              </span>
+   738→   738→              <button
+   739→   739→                onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+   740→   740→                disabled={currentPage === totalPages}
+   741→   741→                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+   742→   742→                title="Halaman berikutnya"
+   743→   743→              >
+   744→   744→                <ChevronRight className="w-4 h-4" />
+   745→   745→              </button>
+   746→   746→              <button
+   747→   747→                onClick={() => setPage(totalPages)}
+   748→   748→                disabled={currentPage === totalPages}
+   749→   749→                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+   750→   750→                title="Halaman terakhir"
+   751→   751→              >
+   752→   752→                <ChevronsUpDown className="w-4 h-4 -rotate-90" />
+   753→   753→              </button>
+   754→   754→            </div>
+   755→   755→          </div>
+   756→   756→        )}
+   757→   757→      </div>
+   758→   758→
+   759→   759→      {/* Detail Dialog */}
+   760→   760→      <WilayahDetailDialog
+   761→   761→        wilayahId={detailId}
+   762→   762→        type={detailType}
+   763→   763→        onClose={() => setDetailId(null)}
+   764→   764→        onEdit={canEdit ? () => {
+   765→   765→          // Cari data wilayah yang sedang ditampilkan untuk dibuka di form edit
+   766→   766→          const currentList = detailType === "provinsi" ? provData : kabData;
+   767→   767→          const item = currentList.find((i: any) => i.id === detailId);
+   768→   768→          if (item) {
+   769→   769→            setDetailId(null);
+   770→   770→            // Set tab sesuai type sebelum buka form
+   771→   771→            if (detailType !== tab) {
+   772→   772→              setTab(detailType);
+   773→   773→            }
+   774→   774→            setTimeout(() => openEditForm(item), 100);
+   775→   775→          } else {
+   776→   776→            setDetailId(null);
+   777→   777→            toast.error("Data tidak ditemukan untuk diedit");
+   778→   778→          }
+   779→   779→        } : undefined}
+   780→   780→        onViewPengurus={(id) => {
+   781→   781→          setDetailId(null);
+   782→   782→          onNavigate?.("pengurus");
+   783→   783→        }}
+   784→   784→        onViewAnggota={(id) => {
+   785→   785→          setDetailId(null);
+   786→   786→          onNavigate?.("pengurus");
+   787→   787→        }}
+   788→   788→        onAddAnggota={() => {
+   789→   789→          onNavigate?.("pengurus");
+   790→   790→        }}
+   791→   791→        onNavigateToPengurus={(filter) => {
+   792→   792→          setDetailId(null);
+   793→   793→          // Navigate to pengurus page with filter applied
+   794→   794→          onNavigate?.("pengurus", filter);
+   795→   795→        }}
+   796→   796→      />
+   797→   797→
+   798→   798→      {/* Form Dialog for Add/Edit */}
+   799→   799→      <WilayahFormDialog
+   800→   800→        open={showFormDialog}
+   801→   801→        data={formData}
+   802→   802→        provinsiList={apiProvinsi.map((p: any) => ({ id: p.id, nama: p.nama }))}
+   803→   803→        existingKabupatenKodes={kabData.map((k: any) => k.kode)}
+   804→   804→        onClose={() => setShowFormDialog(false)}
+   805→   805→        onSave={handleSave}
+   806→   806→      />
+   807→   807→
+   808→   808→      {/* Backdrop for action menu */}
+   809→   809→      {actionMenuId !== null && (
+   810→   810→        <div
+   811→   811→          className="fixed inset-0 z-[5]"
+   812→   812→          onClick={() => setActionMenuId(null)}
+   813→   813→        />
+   814→   814→      )}
+   815→   815→    </div>
+   816→   816→  );
+   817→   817→}
+   818→   818→
+   819→   819→function SummaryCard({ label, value, color, bg }: { label: string; value: number; color: string; bg: string }) {
+   820→   820→  return (
+   821→   821→    <div className={`${bg} rounded-xl p-3 text-center`}>
+   822→   822→      <div className={`text-xl font-extrabold ${color}`}>{value.toLocaleString("id-ID")}</div>
+   823→   823→      <div className="text-[10px] text-slate-500 mt-0.5">{label}</div>
+   824→   824→    </div>
+   825→   825→  );
+   826→   826→}
+   827→   827→
+   828→   828→function Th({ children, onClick, icon }: { children: React.ReactNode; onClick: () => void; icon: React.ReactNode }) {
+   829→   829→  return (
+   830→   830→    <th
+   831→   831→      onClick={onClick}
+   832→   832→      className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider cursor-pointer hover:bg-slate-100 select-none"
+   833→   833→    >
+   834→   834→      <span className="inline-flex items-center gap-1">
+   835→   835→        {children}
+   836→   836→        {icon}
+   837→   837→      </span>
+   838→   838→    </th>
+   839→   839→  );
+   840→   840→}
+   841→   841→

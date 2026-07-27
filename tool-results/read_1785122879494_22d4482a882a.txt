@@ -1,0 +1,669 @@
+     1→"use client";
+     2→
+     3→import { useState, useEffect } from "react";
+     4→import { motion, AnimatePresence } from "framer-motion";
+     5→import { X, Save, UserCog, Search } from "lucide-react";
+     6→import { toast } from "sonner";
+     7→
+     8→export default function PengurusFormDialog({
+     9→  open,
+    10→  onClose,
+    11→  onSave,
+    12→}: {
+    13→  open: boolean;
+    14→  onClose: () => void;
+    15→  onSave: (data: any) => Promise<void>;
+    16→}) {
+    17→  const [form, setForm] = useState({
+    18→    anggotaId: "",
+    19→    jabatanId: "",
+    20→    level: "KABUPATEN",
+    21→    provinsiId: "",
+    22→    kabupatenId: "",
+    23→    status: "Aktif",
+    24→    tanggalMulai: new Date().toISOString().split("T")[0],
+    25→    tanggalSelesai: "",
+    26→    nomorSK: "",
+    27→    fileSK: "",
+    28→  });
+    29→  // Toggle mode: "database" = pilih dari existing, "manual" = input orang baru
+    30→  const [inputMode, setInputMode] = useState<"database" | "manual">("database");
+    31→  // Data untuk mode manual (orang baru)
+    32→  const [manualData, setManualData] = useState({
+    33→    namaLengkap: "",
+    34→    nik: "",
+    35→    email: "",
+    36→    hp: "",
+    37→    tempatLahir: "",
+    38→    tanggalLahir: "",
+    39→    jenisKelamin: "L",
+    40→    alamat: "",
+    41→    foto: "",
+    42→    ktp: "",
+    43→    cv: "",
+    44→    suratPernyataan: "",
+    45→    suratSehat: "",
+    46→  });
+    47→  const [saving, setSaving] = useState(false);
+    48→  const [error, setError] = useState("");
+    49→  const [anggotaList, setAnggotaList] = useState<any[]>([]);
+    50→  const [jabatanList, setJabatanList] = useState<any[]>([]);
+    51→  const [provinsiList, setProvinsiList] = useState<any[]>([]);
+    52→  const [kabupatenList, setKabupatenList] = useState<any[]>([]);
+    53→  const [searchAnggota, setSearchAnggota] = useState("");
+    54→
+    55→  useEffect(() => {
+    56→    if (open) {
+    57→      setError("");
+    58→      setForm({
+    59→        anggotaId: "", jabatanId: "", level: "KABUPATEN", provinsiId: "", kabupatenId: "",
+    60→        status: "Aktif", tanggalMulai: new Date().toISOString().split("T")[0],
+    61→        tanggalSelesai: "", nomorSK: "", fileSK: "",
+    62→      });
+    63→      setSearchAnggota("");
+    64→      setInputMode("database");
+    65→      setManualData({
+    66→        namaLengkap: "", nik: "", email: "", hp: "", tempatLahir: "",
+    67→        tanggalLahir: "", jenisKelamin: "L", alamat: "",
+    68→        foto: "", ktp: "", cv: "", suratPernyataan: "", suratSehat: "",
+    69→      });
+    70→      // Fetch anggota, jabatan, wilayah
+    71→      Promise.all([
+    72→        fetch("/api/anggota", { cache: "no-store" }).then((r) => r.json()),
+    73→        fetch("/api/jabatan", { cache: "no-store" }).then((r) => r.json()),
+    74→        fetch("/api/wilayah?type=provinsi", { cache: "no-store" }).then((r) => r.json()),
+    75→        fetch("/api/wilayah?type=kabupaten", { cache: "no-store" }).then((r) => r.json()),
+    76→      ]).then(([anggotaJson, jabatanJson, provJson, kabJson]) => {
+    77→        if (anggotaJson.success) setAnggotaList(anggotaJson.data);
+    78→        if (jabatanJson.success) setJabatanList(jabatanJson.data);
+    79→        if (provJson.success) setProvinsiList(provJson.data);
+    80→        if (kabJson.success) setKabupatenList(kabJson.data);
+    81→      });
+    82→    }
+    83→  }, [open]);
+    84→
+    85→  const filteredAnggota = anggotaList.filter((a) =>
+    86→    a.namaLengkap?.toLowerCase().includes(searchAnggota.toLowerCase()) ||
+    87→    a.nia?.toLowerCase().includes(searchAnggota.toLowerCase())
+    88→  );
+    89→
+    90→  const filteredJabatan = jabatanList.filter((j) => {
+    91→    if (form.level === "NASIONAL") return j.level === "Nasional";
+    92→    if (form.level === "PROVINSI") return j.level === "Provinsi";
+    93→    if (form.level === "KABUPATEN") return j.level === "Kabupaten";
+    94→    return true;
+    95→  });
+    96→
+    97→  // Group jabatan by bidang for the dropdown
+    98→  const jabatanGrouped: Record<string, any[]> = {};
+    99→  for (const j of filteredJabatan) {
+   100→    if (!jabatanGrouped[j.bidang]) jabatanGrouped[j.bidang] = [];
+   101→    jabatanGrouped[j.bidang].push(j);
+   102→  }
+   103→  const bidangNames = Object.keys(jabatanGrouped).sort();
+   104→
+   105→  const handleSave = async () => {
+   106→    if (!form.jabatanId) {
+   107→      setError("Jabatan wajib dipilih");
+   108→      return;
+   109→    }
+   110→    // Validasi anggota berdasarkan mode
+   111→    if (inputMode === "database") {
+   112→      if (!form.anggotaId) {
+   113→        setError("Pengurus wajib dipilih dari database");
+   114→        return;
+   115→      }
+   116→    } else {
+   117→      // Mode manual: semua field biodata & kontak wajib
+   118→      if (!manualData.namaLengkap.trim()) {
+   119→        setError("Nama Lengkap wajib diisi");
+   120→        return;
+   121→      }
+   122→      if (!manualData.tempatLahir.trim()) {
+   123→        setError("Tempat Lahir wajib diisi");
+   124→        return;
+   125→      }
+   126→      if (!manualData.tanggalLahir) {
+   127→        setError("Tanggal Lahir wajib diisi");
+   128→        return;
+   129→      }
+   130→      if (!manualData.alamat.trim()) {
+   131→        setError("Alamat wajib diisi");
+   132→        return;
+   133→      }
+   134→      if (!manualData.email.trim()) {
+   135→        setError("Email wajib diisi");
+   136→        return;
+   137→      }
+   138→      if (!manualData.hp.trim()) {
+   139→        setError("No. HP wajib diisi");
+   140→        return;
+   141→      }
+   142→    }
+   143→    if (form.level === "PROVINSI" && !form.provinsiId) {
+   144→      setError("Provinsi penempatan wajib dipilih untuk level Provinsi");
+   145→      return;
+   146→    }
+   147→    if (form.level === "KABUPATEN" && (!form.provinsiId || !form.kabupatenId)) {
+   148→      setError("Provinsi & Kabupaten/Kota penempatan wajib dipilih untuk level Kabupaten");
+   149→      return;
+   150→    }
+   151→    setSaving(true);
+   152→    setError("");
+   153→    try {
+   154→      // Kirim data sesuai mode
+   155→      const payload: any = { ...form };
+   156→      if (inputMode === "manual") {
+   157→        // Tandai bahwa ini orang baru, kirim data manual juga
+   158→        payload.isNewAnggota = true;
+   159→        payload.newAnggotaData = manualData;
+   160→        payload.anggotaId = null; // clear anggotaId
+   161→      }
+   162→      await onSave(payload);
+   163→      onClose();
+   164→    } catch (e: any) {
+   165→      setError(e.message || "Gagal menyimpan");
+   166→    } finally {
+   167→      setSaving(false);
+   168→    }
+   169→  };
+   170→
+   171→  return (
+   172→    <AnimatePresence>
+   173→      {open && (
+   174→        <motion.div
+   175→          initial={{ opacity: 0 }}
+   176→          animate={{ opacity: 1 }}
+   177→          exit={{ opacity: 0 }}
+   178→          onClick={onClose}
+   179→          className="fixed inset-0 z-[300] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
+   180→        >
+   181→          <motion.div
+   182→            initial={{ scale: 0.95, y: 20 }}
+   183→            animate={{ scale: 1, y: 0 }}
+   184→            exit={{ scale: 0.95, y: 20 }}
+   185→            onClick={(e) => e.stopPropagation()}
+   186→            className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+   187→          >
+   188→            <div className="relative bg-gradient-to-r from-blue-600 to-sky-500 p-5 text-white">
+   189→              <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+   190→                <X className="w-4 h-4" />
+   191→              </button>
+   192→              <div className="flex items-center gap-3">
+   193→                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+   194→                  <UserCog className="w-5 h-5" />
+   195→                </div>
+   196→                <div>
+   197→                  <h2 className="text-lg font-bold">Tambah Pengurus</h2>
+   198→                  <p className="text-xs text-blue-100">Pilih anggota yang akan diberi jabatan</p>
+   199→                </div>
+   200→              </div>
+   201→            </div>
+   202→
+   203→            <div className="p-6 space-y-4">
+   204→              {error && (
+   205→                <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs px-3 py-2 rounded-lg">
+   206→                  ⚠️ {error}
+   207→                </div>
+   208→              )}
+   209→
+   210→              {/* Pilih Anggota — Toggle Mode */}
+   211→              <div>
+   212→                <div className="flex items-center justify-between mb-2">
+   213→                  <label className="block text-xs font-semibold text-slate-700">Pilih Anggota *</label>
+   214→                  <div className="flex gap-1 bg-slate-100 p-0.5 rounded-lg">
+   215→                    <button
+   216→                      type="button"
+   217→                      onClick={() => setInputMode("database")}
+   218→                      className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
+   219→                        inputMode === "database" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-200"
+   220→                      }`}
+   221→                    >
+   222→                      📋 Dari Database
+   223→                    </button>
+   224→                    <button
+   225→                      type="button"
+   226→                      onClick={() => setInputMode("manual")}
+   227→                      className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
+   228→                        inputMode === "manual" ? "bg-emerald-600 text-white" : "text-slate-600 hover:bg-slate-200"
+   229→                      }`}
+   230→                    >
+   231→                      ✏️ Input Manual (Orang Baru)
+   232→                    </button>
+   233→                  </div>
+   234→                </div>
+   235→
+   236→                {/* MODE DATABASE: pilih dari existing anggota */}
+   237→                {inputMode === "database" && (
+   238→                  <>
+   239→                    <div className="relative mb-2">
+   240→                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+   241→                      <input
+   242→                        type="text"
+   243→                        value={searchAnggota}
+   244→                        onChange={(e) => setSearchAnggota(e.target.value)}
+   245→                        placeholder="Cari nama atau NIP pengurus yang sudah terdaftar..."
+   246→                        className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   247→                      />
+   248→                    </div>
+   249→                    <select
+   250→                      value={form.anggotaId}
+   251→                      onChange={(e) => {
+   252→                        const a = anggotaList.find((x) => x.id === parseInt(e.target.value));
+   253→                        setForm({
+   254→                          ...form,
+   255→                          anggotaId: e.target.value,
+   256→                          provinsiId: a?.provinsiId ? String(a.provinsiId) : "",
+   257→                          kabupatenId: a?.kabupatenId ? String(a.kabupatenId) : "",
+   258→                        });
+   259→                      }}
+   260→                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   261→                      size={5}
+   262→                    >
+   263→                      <option value="">— Pilih Anggota —</option>
+   264→                      {filteredAnggota.map((a) => (
+   265→                        <option key={a.id} value={a.id}>
+   266→                          {a.nia} — {a.namaLengkap} ({a.kabupaten?.nama || "-"})
+   267→                        </option>
+   268→                      ))}
+   269→                    </select>
+   270→                    <p className="text-[10px] text-slate-500 mt-1">
+   271→                      💡 Pilih anggota yang sudah terdaftar di database. Jika orang belum terdaftar, gunakan mode "Input Manual".
+   272→                    </p>
+   273→                  </>
+   274→                )}
+   275→
+   276→                {/* MODE MANUAL: input orang baru */}
+   277→                {inputMode === "manual" && (
+   278→                  <div className="space-y-3 bg-emerald-50/50 border border-emerald-200 rounded-lg p-3">
+   279→                    <p className="text-[11px] text-emerald-700 font-medium">
+   280→                      ✨ Input data orang baru — sistem akan otomatis membuat record pengurus saat disimpan. Semua field wajib diisi.
+   281→                    </p>
+   282→                    <div>
+   283→                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nama Lengkap *</label>
+   284→                      <input
+   285→                        type="text"
+   286→                        value={manualData.namaLengkap}
+   287→                        onChange={(e) => setManualData({ ...manualData, namaLengkap: e.target.value })}
+   288→                        placeholder="Contoh: Mirwan Kholid"
+   289→                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+   290→                      />
+   291→                    </div>
+   292→                    <div className="grid grid-cols-2 gap-2">
+   293→                      <div>
+   294→                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">NIK</label>
+   295→                        <input
+   296→                          type="text"
+   297→                          maxLength={16}
+   298→                          value={manualData.nik}
+   299→                          onChange={(e) => setManualData({ ...manualData, nik: e.target.value.replace(/\D/g, "") })}
+   300→                          placeholder="16 digit NIK (opsional)"
+   301→                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+   302→                        />
+   303→                      </div>
+   304→                      <div>
+   305→                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Jenis Kelamin</label>
+   306→                        <select
+   307→                          value={manualData.jenisKelamin}
+   308→                          onChange={(e) => setManualData({ ...manualData, jenisKelamin: e.target.value })}
+   309→                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+   310→                        >
+   311→                          <option value="L">Laki-laki</option>
+   312→                          <option value="P">Perempuan</option>
+   313→                        </select>
+   314→                      </div>
+   315→                    </div>
+   316→                    <div className="grid grid-cols-2 gap-2">
+   317→                      <div>
+   318→                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tempat Lahir *</label>
+   319→                        <input
+   320→                          type="text"
+   321→                          value={manualData.tempatLahir}
+   322→                          onChange={(e) => setManualData({ ...manualData, tempatLahir: e.target.value })}
+   323→                          placeholder="Contoh: Bandung"
+   324→                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+   325→                        />
+   326→                      </div>
+   327→                      <div>
+   328→                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Lahir *</label>
+   329→                        <input
+   330→                          type="date"
+   331→                          value={manualData.tanggalLahir}
+   332→                          onChange={(e) => setManualData({ ...manualData, tanggalLahir: e.target.value })}
+   333→                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+   334→                        />
+   335→                      </div>
+   336→                    </div>
+   337→                    <div className="grid grid-cols-2 gap-2">
+   338→                      <div>
+   339→                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email *</label>
+   340→                        <input
+   341→                          type="email"
+   342→                          value={manualData.email}
+   343→                          onChange={(e) => setManualData({ ...manualData, email: e.target.value })}
+   344→                          placeholder="email@contoh.com"
+   345→                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+   346→                        />
+   347→                      </div>
+   348→                      <div>
+   349→                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">No. HP *</label>
+   350→                        <input
+   351→                          type="tel"
+   352→                          value={manualData.hp}
+   353→                          onChange={(e) => setManualData({ ...manualData, hp: e.target.value })}
+   354→                          placeholder="08xxxxxxxxxx"
+   355→                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+   356→                        />
+   357→                      </div>
+   358→                    </div>
+   359→                    <div>
+   360→                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Alamat *</label>
+   361→                      <textarea
+   362→                        value={manualData.alamat}
+   363→                        onChange={(e) => setManualData({ ...manualData, alamat: e.target.value })}
+   364→                        placeholder="Alamat lengkap"
+   365→                        rows={2}
+   366→                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none resize-none"
+   367→                      />
+   368→                    </div>
+   369→
+   370→                    {/* Upload Dokumen */}
+   371→                    <div className="border-t border-slate-200 pt-3 mt-2">
+   372→                      <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Upload Dokumen</p>
+   373→                      <div className="grid grid-cols-2 gap-2">
+   374→                        {[
+   375→                          { key: "foto", label: "Pas Foto", accept: "image/*" },
+   376→                          { key: "ktp", label: "KTP", accept: "image/*,.pdf" },
+   377→                          { key: "cv", label: "CV/Resume", accept: "image/*,.pdf" },
+   378→                          { key: "suratPernyataan", label: "Surat Pernyataan", accept: "image/*,.pdf" },
+   379→                          { key: "suratSehat", label: "Surat Sehat", accept: "image/*,.pdf" },
+   380→                        ].map((doc) => (
+   381→                          <div key={doc.key}>
+   382→                            <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">{doc.label}</label>
+   383→                            <input
+   384→                              type="file"
+   385→                              accept={doc.accept}
+   386→                              onChange={async (e) => {
+   387→                                const file = e.target.files?.[0];
+   388→                                if (!file) return;
+   389→                                if (file.size > 1024 * 1024 * 2) {
+   390→                                  toast.error("File maksimal 2MB");
+   391→                                  return;
+   392→                                }
+   393→                                const reader = new FileReader();
+   394→                                reader.onload = () => {
+   395→                                  setManualData((prev) => ({ ...prev, [doc.key]: reader.result as string }));
+   396→                                  toast.success(`${doc.label} terupload`);
+   397→                                };
+   398→                                reader.readAsDataURL(file);
+   399→                              }}
+   400→                              className="w-full text-[10px] border border-slate-200 rounded-lg px-1.5 py-1 file:mr-1.5 file:py-0.5 file:px-1.5 file:rounded file:border-0 file:text-[10px] file:font-medium file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+   401→                            />
+   402→                            {manualData[doc.key as keyof typeof manualData] && (
+   403→                              <div className="flex items-center gap-1.5 mt-0.5">
+   404→                                <span className="text-[9px] text-emerald-600">✓ {doc.label} terupload</span>
+   405→                                <button
+   406→                                  type="button"
+   407→                                  onClick={() => setManualData((prev) => ({ ...prev, [doc.key]: "" }))}
+   408→                                  className="text-[9px] text-rose-500 hover:text-rose-700 underline"
+   409→                                >
+   410→                                  Hapus
+   411→                                </button>
+   412→                                <button
+   413→                                  type="button"
+   414→                                  onClick={() => {
+   415→                                    const url = manualData[doc.key as keyof typeof manualData] as string;
+   416→                                    const w = window.open();
+   417→                                    if (w) {
+   418→                                      if (url.startsWith("data:image/")) {
+   419→                                        w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
+   420→                                      } else if (url.startsWith("data:application/pdf")) {
+   421→                                        w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0"><iframe src="${url}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
+   422→                                      }
+   423→                                      w.document.close();
+   424→                                    }
+   425→                                  }}
+   426→                                  className="text-[9px] text-blue-600 hover:text-blue-700 underline"
+   427→                                >
+   428→                                  Lihat
+   429→                                </button>
+   430→                              </div>
+   431→                            )}
+   432→                          </div>
+   433→                        ))}
+   434→                      </div>
+   435→                    </div>
+   436→                  </div>
+   437→                )}
+   438→              </div>
+   439→
+   440→              {/* Level — Card-style selector with clear placement info */}
+   441→              <div>
+   442→                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+   443→                  Level Penempatan * <span className="text-slate-400 font-normal">(akan ditempatkan di pengurus level ini)</span>
+   444→                </label>
+   445→                <div className="grid grid-cols-3 gap-2">
+   446→                  {[
+   447→                    { value: "NASIONAL", label: "Nasional", desc: "Indonesia", color: "violet", icon: "🏛️" },
+   448→                    { value: "PROVINSI", label: "Provinsi", desc: "Tingkat Provinsi", color: "blue", icon: "📍" },
+   449→                    { value: "KABUPATEN", label: "Kabupaten/Kota", desc: "Tingkat Daerah", color: "cyan", icon: "🏙️" },
+   450→                  ].map((opt) => {
+   451→                    const isActive = form.level === opt.value;
+   452→                    return (
+   453→                      <button
+   454→                        key={opt.value}
+   455→                        type="button"
+   456→                        onClick={() => setForm({ ...form, level: opt.value, jabatanId: "", provinsiId: "", kabupatenId: "" })}
+   457→                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+   458→                          isActive
+   459→                            ? opt.color === "violet"
+   460→                              ? "border-violet-500 bg-violet-50"
+   461→                              : opt.color === "blue"
+   462→                              ? "border-blue-500 bg-blue-50"
+   463→                              : "border-cyan-500 bg-cyan-50"
+   464→                            : "border-slate-200 bg-white hover:border-slate-300"
+   465→                        }`}
+   466→                      >
+   467→                        <div className="text-lg mb-0.5">{opt.icon}</div>
+   468→                        <div className={`text-xs font-bold ${
+   469→                          isActive
+   470→                            ? opt.color === "violet" ? "text-violet-700"
+   471→                              : opt.color === "blue" ? "text-blue-700"
+   472→                              : "text-cyan-700"
+   473→                            : "text-slate-700"
+   474→                        }`}>{opt.label}</div>
+   475→                        <div className="text-[9px] text-slate-500 mt-0.5">{opt.desc}</div>
+   476→                      </button>
+   477→                    );
+   478→                  })}
+   479→                </div>
+   480→              </div>
+   481→
+   482→              {/* Wilayah Penempatan — conditional on level */}
+   483→              {form.level === "NASIONAL" && (
+   484→                <div className="bg-violet-50 border border-violet-200 rounded-lg p-3 text-xs text-violet-800">
+   485→                  📌 <strong>Penempatan:</strong> Pengurus Tingkat Nasional (Indonesia). Tidak perlu pilih wilayah.
+   486→                </div>
+   487→              )}
+   488→              {form.level === "PROVINSI" && (
+   489→                <div>
+   490→                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Provinsi Penempatan *</label>
+   491→                  <select
+   492→                    value={form.provinsiId}
+   493→                    onChange={(e) => setForm({ ...form, provinsiId: e.target.value, kabupatenId: "" })}
+   494→                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   495→                  >
+   496→                    <option value="">— Pilih Provinsi —</option>
+   497→                    {provinsiList.map((p) => (
+   498→                      <option key={p.id} value={p.id}>{p.nama}</option>
+   499→                    ))}
+   500→                  </select>
+   501→                  {form.provinsiId && (
+   502→                    <p className="text-[10px] text-blue-600 mt-1">
+   503→                      📌 Akan ditempatkan sebagai pengurus di provinsi <strong>{provinsiList.find(p => p.id === parseInt(form.provinsiId))?.nama}</strong>
+   504→                    </p>
+   505→                  )}
+   506→                </div>
+   507→              )}
+   508→              {form.level === "KABUPATEN" && (
+   509→                <div className="grid grid-cols-2 gap-3">
+   510→                  <div>
+   511→                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Provinsi *</label>
+   512→                    <select
+   513→                      value={form.provinsiId}
+   514→                      onChange={(e) => setForm({ ...form, provinsiId: e.target.value, kabupatenId: "" })}
+   515→                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   516→                    >
+   517→                      <option value="">— Pilih —</option>
+   518→                      {provinsiList.map((p) => (
+   519→                        <option key={p.id} value={p.id}>{p.nama}</option>
+   520→                      ))}
+   521→                    </select>
+   522→                  </div>
+   523→                  <div>
+   524→                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kabupaten/Kota *</label>
+   525→                    <select
+   526→                      value={form.kabupatenId}
+   527→                      onChange={(e) => setForm({ ...form, kabupatenId: e.target.value })}
+   528→                      disabled={!form.provinsiId}
+   529→                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none disabled:bg-slate-50"
+   530→                    >
+   531→                      <option value="">— Pilih —</option>
+   532→                      {kabupatenList
+   533→                        .filter(k => !form.provinsiId || k.provinsiId === parseInt(form.provinsiId))
+   534→                        .map((k) => (
+   535→                          <option key={k.id} value={k.id}>{k.nama}</option>
+   536→                        ))}
+   537→                    </select>
+   538→                  </div>
+   539→                  {form.kabupatenId && (
+   540→                    <div className="col-span-2 bg-cyan-50 border border-cyan-200 rounded-lg p-2 text-[11px] text-cyan-800">
+   541→                      📌 Akan ditempatkan sebagai pengurus di <strong>
+   542→                        {kabupatenList.find(k => k.id === parseInt(form.kabupatenId))?.nama}
+   543→                      </strong>, {provinsiList.find(p => p.id === parseInt(form.provinsiId))?.nama}
+   544→                    </div>
+   545→                  )}
+   546→                </div>
+   547→              )}
+   548→
+   549→              {/* Pilih Jabatan — Grouped by Bidang */}
+   550→              <div>
+   551→                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Bidang & Jabatan *</label>
+   552→                <select
+   553→                  value={form.jabatanId}
+   554→                  onChange={(e) => setForm({ ...form, jabatanId: e.target.value })}
+   555→                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   556→                >
+   557→                  <option value="">— Pilih Bidang & Jabatan —</option>
+   558→                  {bidangNames.map((bidang) => (
+   559→                    <optgroup key={bidang} label={bidang}>
+   560→                      {jabatanGrouped[bidang]
+   561→                        .sort((a, b) => a.urutan - b.urutan)
+   562→                        .map((j) => (
+   563→                          <option key={j.id} value={j.id}>{j.nama}</option>
+   564→                        ))}
+   565→                    </optgroup>
+   566→                  ))}
+   567→                </select>
+   568→                {bidangNames.length === 0 && (
+   569→                  <p className="text-[10px] text-amber-600 mt-1">
+   570→                    Belum ada jabatan untuk level {form.level}. Tambahkan jabatan di halaman master data.
+   571→                  </p>
+   572→                )}
+   573→                {form.jabatanId && (
+   574→                  <p className="text-[10px] text-slate-500 mt-1">
+   575→                    {(() => {
+   576→                      const sel = filteredJabatan.find((j) => j.id === parseInt(form.jabatanId));
+   577→                      return sel ? `Bidang: ${sel.bidang} • Level: ${sel.level}` : "";
+   578→                    })()}
+   579→                  </p>
+   580→                )}
+   581→              </div>
+   582→
+   583→              {/* Status & Periode */}
+   584→              <div className="grid grid-cols-2 gap-3">
+   585→                <div>
+   586→                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Status</label>
+   587→                  <select
+   588→                    value={form.status}
+   589→                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+   590→                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   591→                  >
+   592→                    <option value="Aktif">Aktif</option>
+   593→                    <option value="Selesai">Selesai</option>
+   594→                    <option value="Diberhentikan">Diberhentikan</option>
+   595→                  </select>
+   596→                </div>
+   597→                <div>
+   598→                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nomor SK</label>
+   599→                  <input
+   600→                    type="text"
+   601→                    value={form.nomorSK}
+   602→                    onChange={(e) => setForm({ ...form, nomorSK: e.target.value })}
+   603→                    placeholder="SK-001/KIPAN/..."
+   604→                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   605→                  />
+   606→                </div>
+   607→              </div>
+   608→
+   609→              <div className="grid grid-cols-2 gap-3">
+   610→                <div>
+   611→                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Mulai Menjabat</label>
+   612→                  <input
+   613→                    type="date"
+   614→                    value={form.tanggalMulai}
+   615→                    onChange={(e) => setForm({ ...form, tanggalMulai: e.target.value })}
+   616→                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   617→                  />
+   618→                </div>
+   619→                <div>
+   620→                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Selesai</label>
+   621→                  <input
+   622→                    type="date"
+   623→                    value={form.tanggalSelesai}
+   624→                    onChange={(e) => setForm({ ...form, tanggalSelesai: e.target.value })}
+   625→                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+   626→                  />
+   627→                </div>
+   628→              </div>
+   629→
+   630→              {/* Upload SK */}
+   631→              <div>
+   632→                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Upload SK (PDF/Image)</label>
+   633→                <input
+   634→                  type="file"
+   635→                  accept=".pdf,image/*"
+   636→                  onChange={async (e) => {
+   637→                    const file = e.target.files?.[0];
+   638→                    if (!file) return;
+   639→                    if (file.size > 1024 * 1024 * 2) return;
+   640→                    const reader = new FileReader();
+   641→                    reader.onload = () => {
+   642→                      setForm((prev) => ({ ...prev, fileSK: reader.result as string }));
+   643→                      toast.success("SK terupload");
+   644→                    };
+   645→                    reader.readAsDataURL(file);
+   646→                  }}
+   647→                  className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 file:mr-2 file:py-0.5 file:px-2 file:rounded file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+   648→                />
+   649→                {form.fileSK && <span className="text-[10px] text-emerald-600 mt-0.5 block">✓ SK terupload</span>}
+   650→              </div>
+   651→            </div>
+   652→
+   653→            <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
+   654→              <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+   655→              <button onClick={handleSave} disabled={saving} className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50">
+   656→                {saving ? (
+   657→                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
+   658→                ) : (
+   659→                  <><Save className="w-4 h-4" /> Simpan</>
+   660→                )}
+   661→              </button>
+   662→            </div>
+   663→          </motion.div>
+   664→        </motion.div>
+   665→      )}
+   666→    </AnimatePresence>
+   667→  );
+   668→}
+   669→
