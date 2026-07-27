@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 // GET /api/wilayah — List provinsi & kabupaten
+// Penting: count pengurus HANYA untuk level yang sesuai:
+//   - provinsi: count pengurus dengan level="PROVINSI" (bukan Nasional yang kebetulan provinsiId=ini)
+//   - kabupaten: count pengurus dengan level="KABUPATEN"
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -9,7 +12,7 @@ export async function GET(req: NextRequest) {
 
     const provinsi = await db.provinsi.findMany({
       include: {
-        _count: { select: { kabupaten: true, pengurus: true } },
+        _count: { select: { kabupaten: true } },
       },
       orderBy: { nama: "asc" },
     });
@@ -17,19 +20,57 @@ export async function GET(req: NextRequest) {
     const kabupaten = await db.kabupaten.findMany({
       include: {
         provinsi: { select: { nama: true, kode: true } },
-        _count: { select: { pengurus: true } },
       },
       orderBy: { nama: "asc" },
     });
 
+    // Count pengurus level PROVINSI per provinsi (terpisah, agar tidak ikut count Nasional)
+    const pengurusProvinsiCounts = await db.pengurus.groupBy({
+      by: ["provinsiId"],
+      where: { level: "PROVINSI" },
+      _count: { _all: true },
+    });
+    const pengurusProvinsiMap: Record<number, number> = {};
+    pengurusProvinsiCounts.forEach((c) => {
+      if (c.provinsiId) pengurusProvinsiMap[c.provinsiId] = c._count._all;
+    });
+
+    // Count pengurus level KABUPATEN per kabupaten (terpisah)
+    const pengurusKabupatenCounts = await db.pengurus.groupBy({
+      by: ["kabupatenId"],
+      where: { level: "KABUPATEN" },
+      _count: { _all: true },
+    });
+    const pengurusKabupatenMap: Record<number, number> = {};
+    pengurusKabupatenCounts.forEach((c) => {
+      if (c.kabupatenId) pengurusKabupatenMap[c.kabupatenId] = c._count._all;
+    });
+
+    // Tambahkan count pengurus ke response provinsi
+    const provinsiWithCount = provinsi.map((p) => ({
+      ...p,
+      _count: {
+        kabupaten: p._count.kabupaten,
+        pengurus: pengurusProvinsiMap[p.id] || 0,
+      },
+    }));
+
+    // Tambahkan count pengurus ke response kabupaten
+    const kabupatenWithCount = kabupaten.map((k) => ({
+      ...k,
+      _count: {
+        pengurus: pengurusKabupatenMap[k.id] || 0,
+      },
+    }));
+
     if (type === "provinsi") {
-      return NextResponse.json({ success: true, data: provinsi });
+      return NextResponse.json({ success: true, data: provinsiWithCount });
     }
     if (type === "kabupaten") {
-      return NextResponse.json({ success: true, data: kabupaten });
+      return NextResponse.json({ success: true, data: kabupatenWithCount });
     }
 
-    return NextResponse.json({ success: true, data: { provinsi, kabupaten } });
+    return NextResponse.json({ success: true, data: { provinsi: provinsiWithCount, kabupaten: kabupatenWithCount } });
   } catch (error) {
     console.error("GET /api/wilayah error:", error);
     return NextResponse.json({ success: false, error: "Gagal mengambil data wilayah" }, { status: 500 });
