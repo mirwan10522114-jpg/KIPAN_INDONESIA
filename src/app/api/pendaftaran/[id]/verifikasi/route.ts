@@ -154,15 +154,6 @@ export async function PATCH(
             nomorSK: `SK-AUTO/${nia}/${tahun}`,
           },
         });
-
-        // Update ketua wilayah jika belum ada ketua
-        const kabupatenRecord = await db.kabupaten.findUnique({ where: { id: pendaftaran.kabupatenId } });
-        if (kabupatenRecord && !kabupatenRecord.ketua) {
-          await db.kabupaten.update({
-            where: { id: pendaftaran.kabupatenId },
-            data: { ketua: newAnggota.namaLengkap },
-          });
-        }
       }
 
       await db.pendaftaranRiwayat.create({
