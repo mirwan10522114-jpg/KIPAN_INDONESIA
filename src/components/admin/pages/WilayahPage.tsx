@@ -139,8 +139,8 @@ export default function WilayahPage({
 
   // Stat cards — use API data for consistency with dashboard
   const statCards = [
-    { label: "Total Provinsi", value: provData.length, total: 38, icon: MapPin, color: "from-blue-500 to-sky-500", targetPage: null },
-    { label: "Total Kabupaten/Kota", value: kabData.length, total: 514, icon: Building2, color: "from-sky-500 to-cyan-500", targetPage: null },
+    { label: "Total Provinsi", value: provData.length, total: null, icon: MapPin, color: "from-blue-500 to-sky-500", targetPage: null },
+    { label: "Total Kabupaten/Kota", value: kabData.length, total: null, icon: Building2, color: "from-sky-500 to-cyan-500", targetPage: null },
     { label: "Total Pengurus", value: totalAllPengurus, total: null, icon: UserCog, color: "from-violet-500 to-purple-500", targetPage: "pengurus" },
   ];
 

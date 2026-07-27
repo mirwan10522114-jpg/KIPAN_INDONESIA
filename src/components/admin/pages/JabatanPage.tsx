@@ -626,31 +626,22 @@ function AddBidangDialog({
     setSaving(true);
     setError("");
     try {
-      // Create 3 default jabatan (Ketua Divisi, Sekretaris Divisi, Anggota) for each selected level
-      const defaultJabatan = [
-        { nama: "Ketua Divisi", urutan: 1 },
-        { nama: "Sekretaris Divisi", urutan: 2 },
-        { nama: "Anggota", urutan: 3 },
-      ];
-      let created = 0;
-      for (const level of selectedLevels) {
-        for (const dj of defaultJabatan) {
-          const res = await fetch("/api/jabatan", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              nama: dj.nama,
-              bidang: bidangName.trim(),
-              level,
-              urutan: dj.urutan,
-            }),
-          });
-          const json = await res.json();
-          if (json.success) created++;
-        }
+      // Single API call — bulk create dalam transaction
+      const res = await fetch("/api/jabatan/bulk-create-bidang", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bidang: bidangName.trim(),
+          levels: selectedLevels,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(json.message);
+        onCreated();
+      } else {
+        setError(json.error || "Gagal membuat bidang");
       }
-      toast.success(`Bidang "${bidangName.trim()}" dibuat dengan ${created} jabatan di ${selectedLevels.length} level`);
-      onCreated();
     } catch (e: any) {
       setError(e.message);
     } finally {
