@@ -216,56 +216,72 @@ export default function PengurusDetailDialog({
                       {/* KTA — Kartu Pengurus Digital */}
                       <div>
                         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Kartu Pengurus (KTA)</h3>
-                        {/* KTA Card Design */}
-                        <div id="kta-card-pengurus" className="relative bg-gradient-to-br from-blue-700 via-blue-600 to-sky-500 rounded-2xl p-6 text-white shadow-2xl overflow-hidden max-w-sm mx-auto" style={{ aspectRatio: "1.586/1" }}>
-                          {/* Decorative pattern */}
-                          <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
-                          <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/3" />
+                        {/* KTA Card Design — Navy Blue theme matching KIPAN logo */}
+                        <div id="kta-card-pengurus" className="relative rounded-2xl shadow-2xl overflow-hidden max-w-md mx-auto" style={{ aspectRatio: "1.586/1" }}>
+                          {/* Navy blue background */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-[#0a1f44] via-[#0d2a5c] to-[#0a1f44]" />
+                          
+                          {/* Gold border line */}
+                          <div className="absolute inset-2 border-2 border-yellow-500/60 rounded-xl pointer-events-none" />
+                          
+                          {/* Decorative circles */}
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full -translate-y-1/3 translate-x-1/3" />
+                          <div className="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/5 rounded-full translate-y-1/3 -translate-x-1/3" />
 
-                          {/* Header */}
-                          <div className="relative flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                                <Shield className="w-5 h-5" />
+                          {/* Content */}
+                          <div className="relative h-full flex flex-col p-5">
+                            {/* Header — Logo + Org Name */}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2.5">
+                                <img src="/kipan-logo.png" alt="KIPAN" className="w-12 h-12 rounded-full object-cover border-2 border-yellow-500/60" />
+                                <div className="text-white">
+                                  <div className="text-[9px] uppercase tracking-wider text-yellow-400 font-semibold">Kader Inti Pemuda</div>
+                                  <div className="text-xs font-bold text-white leading-tight">Anti Narkoba</div>
+                                  <div className="text-[8px] text-blue-200 mt-0.5">Sekretariat Nasional</div>
+                                </div>
                               </div>
-                              <div>
-                                <div className="text-[10px] opacity-80 uppercase tracking-wider">KIPAN Indonesia</div>
-                                <div className="text-xs font-bold">Kartu Pengurus</div>
+                              <div className="text-right">
+                                <div className="text-[9px] text-yellow-400 font-semibold uppercase tracking-wider">Kartu Pengurus</div>
+                                <div className="text-[8px] text-blue-200">KIPAN Indonesia</div>
                               </div>
                             </div>
-                            <div className="w-12 h-12 bg-white/15 rounded-lg flex items-center justify-center">
-                              <QrCode className="w-8 h-8" />
-                            </div>
-                          </div>
 
-                          {/* Member info */}
-                          <div className="relative flex items-center gap-3 mt-4">
-                            <SafeImage src={p?.foto} alt={p?.namaLengkap || ""} className="w-14 h-14 rounded-xl object-cover border-2 border-white/40" />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-bold text-base truncate">{p?.namaLengkap}</div>
-                              <div className="text-[10px] opacity-70 font-mono">{p?.nia}</div>
-                              <div className="text-[10px] opacity-70 mt-0.5 truncate">
-                                {p?.jabatanNama}{p?.jabatanBidang && p?.jabatanBidang !== "Pengurus Harian" ? ` • ${p.jabatanBidang}` : ""}
+                            {/* Member info — Photo + Details */}
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="shrink-0">
+                                <SafeImage src={p?.foto} alt={p?.namaLengkap || ""} className="w-16 h-20 rounded-lg object-cover border-2 border-yellow-500/60" />
                               </div>
-                              <div className="text-[10px] opacity-70 mt-0.5 truncate">
-                                {normalizeLevel(p?.level || "") === "Nasional" ? "Indonesia" : (p?.kabupaten?.nama || p?.provinsi?.nama || "-")}
+                              <div className="flex-1 min-w-0 text-white">
+                                <div className="text-[8px] text-yellow-400 uppercase tracking-wider mb-0.5">Nama</div>
+                                <div className="font-bold text-sm leading-tight truncate">{p?.namaLengkap}</div>
+                                
+                                <div className="text-[8px] text-yellow-400 uppercase tracking-wider mt-2 mb-0.5">NIP</div>
+                                <div className="text-[10px] font-mono text-blue-100 truncate">{p?.nia}</div>
+                                
+                                <div className="text-[8px] text-yellow-400 uppercase tracking-wider mt-2 mb-0.5">Jabatan</div>
+                                <div className="text-[10px] text-blue-100 truncate">
+                                  {p?.jabatanNama}{p?.jabatanBidang && p?.jabatanBidang !== "Pengurus Harian" ? ` • ${p.jabatanBidang}` : ""}
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Footer */}
-                          <div className="relative flex items-center justify-between mt-4 text-[10px]">
-                            <div>
-                              <div className="opacity-60">Level</div>
-                              <div className="font-semibold">{normalizeLevel(p?.level || "")}</div>
-                            </div>
-                            <div>
-                              <div className="opacity-60">Status</div>
-                              <div className="font-semibold">{p?.status}</div>
-                            </div>
-                            <div>
-                              <div className="opacity-60">Berlaku</div>
-                              <div className="font-semibold">Seumur Hidup</div>
+                            {/* Footer — Level, Wilayah, Status */}
+                            <div className="flex items-end justify-between mt-3 pt-2 border-t border-yellow-500/20">
+                              <div className="text-white">
+                                <div className="text-[7px] text-yellow-400 uppercase">Level</div>
+                                <div className="text-[9px] font-semibold">{normalizeLevel(p?.level || "")}</div>
+                                <div className="text-[7px] text-blue-200 mt-1">
+                                  {normalizeLevel(p?.level || "") === "Nasional" ? "Indonesia" : (p?.kabupaten?.nama || p?.provinsi?.nama || "-")}
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-[7px] text-yellow-400 uppercase">Status</div>
+                                <div className="text-[9px] font-semibold text-white">{p?.status}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-[7px] text-yellow-400 uppercase">Berlaku</div>
+                                <div className="text-[9px] font-semibold text-white">Seumur Hidup</div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -280,38 +296,73 @@ export default function PengurusDetailDialog({
                               printWin.document.write(`
                                 <html><head><title>KTA - ${p.nia}</title>
                                 <style>
-                                  body { margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0; font-family:sans-serif; }
-                                  .card { width:400px; background:linear-gradient(135deg,#1d4ed8,#0ea5e9); border-radius:16px; padding:24px; color:white; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
-                                  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-                                  .logo { display:flex; align-items:center; gap:8px; }
-                                  .logo-circle { width:32px; height:32px; background:rgba(255,255,255,0.2); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; }
-                                  .info { display:flex; gap:12px; margin-top:16px; }
-                                  .photo { width:56px; height:56px; border-radius:12px; object-fit:cover; border:2px solid rgba(255,255,255,0.4); }
-                                  .footer { display:flex; justify-content:space-between; margin-top:16px; font-size:10px; }
-                                  .footer div div:first-child { opacity:0.6; }
-                                  .footer div div:last-child { font-weight:bold; }
+                                  * { margin:0; padding:0; box-sizing:border-box; }
+                                  body { display:flex; justify-content:center; align-items:center; min-height:100vh; background:#f0f0f0; font-family:'Segoe UI',sans-serif; }
+                                  .card { width:480px; height:302px; background:linear-gradient(135deg,#0a1f44,#0d2a5c,#0a1f44); border-radius:16px; padding:20px; position:relative; overflow:hidden; box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+                                  .gold-border { position:absolute; inset:8px; border:2px solid rgba(234,179,8,0.6); border-radius:12px; }
+                                  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; position:relative; }
+                                  .logo-box { display:flex; align-items:center; gap:10px; }
+                                  .logo-img { width:48px; height:48px; border-radius:50%; border:2px solid rgba(234,179,8,0.6); }
+                                  .org-name { color:white; }
+                                  .org-name .top { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:#eab308; font-weight:600; }
+                                  .org-name .mid { font-size:12px; font-weight:bold; color:white; }
+                                  .org-name .sub { font-size:8px; color:#93c5fd; }
+                                  .card-type { text-align:right; }
+                                  .card-type .label { font-size:9px; color:#eab308; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+                                  .card-type .sub { font-size:8px; color:#93c5fd; }
+                                  .info-row { display:flex; gap:12px; align-items:center; position:relative; flex:1; }
+                                  .photo { width:64px; height:80px; border-radius:8px; object-fit:cover; border:2px solid rgba(234,179,8,0.6); }
+                                  .details { color:white; flex:1; }
+                                  .field-label { font-size:8px; color:#eab308; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:1px; }
+                                  .field-value { font-size:11px; color:#dbeafe; margin-bottom:6px; }
+                                  .field-value.name { font-size:14px; font-weight:bold; color:white; }
+                                  .field-value.nip { font-family:monospace; font-size:10px; }
+                                  .footer { display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px; padding-top:8px; border-top:1px solid rgba(234,179,8,0.2); position:relative; }
+                                  .footer-item .label { font-size:7px; color:#eab308; text-transform:uppercase; }
+                                  .footer-item .value { font-size:9px; color:white; font-weight:600; }
+                                  .footer-item .sub { font-size:7px; color:#93c5fd; }
                                 </style></head><body>
                                 <div class="card">
+                                  <div class="gold-border"></div>
                                   <div class="header">
-                                    <div class="logo">
-                                      <div class="logo-circle">🛡️</div>
-                                      <div><div style="font-size:9px;opacity:0.8">KIPAN INDONESIA</div><div style="font-size:11px;font-weight:bold">Kartu Pengurus</div></div>
+                                    <div class="logo-box">
+                                      <img src="${window.location.origin}/kipan-logo.png" class="logo-img" />
+                                      <div class="org-name">
+                                        <div class="top">Kader Inti Pemuda</div>
+                                        <div class="mid">Anti Narkoba</div>
+                                        <div class="sub">Sekretariat Nasional</div>
+                                      </div>
                                     </div>
-                                    <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px">📱</div>
+                                    <div class="card-type">
+                                      <div class="label">Kartu Pengurus</div>
+                                      <div class="sub">KIPAN Indonesia</div>
+                                    </div>
                                   </div>
-                                  <div class="info">
-                                    ${p.foto ? `<img src="${p.foto}" class="photo" />` : `<div class="photo" style="background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center">${(p.namaLengkap||'?').charAt(0)}</div>`}
-                                    <div>
-                                      <div style="font-weight:bold;font-size:15px">${p.namaLengkap}</div>
-                                      <div style="font-size:10px;opacity:0.7;font-family:monospace">${p.nia}</div>
-                                      <div style="font-size:10px;opacity:0.7;margin-top:2px">${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' • ' + p.jabatanBidang : ''}</div>
-                                      <div style="font-size:10px;opacity:0.7;margin-top:2px">${p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-')}</div>
+                                  <div class="info-row">
+                                    ${p.foto ? `<img src="${p.foto}" class="photo" />` : `<div class="photo" style="background:rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;color:white;font-size:24px">${(p.namaLengkap||'?').charAt(0)}</div>`}
+                                    <div class="details">
+                                      <div class="field-label">Nama</div>
+                                      <div class="field-value name">${p.namaLengkap}</div>
+                                      <div class="field-label">NIP</div>
+                                      <div class="field-value nip">${p.nia}</div>
+                                      <div class="field-label">Jabatan</div>
+                                      <div class="field-value">${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' &bull; ' + p.jabatanBidang : ''}</div>
                                     </div>
                                   </div>
                                   <div class="footer">
-                                    <div><div>Level</div><div>${p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten'}</div></div>
-                                    <div><div>Status</div><div>${p.status}</div></div>
-                                    <div><div>Berlaku</div><div>Seumur Hidup</div></div>
+                                    <div class="footer-item">
+                                      <div class="label">Level</div>
+                                      <div class="value">${p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten'}</div>
+                                      <div class="sub">${p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-')}</div>
+                                    </div>
+                                    <div class="footer-item" style="text-align:center">
+                                      <div class="label">Status</div>
+                                      <div class="value">${p.status}</div>
+                                    </div>
+                                    <div class="footer-item" style="text-align:right">
+                                      <div class="label">Berlaku</div>
+                                      <div class="value">Seumur Hidup</div>
+                                    </div>
                                   </div>
                                 </div>
                                 <script>setTimeout(()=>window.print(),500)</script>
@@ -326,7 +377,7 @@ export default function PengurusDetailDialog({
                           <button
                             onClick={() => {
                               if (!p) return;
-                              const text = `KARTU PENGURUS KIPAN INDONESIA\n\nNIP: ${p.nia}\nNama: ${p.namaLengkap}\nJabatan: ${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' (' + p.jabatanBidang + ')' : ''}\nLevel: ${p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten'}\nWilayah: ${p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-')}\nStatus: ${p.status}\nSK: ${p.nomorSK || '-'}\nMulai Menjabat: ${p.tanggalMulai ? new Date(p.tanggalMulai).toLocaleDateString('id-ID') : '-'}\n\nKIPAN Indonesia`;
+                              const text = `KARTU PENGURUS KIPAN INDONESIA\n=================================\n\nNIP: ${p.nia}\nNama: ${p.namaLengkap}\nJabatan: ${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' (' + p.jabatanBidang + ')' : ''}\nLevel: ${p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten'}\nWilayah: ${p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-')}\nStatus: ${p.status}\nSK: ${p.nomorSK || '-'}\nMulai Menjabat: ${p.tanggalMulai ? new Date(p.tanggalMulai).toLocaleDateString('id-ID') : '-'}\nBerlaku: Seumur Hidup\n\nKIPAN Indonesia\nKader Inti Pemuda Anti Narkoba\nSekretariat Nasional`;
                               const blob = new Blob([text], { type: "text/plain" });
                               const url = URL.createObjectURL(blob);
                               const link = document.createElement("a");
