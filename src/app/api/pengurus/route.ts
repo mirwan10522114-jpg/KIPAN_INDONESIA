@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { generateNIA } from "@/lib/nia";
+import { generateNIP } from "@/lib/nip";
 
 export async function GET(req: NextRequest) {
   try {
@@ -89,15 +89,15 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Generate NIA dengan global sequence (pakai newAnggota.id)
+      // Generate NIP dengan global sequence (pakai newAnggota.id)
       const tahun = new Date().getFullYear();
-      const nia = await generateNIA(newAnggota.id, {
+      const nia = await generateNIP(newAnggota.id, {
         provinsiId: parseInt(body.provinsiId),
         kabupatenId: body.kabupatenId ? parseInt(body.kabupatenId) : null,
         tahun,
       });
 
-      // Update anggota dengan NIA yang benar
+      // Update anggota dengan NIP yang benar
       await db.anggota.update({
         where: { id: newAnggota.id },
         data: { nia },

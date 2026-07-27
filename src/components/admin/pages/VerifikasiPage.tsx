@@ -425,7 +425,7 @@ export default function VerifikasiPage() {
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
                 ℹ️ Saat disetujui, sistem akan otomatis membuat:
                 <ul className="list-disc list-inside mt-1 space-y-0.5">
-                  <li>Record data person (NIA auto-generate)</li>
+                  <li>Record data person (NIP auto-generate)</li>
                   <li>Record Pengurus dengan jabatan "Anggota" di divisi yang Anda pilih</li>
                   <li>Level default: <strong>Kabupaten</strong> sesuai wilayah pendaftaran</li>
                 </ul>

@@ -136,7 +136,7 @@ export default function AnggotaPage({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari nama atau NIA..."
+            placeholder="Cari nama atau NIP..."
             className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
           />
         </div>
@@ -210,7 +210,7 @@ export default function AnggotaPage({
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">NIA</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">NIP</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Wilayah</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Angkatan</th>
@@ -322,7 +322,7 @@ export default function AnggotaPage({
                   </div>
                   <div>
                     <h2 className="text-lg font-bold">Tambah Anggota</h2>
-                    <p className="text-xs text-emerald-100">NIA akan dibuat otomatis</p>
+                    <p className="text-xs text-emerald-100">NIP akan dibuat otomatis</p>
                   </div>
                 </div>
               </div>

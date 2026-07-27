@@ -268,7 +268,7 @@ export function exportAnggotaPdf(data: any[], filters?: { search?: string; statu
       { label: "Kabupaten", value: kabupatenCount },
     ],
     columns: [
-      { header: "NIA", dataKey: "nia" },
+      { header: "NIP", dataKey: "nia" },
       { header: "Nama", dataKey: "namaLengkap" },
       { header: "Jenis Kelamin", dataKey: "jenisKelamin" },
       { header: "Kabupaten", dataKey: "kabupaten" },

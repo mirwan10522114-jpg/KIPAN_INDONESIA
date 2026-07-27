@@ -101,7 +101,7 @@ export default function AnggotaDetailDialog({
                     // Generate a simple text-based PDF download
                     const a = data?.anggota;
                     if (!a) return;
-                    const text = `KARTU ANGGOTA KIPAN INDONESIA\n\nNIA: ${a.nia}\nNama: ${a.namaLengkap}\nWilayah: ${a.kabupaten?.nama || "-"}, ${a.provinsi?.nama || "-"}\nStatus: ${a.status}\nAngkatan: ${a.angkatan || "-"}\nTanggal Daftar: ${a.tanggalDaftar ? new Date(a.tanggalDaftar).toLocaleDateString("id-ID") : "-"}\n\nKIPAN Indonesia`;
+                    const text = `KARTU PENGURUS KIPAN INDONESIA\n\nNIP: ${a.nia}\nNama: ${a.namaLengkap}\nWilayah: ${a.kabupaten?.nama || "-"}, ${a.provinsi?.nama || "-"}\nStatus: ${a.status}\nAngkatan: ${a.angkatan || "-"}\nTanggal Daftar: ${a.tanggalDaftar ? new Date(a.tanggalDaftar).toLocaleDateString("id-ID") : "-"}\n\nKIPAN Indonesia`;
                     const blob = new Blob([text], { type: "text/plain" });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement("a");
@@ -294,7 +294,7 @@ export default function AnggotaDetailDialog({
                         <button
                           onClick={() => {
                             if (!a) return;
-                            const text = `KARTU ANGGOTA KIPAN INDONESIA\n\nNIA: ${a.nia}\nNama: ${a.namaLengkap}\nWilayah: ${a.kabupaten?.nama || "-"}, ${a.provinsi?.nama || "-"}\nStatus: ${a.status}\nAngkatan: ${a.angkatan || "-"}\nTanggal Daftar: ${a.tanggalDaftar ? new Date(a.tanggalDaftar).toLocaleDateString("id-ID") : "-"}\nTanggal Diangkat: ${a.tanggalAngkat ? new Date(a.tanggalAngkat).toLocaleDateString("id-ID") : "-"}\n\nKIPAN Indonesia`;
+                            const text = `KARTU PENGURUS KIPAN INDONESIA\n\nNIP: ${a.nia}\nNama: ${a.namaLengkap}\nWilayah: ${a.kabupaten?.nama || "-"}, ${a.provinsi?.nama || "-"}\nStatus: ${a.status}\nAngkatan: ${a.angkatan || "-"}\nTanggal Daftar: ${a.tanggalDaftar ? new Date(a.tanggalDaftar).toLocaleDateString("id-ID") : "-"}\nTanggal Diangkat: ${a.tanggalAngkat ? new Date(a.tanggalAngkat).toLocaleDateString("id-ID") : "-"}\n\nKIPAN Indonesia`;
                             const blob = new Blob([text], { type: "text/plain" });
                             const url = URL.createObjectURL(blob);
                             const link = document.createElement("a");
@@ -311,7 +311,7 @@ export default function AnggotaDetailDialog({
 
                       {/* Data Keanggotaan */}
                       <div className="grid grid-cols-2 gap-4 text-sm pt-2">
-                        <InfoRow label="NIA" value={a?.nia} />
+                        <InfoRow label="NIP" value={a?.nia} />
                         <InfoRow label="Status" value={a?.status} />
                         <InfoRow label="Angkatan" value={a?.angkatan || "-"} />
                         <InfoRow label="Tanggal Daftar" value={a?.tanggalDaftar ? formatTanggal(a.tanggalDaftar) : "-"} />

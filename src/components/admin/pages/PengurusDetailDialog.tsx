@@ -258,7 +258,7 @@ export default function PengurusDetailDialog({
                       <table className="w-full">
                         <thead className="bg-slate-50 border-b border-slate-200">
                           <tr>
-                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">NIA</th>
+                            <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">NIP</th>
                             <th className="px-3 py-2 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
                             <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Angkatan</th>
                             <th className="px-3 py-2 text-center text-xs font-bold text-slate-600 uppercase">Status</th>

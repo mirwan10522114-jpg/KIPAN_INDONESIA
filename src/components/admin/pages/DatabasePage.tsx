@@ -414,8 +414,8 @@ provinsi (1) ──── (N) kabupaten
     └── (N) anggota           │
                              └── (N) pendaftaran_riwayat
 
-pendaftaran ──(DISETUJUI)──→ anggota (auto-create NIA)
-                             Format NIA: KIPAN-PROVKODE-KABKODE-YEAR-SEQ
+pendaftaran ──(DISETUJUI)──→ anggota (auto-create NIP)
+                             Format NIP: KIPAN-PROVKODE-KABKODE-YEAR-SEQ
                              Contoh: KIPAN-JBR-3204-2026-00012
 
 berita, galeri, program_kerja, profil_organisasi → tabel independen (CMS)`}

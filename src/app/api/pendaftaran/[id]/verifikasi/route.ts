@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { generateNIA } from "@/lib/nia";
+import { generateNIP } from "@/lib/nip";
 
 // PATCH /api/pendaftaran/[id]/verifikasi — Update status pendaftaran
 // Body: { status: "DISETUJUI" | "DITOLAK" | "PERBAIKAN" | "DIVERIFIKASI", catatan?: string, jabatanId?: number }
@@ -51,7 +51,7 @@ export async function PATCH(
 
     // Jika disetujui, buat record Anggota (data person) + Pengurus (jabatan)
     if (status === "DISETUJUI") {
-      // 1. Buat record Anggota (data person) dengan NIA placeholder
+      // 1. Buat record Anggota (data person) dengan NIP placeholder
       const newAnggota = await db.anggota.create({
         data: {
           nia: "TEMP-" + Date.now(), // placeholder, akan di-update setelah dapat ID
@@ -84,14 +84,14 @@ export async function PATCH(
         },
       });
 
-      // Generate NIA dengan global sequence (pakai newAnggota.id)
+      // Generate NIP dengan global sequence (pakai newAnggota.id)
       const tahun = new Date().getFullYear();
-      const nia = await generateNIA(newAnggota.id, {
+      const nia = await generateNIP(newAnggota.id, {
         provinsiId: pendaftaran.provinsiId,
         kabupatenId: pendaftaran.kabupatenId,
         tahun,
       });
-      // Update anggota dengan NIA yang benar
+      // Update anggota dengan NIP yang benar
       await db.anggota.update({
         where: { id: newAnggota.id },
         data: { nia },
@@ -168,7 +168,7 @@ export async function PATCH(
       await db.pendaftaranRiwayat.create({
         data: {
           pendaftaranId: id,
-          aksi: `Menjadi Pengurus dengan NIA: ${nia}`,
+          aksi: `Menjadi Pengurus dengan NIP: ${nia}`,
           oleh: "Sistem",
         },
       });

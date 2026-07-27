@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { generateNIA } from "@/lib/nia";
+import { generateNIP } from "@/lib/nip";
 
 export async function GET(req: NextRequest) {
   try {
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Provinsi atau kabupaten tidak ditemukan" }, { status: 400 });
     }
 
-    // Create anggota dulu TANPA nia (placeholder), lalu generate NIA pakai anggota.id
+    // Create anggota dulu TANPA nia (placeholder), lalu generate NIP pakai anggota.id
     const anggota = await db.anggota.create({
       data: {
         nia: "TEMP-" + Date.now(), // placeholder, akan di-update
@@ -86,15 +86,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Generate NIA dengan global sequence (pakai anggota.id)
+    // Generate NIP dengan global sequence (pakai anggota.id)
     const tahun = new Date().getFullYear();
-    const nia = await generateNIA(anggota.id, {
+    const nia = await generateNIP(anggota.id, {
       provinsiId: parseInt(body.provinsiId),
       kabupatenId: parseInt(body.kabupatenId),
       tahun,
     });
 
-    // Update anggota dengan NIA yang benar
+    // Update anggota dengan NIP yang benar
     const updated = await db.anggota.update({
       where: { id: anggota.id },
       data: { nia },
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, data: updated, message: `Anggota berhasil ditambahkan dengan NIA: ${nia}` });
+    return NextResponse.json({ success: true, data: updated, message: `Pengurus berhasil ditambahkan dengan NIP: ${nia}` });
   } catch (error) {
     console.error("POST /api/anggota error:", error);
     return NextResponse.json({ success: false, error: "Gagal menambahkan anggota" }, { status: 500 });

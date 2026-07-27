@@ -216,7 +216,7 @@ export default function PengurusFormDialog({
                         type="text"
                         value={searchAnggota}
                         onChange={(e) => setSearchAnggota(e.target.value)}
-                        placeholder="Cari nama atau NIA anggota yang sudah terdaftar..."
+                        placeholder="Cari nama atau NIP pengurus yang sudah terdaftar..."
                         className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
                       />
                     </div>
