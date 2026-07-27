@@ -5,9 +5,11 @@ import { generateNIP } from "@/lib/nip";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get("status");
-    const provinsiId = searchParams.get("provinsiId");
-    const search = searchParams.get("search");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const status = searchParams.get("status") || "";
+    const provinsiId = searchParams.get("provinsiId") || "";
+    const search = searchParams.get("search") || "";
 
     const where: any = {};
     if (status && status !== "Semua") where.status = status;
@@ -20,6 +22,11 @@ export async function GET(req: NextRequest) {
       ];
     }
 
+    const total = await db.anggota.count({ where });
+    const totalPages = Math.ceil(total / limit) || 1;
+    const currentPage = Math.min(page, totalPages);
+    const skip = (currentPage - 1) * limit;
+
     const anggota = await db.anggota.findMany({
       where,
       include: {
@@ -27,9 +34,18 @@ export async function GET(req: NextRequest) {
         kabupaten: { select: { nama: true, kode: true } },
       },
       orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
     });
 
-    return NextResponse.json({ success: true, data: anggota, total: anggota.length });
+    return NextResponse.json({
+      success: true,
+      data: anggota,
+      total,
+      page: currentPage,
+      limit,
+      totalPages,
+    });
   } catch (error) {
     console.error("GET /api/anggota error:", error);
     return NextResponse.json({ success: false, error: "Gagal mengambil data anggota" }, { status: 500 });

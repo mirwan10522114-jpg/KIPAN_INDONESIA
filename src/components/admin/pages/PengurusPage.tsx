@@ -76,15 +76,40 @@ export default function PengurusPage({
   const [editSaving, setEditSaving] = useState(false);
   const [apiData, setApiData] = useState<any[]>([]);
   const [useApiData, setUseApiData] = useState(false);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [serverTotalPages, setServerTotalPages] = useState(1);
+  const [levelCounts, setLevelCounts] = useState({ all: 0, nasional: 0, provinsi: 0, kabupaten: 0 });
+  const [bidangOptionsState, setBidangOptionsState] = useState<string[]>([]);
 
-  // Fetch from API
+  // Fetch from API — server-side pagination + filtering
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/pengurus", { cache: "no-store" });
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("limit", String(rowsPerPage));
+      if (search) params.set("search", search);
+      if (levelFilter !== "Semua") {
+        const levelMap: Record<string, string> = { Nasional: "NASIONAL", Provinsi: "PROVINSI", Kabupaten: "KABUPATEN" };
+        params.set("level", levelMap[levelFilter] || levelFilter);
+      }
+      if (bidangFilter !== "Semua") params.set("bidang", bidangFilter);
+      if (statusFilter !== "Semua") params.set("status", statusFilter);
+      if (provinsiFilter !== "Semua") {
+        const prov = PROVINSI_LIST.find((p) => p.nama === provinsiFilter);
+        if (prov) params.set("provinsiId", String(prov.id));
+      }
+      if (kabupatenFilter !== "Semua") {
+        const kab = KABUPATEN_LIST.find((k) => k.nama === kabupatenFilter);
+        if (kab) params.set("kabupatenId", String(kab.id));
+      }
+
+      const res = await fetch(`/api/pengurus?${params.toString()}`, { cache: "no-store" });
       const json = await res.json();
       if (json.success) {
         setApiData(json.data);
+        setServerTotal(json.total);
+        setServerTotalPages(json.totalPages);
         setUseApiData(true);
       }
     } catch (e) {
@@ -94,15 +119,64 @@ export default function PengurusPage({
     }
   };
 
-  // Initial load + apply filter from navigation
+  // Fetch level counts (lightweight — limit=1, just to get total per level)
+  const fetchLevelCounts = async () => {
+    try {
+      const [all, nasional, provinsi, kabupaten] = await Promise.all([
+        fetch("/api/pengurus?limit=1", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/pengurus?level=NASIONAL&limit=1", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/pengurus?level=PROVINSI&limit=1", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/pengurus?level=KABUPATEN&limit=1", { cache: "no-store" }).then((r) => r.json()),
+      ]);
+      setLevelCounts({
+        all: all.total || 0,
+        nasional: nasional.total || 0,
+        provinsi: provinsi.total || 0,
+        kabupaten: kabupaten.total || 0,
+      });
+    } catch (e) {
+      console.error("Failed to fetch level counts:", e);
+    }
+  };
+
+  // Fetch bidang options from jabatan API
+  const fetchBidangOptions = async () => {
+    try {
+      const res = await fetch("/api/jabatan", { cache: "no-store" });
+      const json = await res.json();
+      if (json.success) {
+        const set = new Set<string>();
+        for (const j of json.data) {
+          if (j.bidang) set.add(j.bidang);
+        }
+        setBidangOptionsState(Array.from(set).sort());
+      }
+    } catch (e) {
+      console.error("Failed to fetch bidang options:", e);
+    }
+  };
+
+  // Initial load
   useEffect(() => {
     if (initialFilter) {
       if (initialFilter.provinsiNama) setProvinsiFilter(initialFilter.provinsiNama);
       if (initialFilter.kabupatenNama) setKabupatenFilter(initialFilter.kabupatenNama);
       if (initialFilter.level) setLevelFilter(initialFilter.level);
     }
-    fetchData();
+    fetchBidangOptions();
+    fetchLevelCounts();
   }, []);
+
+  // Re-fetch when filters or page change (server-side pagination)
+  useEffect(() => {
+    fetchData();
+  }, [page, search, levelFilter, bidangFilter, provinsiFilter, kabupatenFilter, statusFilter, rowsPerPage]);
+
+  // Refresh level counts after data changes (add/edit/delete)
+  const refreshData = () => {
+    fetchData();
+    fetchLevelCounts();
+  };
 
   // Permission check
   const canCreate = ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"].includes(userRole);
@@ -143,30 +217,23 @@ export default function PengurusPage({
     nia: p.anggota?.nia,
   })) : PENGURUS_LIST;
 
-  // Get unique bidang names for filter
-  const bidangOptions = useMemo(() => {
-    const set = new Set<string>();
-    pengurusData.forEach((p) => { if (p.bidang && p.bidang !== "-") set.add(p.bidang); });
-    return Array.from(set).sort();
-  }, [pengurusData]);
+  // Bidang options from jabatan API (not from pengurusData, since pagination)
+  const bidangOptions = bidangOptionsState;
 
-  const totalPengurus = pengurusData.length;
-  const pengurusNasional = pengurusData.filter((p) => p.level === "Nasional").length;
-  const pengurusProvinsi = pengurusData.filter((p) => p.level === "Provinsi").length;
-  const pengurusKabupaten = pengurusData.filter((p) => p.level === "Kabupaten").length;
+  // Stat cards — use levelCounts from server, not from current page
   const masaJabatanBerakhir = pengurusData.filter((p) => {
     if (!p.tanggalSelesai) return false;
     const end = new Date(p.tanggalSelesai);
     const now = new Date();
     const diff = (end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-    return diff > 0 && diff < 365; // within 1 year
+    return diff > 0 && diff < 365;
   }).length;
 
   const statCards = [
-    { label: "Total Pengurus", value: totalPengurus, icon: UserCog, color: "from-blue-500 to-sky-500" },
-    { label: "Pengurus Nasional", value: pengurusNasional, icon: Shield, color: "from-violet-500 to-purple-500" },
-    { label: "Pengurus Provinsi", value: pengurusProvinsi, icon: Building2, color: "from-sky-500 to-cyan-500" },
-    { label: "Pengurus Kabupaten", value: pengurusKabupaten, icon: Building2, color: "from-cyan-500 to-teal-500" },
+    { label: "Total Pengurus", value: levelCounts.all, icon: UserCog, color: "from-blue-500 to-sky-500" },
+    { label: "Pengurus Nasional", value: levelCounts.nasional, icon: Shield, color: "from-violet-500 to-purple-500" },
+    { label: "Pengurus Provinsi", value: levelCounts.provinsi, icon: Building2, color: "from-sky-500 to-cyan-500" },
+    { label: "Pengurus Kabupaten", value: levelCounts.kabupaten, icon: Building2, color: "from-cyan-500 to-teal-500" },
     { label: "Masa Jabatan Akan Berakhir", value: masaJabatanBerakhir, icon: CalendarClock, color: "from-amber-500 to-orange-500" },
   ];
 
@@ -176,18 +243,9 @@ export default function PengurusPage({
     return KABUPATEN_LIST.filter((k) => k.provinsiNama === provinsiFilter);
   }, [provinsiFilter]);
 
-  // Filter data
+  // Filter data — only masaJabatan + sort on current page (server handles the rest)
   const filtered = useMemo(() => {
     let result = pengurusData.filter((p) => {
-      const matchSearch = p.nama.toLowerCase().includes(search.toLowerCase()) ||
-        p.jabatan.toLowerCase().includes(search.toLowerCase()) ||
-        p.bidang.toLowerCase().includes(search.toLowerCase()) ||
-        p.nomorSK.toLowerCase().includes(search.toLowerCase());
-      const matchLevel = levelFilter === "Semua" || p.level === levelFilter;
-      const matchBidang = bidangFilter === "Semua" || p.bidang === bidangFilter;
-      const matchProv = provinsiFilter === "Semua" || p.provinsiNama === provinsiFilter;
-      const matchKab = kabupatenFilter === "Semua" || p.kabupatenNama === kabupatenFilter;
-      const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
       let matchMasa = true;
       if (masaJabatanFilter === "Aktif") {
         matchMasa = p.status === "Aktif" && (!p.tanggalSelesai || new Date(p.tanggalSelesai) > new Date());
@@ -200,7 +258,7 @@ export default function PengurusPage({
       } else if (masaJabatanFilter === "Berakhir") {
         matchMasa = p.tanggalSelesai ? new Date(p.tanggalSelesai) < new Date() : false;
       }
-      return matchSearch && matchLevel && matchBidang && matchProv && matchKab && matchStatus && matchMasa;
+      return matchMasa;
     });
     if (sortBy && sortDir) {
       result = [...result].sort((a: any, b: any) => {
@@ -213,24 +271,25 @@ export default function PengurusPage({
       });
     }
     return result;
-  }, [pengurusData, search, levelFilter, bidangFilter, provinsiFilter, kabupatenFilter, statusFilter, masaJabatanFilter, sortBy, sortDir]);
+  }, [pengurusData, masaJabatanFilter, sortBy, sortDir]);
 
-  const totalData = filtered.length;
-  const totalPages = Math.ceil(totalData / rowsPerPage) || 1;
-  const currentPage = Math.min(page, totalPages);
+  // Server-side pagination values
+  const totalData = serverTotal;
+  const totalPages = serverTotalPages;
+  const currentPage = page;
   const startIdx = (currentPage - 1) * rowsPerPage;
   const endIdx = Math.min(startIdx + rowsPerPage, totalData);
-  const pageData = filtered.slice(startIdx, endIdx);
+  const pageData = filtered;
 
   // Summary stats from filtered data
   const filterSummary = {
-    total: filtered.length,
-    nasional: filtered.filter((p) => p.level === "Nasional").length,
-    provinsi: filtered.filter((p) => p.level === "Provinsi").length,
-    kabupaten: filtered.filter((p) => p.level === "Kabupaten").length,
-    aktif: filtered.filter((p) => p.status === "Aktif").length,
-    nonaktif: filtered.filter((p) => p.status !== "Aktif").length,
-    akanBerakhir: filtered.filter((p) => {
+    total: serverTotal,
+    nasional: levelCounts.nasional,
+    provinsi: levelCounts.provinsi,
+    kabupaten: levelCounts.kabupaten,
+    aktif: pengurusData.filter((p) => p.status === "Aktif").length,
+    nonaktif: pengurusData.filter((p) => p.status !== "Aktif").length,
+    akanBerakhir: pengurusData.filter((p) => {
       if (!p.tanggalSelesai) return false;
       const diff = (new Date(p.tanggalSelesai).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
       return diff > 0 && diff < 365;
@@ -256,17 +315,18 @@ export default function PengurusPage({
   };
 
   const handleRefresh = () => {
-    setLoading(true);
     setSearch("");
     setLevelFilter("Semua");
     setProvinsiFilter("Semua");
     setKabupatenFilter("Semua");
     setStatusFilter("Semua");
     setMasaJabatanFilter("Semua");
+    setBidangFilter("Semua");
     setSortBy(null);
     setSortDir(null);
     setPage(1);
-    setTimeout(() => setLoading(false), 600);
+    // fetchData will be triggered by useEffect when filters change
+    fetchLevelCounts();
   };
 
   const statusBadge = (status: string) => {
@@ -303,7 +363,7 @@ export default function PengurusPage({
     const json = await res.json();
     if (!json.success) throw new Error(json.error);
     toast.success(json.message);
-    fetchData();
+    refreshData();
   };
 
   const handleEdit = (item: any) => {
@@ -332,7 +392,7 @@ export default function PengurusPage({
         toast.success(json.message);
         setShowEditDialog(false);
         setEditItem(null);
-        fetchData();
+        refreshData();
       } else {
         toast.error(json.error || "Gagal menyimpan");
       }
@@ -354,7 +414,7 @@ export default function PengurusPage({
       const json = await res.json();
       if (json.success) {
         toast.success(`Pengurus "${item.nama}" telah dinonaktifkan`);
-        fetchData();
+        refreshData();
       } else {
         toast.error(json.error || "Gagal menonaktifkan");
       }
@@ -374,7 +434,7 @@ export default function PengurusPage({
       const json = await res.json();
       if (json.success) {
         toast.success(`Pengurus "${item.nama}" telah dinonaktifkan (soft delete)`);
-        fetchData();
+        refreshData();
       } else {
         toast.error(json.error || "Gagal menghapus");
       }
@@ -453,7 +513,7 @@ export default function PengurusPage({
           }`}
         >
           <Users className="w-4 h-4 inline mr-1.5" />
-          Semua Pengurus ({pengurusData.length})
+          Semua Pengurus ({levelCounts.all})
         </button>
         <button
           onClick={() => { setLevelFilter("Nasional"); setPage(1); }}
@@ -462,7 +522,7 @@ export default function PengurusPage({
           }`}
         >
           <Landmark className="w-4 h-4 inline mr-1.5" />
-          Pengurus Nasional ({pengurusData.filter(p => p.level === "Nasional").length})
+          Pengurus Nasional ({levelCounts.nasional})
         </button>
         <button
           onClick={() => { setLevelFilter("Provinsi"); setPage(1); }}
@@ -471,7 +531,7 @@ export default function PengurusPage({
           }`}
         >
           <MapPin className="w-4 h-4 inline mr-1.5" />
-          Pengurus Provinsi ({pengurusData.filter(p => p.level === "Provinsi").length})
+          Pengurus Provinsi ({levelCounts.provinsi})
         </button>
         <button
           onClick={() => { setLevelFilter("Kabupaten"); setPage(1); }}
@@ -480,7 +540,7 @@ export default function PengurusPage({
           }`}
         >
           <Building2 className="w-4 h-4 inline mr-1.5" />
-          Pengurus Kabupaten/Kota ({pengurusData.filter(p => p.level === "Kabupaten").length})
+          Pengurus Kabupaten/Kota ({levelCounts.kabupaten})
         </button>
       </div>
 
@@ -813,7 +873,7 @@ export default function PengurusPage({
         onViewAnggota={(id) => { setDetailId(null); onNavigate?.("pengurus"); }}
         onPengurusIdChanged={(newId) => {
           setDetailId(newId);
-          fetchData();
+          refreshData();
         }}
       />
 

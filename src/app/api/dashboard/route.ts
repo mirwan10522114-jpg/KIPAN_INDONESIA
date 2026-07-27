@@ -129,26 +129,30 @@ export async function GET() {
       where: { createdAt: { gte: today } },
     });
 
-    // Trend anggota baru 7 bulan terakhir
+    // Trend anggota baru 7 bulan terakhir — single groupBy query (optimized)
+    const sixMonthsAgo = new Date(new Date().getFullYear(), new Date().getMonth() - 6, 1);
+    const monthlyRaw = await db.$queryRaw`
+      SELECT strftime('%Y-%m', tanggalAngkat) as bulan_key, COUNT(*) as jumlah
+      FROM anggota
+      WHERE tanggalAngkat >= ${sixMonthsAgo}
+      GROUP BY bulan_key
+      ORDER BY bulan_key
+    ` as Array<{ bulan_key: string; jumlah: bigint }>;
+    const monthlyMap: Record<string, number> = {};
+    for (const row of monthlyRaw) {
+      monthlyMap[row.bulan_key] = Number(row.jumlah);
+    }
     const monthlyTrend = [];
     for (let i = 6; i >= 0; i--) {
-      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
-      const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() - i + 1, 1);
-      const count = await db.anggota.count({
-        where: {
-          tanggalAngkat: {
-            gte: monthStart,
-            lt: monthEnd,
-          },
-        },
-      });
+      const monthDate = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
+      const key = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`;
       monthlyTrend.push({
-        bulan: monthStart.toLocaleDateString("id-ID", { month: "short" }),
-        baru: count,
+        bulan: monthDate.toLocaleDateString("id-ID", { month: "short" }),
+        baru: monthlyMap[key] || 0,
       });
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         stats: {
@@ -183,6 +187,8 @@ export async function GET() {
         monthlyTrend,
       },
     });
+    response.headers.set("Cache-Control", "max-age=60");
+    return response;
   } catch (error) {
     console.error("GET /api/dashboard error:", error);
     return NextResponse.json({ success: false, error: "Gagal mengambil data dashboard" }, { status: 500 });

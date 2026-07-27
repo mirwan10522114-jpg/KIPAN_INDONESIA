@@ -5,9 +5,37 @@ import { generateNIP } from "@/lib/nip";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const level = searchParams.get("level");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    const search = searchParams.get("search") || "";
+    const level = searchParams.get("level") || "";
+    const bidang = searchParams.get("bidang") || "";
+    const status = searchParams.get("status") || "";
+    const provinsiId = searchParams.get("provinsiId") || "";
+    const kabupatenId = searchParams.get("kabupatenId") || "";
+
+    // Build where clause — server-side filtering
     const where: any = {};
     if (level && level !== "Semua") where.level = level;
+    if (status && status !== "Semua") where.status = status;
+    if (provinsiId && provinsiId !== "Semua") where.provinsiId = parseInt(provinsiId);
+    if (kabupatenId && kabupatenId !== "Semua") where.kabupatenId = parseInt(kabupatenId);
+    if (bidang && bidang !== "Semua") where.jabatan = { bidang };
+    if (search) {
+      where.OR = [
+        { anggota: { namaLengkap: { contains: search } } },
+        { anggota: { nia: { contains: search } } },
+        { jabatan: { nama: { contains: search } } },
+        { jabatan: { bidang: { contains: search } } },
+        { nomorSK: { contains: search } },
+      ];
+    }
+
+    // Get total count for pagination
+    const total = await db.pengurus.count({ where });
+    const totalPages = Math.ceil(total / limit) || 1;
+    const currentPage = Math.min(page, totalPages);
+    const skip = (currentPage - 1) * limit;
 
     const pengurus = await db.pengurus.findMany({
       where,
@@ -23,9 +51,18 @@ export async function GET(req: NextRequest) {
         kabupaten: { select: { nama: true, kode: true } },
       },
       orderBy: [{ level: "asc" }, { jabatan: { urutan: "asc" } }],
+      skip,
+      take: limit,
     });
 
-    return NextResponse.json({ success: true, data: pengurus, total: pengurus.length });
+    return NextResponse.json({
+      success: true,
+      data: pengurus,
+      total,
+      page: currentPage,
+      limit,
+      totalPages,
+    });
   } catch (error) {
     console.error("GET /api/pengurus error:", error);
     return NextResponse.json({ success: false, error: "Gagal mengambil data pengurus" }, { status: 500 });
