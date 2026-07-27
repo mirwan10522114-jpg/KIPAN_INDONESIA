@@ -52,31 +52,33 @@ export async function PATCH(
       });
     }
 
-    // Cek apakah anggota ini punya jabatan aktif LAIN (di level lain / id lain)
-    // Aturan: 1 orang hanya boleh pegang 1 jabatan aktif
-    const otherActiveJabatan = await db.pengurus.findFirst({
+    // OTOMATIS akhiri SEMUA jabatan aktif lain yang dimiliki anggota ini
+    // (termasuk yang di level lain — karier bisa naik/turun level)
+    const otherActiveList = await db.pengurus.findMany({
       where: {
         anggotaId: currentPengurus.anggotaId,
         status: "Aktif",
-        id: { not: id }, // exclude current pengurus record
       },
       include: { jabatan: true },
     });
-    if (otherActiveJabatan) {
-      return NextResponse.json({
-        success: false,
-        error: `Pengurus ini masih memiliki jabatan aktif lain sebagai "${otherActiveJabatan.jabatan?.nama}" (${otherActiveJabatan.jabatan?.bidang}) di level ${otherActiveJabatan.level} (pengurus ID: ${otherActiveJabatan.id}). Akhiri jabatan tersebut terlebih dahulu. Aturan: 1 orang hanya boleh pegang 1 jabatan aktif.`,
-      }, { status: 400 });
-    }
 
-    // 1. Tutup jabatan lama: set status=Selesai & tanggalSelesai=now
-    await db.pengurus.update({
-      where: { id },
-      data: {
-        status: "Selesai",
-        tanggalSelesai: new Date(),
-      },
-    });
+    let endedInfo = "";
+    if (otherActiveList.length > 0) {
+      await db.pengurus.updateMany({
+        where: {
+          anggotaId: currentPengurus.anggotaId,
+          status: "Aktif",
+        },
+        data: {
+          status: "Selesai",
+          tanggalSelesai: new Date(),
+        },
+      });
+      const otherNames = otherActiveList
+        .map(p => `"${p.jabatan?.nama}" (${p.jabatan?.bidang}) level ${p.level}`)
+        .join(", ");
+      endedInfo = ` Jabatan lama (${otherNames}) otomatis diakhiri.`;
+    }
 
     // 2. Buat record pengurus baru dengan jabatan baru
     const newPengurus = await db.pengurus.create({
@@ -103,7 +105,7 @@ export async function PATCH(
     return NextResponse.json({
       success: true,
       data: newPengurus,
-      message: `Jabatan berhasil diganti dari "${currentPengurus.jabatan?.nama}" ke "${newJabatan.nama}" (bidang: ${newJabatan.bidang})`,
+      message: `Jabatan berhasil diganti ke "${newJabatan.nama}" (bidang: ${newJabatan.bidang}, level: ${newPengurus.level}).${endedInfo}`,
     });
   } catch (error) {
     console.error("PATCH /api/pengurus/[id]/ganti-jabatan error:", error);

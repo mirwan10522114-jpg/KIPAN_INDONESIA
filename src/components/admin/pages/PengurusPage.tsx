@@ -28,6 +28,8 @@ import {
   Trash2,
   ExternalLink,
   CalendarClock,
+  Landmark,
+  MapPin,
 } from "lucide-react";
 import { PENGURUS_LIST, PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 import type { Pengurus } from "@/lib/admin-data";
@@ -358,6 +360,46 @@ export default function PengurusPage({
             </motion.div>
           );
         })}
+      </div>
+
+      {/* Level Tabs — quick filter by level */}
+      <div className="flex gap-2 bg-white p-1 rounded-xl border border-slate-200 overflow-x-auto">
+        <button
+          onClick={() => { setLevelFilter("Semua"); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+            levelFilter === "Semua" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <Users className="w-4 h-4 inline mr-1.5" />
+          Semua Pengurus ({pengurusData.length})
+        </button>
+        <button
+          onClick={() => { setLevelFilter("Nasional"); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+            levelFilter === "Nasional" ? "bg-violet-600 text-white" : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <Landmark className="w-4 h-4 inline mr-1.5" />
+          Pengurus Nasional ({pengurusData.filter(p => p.level === "Nasional").length})
+        </button>
+        <button
+          onClick={() => { setLevelFilter("Provinsi"); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+            levelFilter === "Provinsi" ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <MapPin className="w-4 h-4 inline mr-1.5" />
+          Pengurus Provinsi ({pengurusData.filter(p => p.level === "Provinsi").length})
+        </button>
+        <button
+          onClick={() => { setLevelFilter("Kabupaten"); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+            levelFilter === "Kabupaten" ? "bg-cyan-600 text-white" : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <Building2 className="w-4 h-4 inline mr-1.5" />
+          Pengurus Kabupaten/Kota ({pengurusData.filter(p => p.level === "Kabupaten").length})
+        </button>
       </div>
 
       {/* Toolbar */}

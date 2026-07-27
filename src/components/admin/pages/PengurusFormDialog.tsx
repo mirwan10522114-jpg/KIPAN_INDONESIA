@@ -30,6 +30,8 @@ export default function PengurusFormDialog({
   const [error, setError] = useState("");
   const [anggotaList, setAnggotaList] = useState<any[]>([]);
   const [jabatanList, setJabatanList] = useState<any[]>([]);
+  const [provinsiList, setProvinsiList] = useState<any[]>([]);
+  const [kabupatenList, setKabupatenList] = useState<any[]>([]);
   const [searchAnggota, setSearchAnggota] = useState("");
 
   useEffect(() => {
@@ -41,13 +43,17 @@ export default function PengurusFormDialog({
         tanggalSelesai: "", nomorSK: "", fileSK: "",
       });
       setSearchAnggota("");
-      // Fetch anggota and jabatan
+      // Fetch anggota, jabatan, wilayah
       Promise.all([
         fetch("/api/anggota", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/jabatan", { cache: "no-store" }).then((r) => r.json()),
-      ]).then(([anggotaJson, jabatanJson]) => {
+        fetch("/api/wilayah?type=provinsi", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/wilayah?type=kabupaten", { cache: "no-store" }).then((r) => r.json()),
+      ]).then(([anggotaJson, jabatanJson, provJson, kabJson]) => {
         if (anggotaJson.success) setAnggotaList(anggotaJson.data);
         if (jabatanJson.success) setJabatanList(jabatanJson.data);
+        if (provJson.success) setProvinsiList(provJson.data);
+        if (kabJson.success) setKabupatenList(kabJson.data);
       });
     }
   }, [open]);
@@ -75,6 +81,14 @@ export default function PengurusFormDialog({
   const handleSave = async () => {
     if (!form.anggotaId || !form.jabatanId) {
       setError("Anggota dan jabatan wajib dipilih");
+      return;
+    }
+    if (form.level === "PROVINSI" && !form.provinsiId) {
+      setError("Provinsi penempatan wajib dipilih untuk level Provinsi");
+      return;
+    }
+    if (form.level === "KABUPATEN" && (!form.provinsiId || !form.kabupatenId)) {
+      setError("Provinsi & Kabupaten/Kota penempatan wajib dipilih untuk level Kabupaten");
       return;
     }
     setSaving(true);
@@ -164,19 +178,114 @@ export default function PengurusFormDialog({
                 </select>
               </div>
 
-              {/* Level */}
+              {/* Level — Card-style selector with clear placement info */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Level Jabatan *</label>
-                <select
-                  value={form.level}
-                  onChange={(e) => setForm({ ...form, level: e.target.value, jabatanId: "" })}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-                >
-                  <option value="NASIONAL">Nasional</option>
-                  <option value="PROVINSI">Provinsi</option>
-                  <option value="KABUPATEN">Kabupaten</option>
-                </select>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Level Penempatan * <span className="text-slate-400 font-normal">(akan ditempatkan di pengurus level ini)</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "NASIONAL", label: "Nasional", desc: "Indonesia", color: "violet", icon: "🏛️" },
+                    { value: "PROVINSI", label: "Provinsi", desc: "Tingkat Provinsi", color: "blue", icon: "📍" },
+                    { value: "KABUPATEN", label: "Kabupaten/Kota", desc: "Tingkat Daerah", color: "cyan", icon: "🏙️" },
+                  ].map((opt) => {
+                    const isActive = form.level === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setForm({ ...form, level: opt.value, jabatanId: "", provinsiId: "", kabupatenId: "" })}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          isActive
+                            ? opt.color === "violet"
+                              ? "border-violet-500 bg-violet-50"
+                              : opt.color === "blue"
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-cyan-500 bg-cyan-50"
+                            : "border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="text-lg mb-0.5">{opt.icon}</div>
+                        <div className={`text-xs font-bold ${
+                          isActive
+                            ? opt.color === "violet" ? "text-violet-700"
+                              : opt.color === "blue" ? "text-blue-700"
+                              : "text-cyan-700"
+                            : "text-slate-700"
+                        }`}>{opt.label}</div>
+                        <div className="text-[9px] text-slate-500 mt-0.5">{opt.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {/* Wilayah Penempatan — conditional on level */}
+              {form.level === "NASIONAL" && (
+                <div className="bg-violet-50 border border-violet-200 rounded-lg p-3 text-xs text-violet-800">
+                  📌 <strong>Penempatan:</strong> Pengurus Tingkat Nasional (Indonesia). Tidak perlu pilih wilayah.
+                </div>
+              )}
+              {form.level === "PROVINSI" && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Provinsi Penempatan *</label>
+                  <select
+                    value={form.provinsiId}
+                    onChange={(e) => setForm({ ...form, provinsiId: e.target.value, kabupatenId: "" })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                  >
+                    <option value="">— Pilih Provinsi —</option>
+                    {provinsiList.map((p) => (
+                      <option key={p.id} value={p.id}>{p.nama}</option>
+                    ))}
+                  </select>
+                  {form.provinsiId && (
+                    <p className="text-[10px] text-blue-600 mt-1">
+                      📌 Akan ditempatkan sebagai pengurus di provinsi <strong>{provinsiList.find(p => p.id === parseInt(form.provinsiId))?.nama}</strong>
+                    </p>
+                  )}
+                </div>
+              )}
+              {form.level === "KABUPATEN" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Provinsi *</label>
+                    <select
+                      value={form.provinsiId}
+                      onChange={(e) => setForm({ ...form, provinsiId: e.target.value, kabupatenId: "" })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    >
+                      <option value="">— Pilih —</option>
+                      {provinsiList.map((p) => (
+                        <option key={p.id} value={p.id}>{p.nama}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Kabupaten/Kota *</label>
+                    <select
+                      value={form.kabupatenId}
+                      onChange={(e) => setForm({ ...form, kabupatenId: e.target.value })}
+                      disabled={!form.provinsiId}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none disabled:bg-slate-50"
+                    >
+                      <option value="">— Pilih —</option>
+                      {kabupatenList
+                        .filter(k => !form.provinsiId || k.provinsiId === parseInt(form.provinsiId))
+                        .map((k) => (
+                          <option key={k.id} value={k.id}>{k.nama}</option>
+                        ))}
+                    </select>
+                  </div>
+                  {form.kabupatenId && (
+                    <div className="col-span-2 bg-cyan-50 border border-cyan-200 rounded-lg p-2 text-[11px] text-cyan-800">
+                      📌 Akan ditempatkan sebagai pengurus di <strong>
+                        {kabupatenList.find(k => k.id === parseInt(form.kabupatenId))?.nama}
+                      </strong>, {provinsiList.find(p => p.id === parseInt(form.provinsiId))?.nama}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Pilih Jabatan — Grouped by Bidang */}
               <div>

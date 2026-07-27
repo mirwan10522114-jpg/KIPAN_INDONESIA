@@ -45,9 +45,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Jabatan tidak ditemukan. Pilih jabatan yang valid." }, { status: 400 });
     }
 
-    // Rule 2: Check if anggota already has ANY active jabatan (di level mana pun)
-    // Aturan: 1 orang hanya boleh pegang 1 jabatan aktif (tidak boleh double jabatan antar level)
-    const existingActive = await db.pengurus.findFirst({
+    // Rule: 1 orang hanya boleh pegang 1 jabatan aktif di satu waktu.
+    // Jika user sudah punya jabatan aktif lain, OTOMATIS akhiri jabatan lama
+    // (karier bisa naik: misal dari Anggota Divisi Kabupaten → Ketua Nasional)
+    const existingActiveList = await db.pengurus.findMany({
       where: {
         anggotaId: parseInt(body.anggotaId),
         status: "Aktif",
@@ -55,11 +56,21 @@ export async function POST(req: NextRequest) {
       include: { jabatan: true },
     });
 
-    if (existingActive) {
-      return NextResponse.json({
-        success: false,
-        error: `Pengurus ini sudah memiliki jabatan aktif sebagai "${existingActive.jabatan?.nama}" (${existingActive.jabatan?.bidang}) di level ${existingActive.level}. Akhiri jabatan lama terlebih dahulu sebelum menunjuk jabatan baru. Aturan: 1 orang hanya boleh pegang 1 jabatan aktif.`,
-      }, { status: 400 });
+    let endedOldJabatan = "";
+    if (existingActiveList.length > 0) {
+      // Akhiri semua jabatan aktif lama
+      await db.pengurus.updateMany({
+        where: {
+          anggotaId: parseInt(body.anggotaId),
+          status: "Aktif",
+        },
+        data: {
+          status: "Selesai",
+          tanggalSelesai: new Date(),
+        },
+      });
+      const oldJabatan = existingActiveList[0];
+      endedOldJabatan = ` Jabatan lama sebagai "${oldJabatan.jabatan?.nama}" (${oldJabatan.jabatan?.bidang}) di level ${oldJabatan.level} otomatis diakhiri.`;
     }
 
     const data: any = {
@@ -85,7 +96,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, data: pengurus, message: `Pengurus berhasil ditambahkan dengan jabatan "${jabatanExists.nama}" di bidang "${jabatanExists.bidang}"` });
+    return NextResponse.json({ success: true, data: pengurus, message: `Pengurus berhasil ditambahkan dengan jabatan "${jabatanExists.nama}" di bidang "${jabatanExists.bidang}".${endedOldJabatan}` });
   } catch (error) {
     console.error("POST /api/pengurus error:", error);
     return NextResponse.json({ success: false, error: "Gagal menambahkan pengurus" }, { status: 500 });
