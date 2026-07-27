@@ -58,17 +58,25 @@ export default function WilayahPage({
   const [apiProvinsi, setApiProvinsi] = useState<any[]>([]);
   const [apiKabupaten, setApiKabupaten] = useState<any[]>([]);
   const [useApiData, setUseApiData] = useState(false);
+  const [totalAllPengurus, setTotalAllPengurus] = useState(0);
 
   // Fetch from API
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/wilayah", { cache: "no-store" });
-      const json = await res.json();
-      if (json.success) {
-        setApiProvinsi(json.data.provinsi || []);
-        setApiKabupaten(json.data.kabupaten || []);
+      const [wilRes, pengRes] = await Promise.all([
+        fetch("/api/wilayah", { cache: "no-store" }),
+        fetch("/api/pengurus", { cache: "no-store" }),
+      ]);
+      const wilJson = await wilRes.json();
+      const pengJson = await pengRes.json();
+      if (wilJson.success) {
+        setApiProvinsi(wilJson.data.provinsi || []);
+        setApiKabupaten(wilJson.data.kabupaten || []);
         setUseApiData(true);
+      }
+      if (pengJson.success) {
+        setTotalAllPengurus(pengJson.total || 0);
       }
     } catch (e) {
       console.error("Failed to fetch wilayah:", e);
@@ -135,7 +143,7 @@ export default function WilayahPage({
   const statCards = [
     { label: "Total Provinsi", value: provData.length, total: 38, icon: MapPin, color: "from-blue-500 to-sky-500", targetPage: null },
     { label: "Total Kabupaten/Kota", value: kabData.length, total: 514, icon: Building2, color: "from-sky-500 to-cyan-500", targetPage: null },
-    { label: "Total Pengurus", value: provData.reduce((a: number, b: any) => a + (b.jumlahPengurus || 0), 0), total: null, icon: UserCog, color: "from-violet-500 to-purple-500", targetPage: "pengurus" },
+    { label: "Total Pengurus", value: totalAllPengurus, total: null, icon: UserCog, color: "from-violet-500 to-purple-500", targetPage: "pengurus" },
   ];
 
   // Filter data
