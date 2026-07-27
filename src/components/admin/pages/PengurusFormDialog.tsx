@@ -104,13 +104,33 @@ export default function PengurusFormDialog({
     // Validasi anggota berdasarkan mode
     if (inputMode === "database") {
       if (!form.anggotaId) {
-        setError("Anggota wajib dipilih dari database");
+        setError("Pengurus wajib dipilih dari database");
         return;
       }
     } else {
-      // Mode manual: nama wajib
+      // Mode manual: semua field biodata & kontak wajib
       if (!manualData.namaLengkap.trim()) {
-        setError("Nama lengkap wajib diisi untuk orang baru");
+        setError("Nama Lengkap wajib diisi");
+        return;
+      }
+      if (!manualData.tempatLahir.trim()) {
+        setError("Tempat Lahir wajib diisi");
+        return;
+      }
+      if (!manualData.tanggalLahir) {
+        setError("Tanggal Lahir wajib diisi");
+        return;
+      }
+      if (!manualData.alamat.trim()) {
+        setError("Alamat wajib diisi");
+        return;
+      }
+      if (!manualData.email.trim()) {
+        setError("Email wajib diisi");
+        return;
+      }
+      if (!manualData.hp.trim()) {
+        setError("No. HP wajib diisi");
         return;
       }
     }
@@ -251,7 +271,7 @@ export default function PengurusFormDialog({
                 {inputMode === "manual" && (
                   <div className="space-y-3 bg-emerald-50/50 border border-emerald-200 rounded-lg p-3">
                     <p className="text-[11px] text-emerald-700 font-medium">
-                      ✨ Input data orang baru — sistem akan otomatis membuat record anggota saat disimpan
+                      ✨ Input data orang baru — sistem akan otomatis membuat record pengurus saat disimpan. Semua field wajib diisi.
                     </p>
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-700 mb-1">Nama Lengkap *</label>
@@ -271,7 +291,7 @@ export default function PengurusFormDialog({
                           maxLength={16}
                           value={manualData.nik}
                           onChange={(e) => setManualData({ ...manualData, nik: e.target.value.replace(/\D/g, "") })}
-                          placeholder="16 digit NIK"
+                          placeholder="16 digit NIK (opsional)"
                           className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
                         />
                       </div>
@@ -289,7 +309,7 @@ export default function PengurusFormDialog({
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tempat Lahir</label>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tempat Lahir *</label>
                         <input
                           type="text"
                           value={manualData.tempatLahir}
@@ -299,7 +319,7 @@ export default function PengurusFormDialog({
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Lahir</label>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Tanggal Lahir *</label>
                         <input
                           type="date"
                           value={manualData.tanggalLahir}
@@ -310,7 +330,7 @@ export default function PengurusFormDialog({
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email</label>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">Email *</label>
                         <input
                           type="email"
                           value={manualData.email}
@@ -320,7 +340,7 @@ export default function PengurusFormDialog({
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">No. HP</label>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">No. HP *</label>
                         <input
                           type="tel"
                           value={manualData.hp}
@@ -331,13 +351,13 @@ export default function PengurusFormDialog({
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Alamat</label>
-                      <input
-                        type="text"
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">Alamat *</label>
+                      <textarea
                         value={manualData.alamat}
                         onChange={(e) => setManualData({ ...manualData, alamat: e.target.value })}
                         placeholder="Alamat lengkap"
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none"
+                        rows={2}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-emerald-500 outline-none resize-none"
                       />
                     </div>
                   </div>

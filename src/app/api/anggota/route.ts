@@ -40,8 +40,21 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    if (!body.namaLengkap || !body.nik || !body.provinsiId || !body.kabupatenId) {
-      return NextResponse.json({ success: false, error: "Nama, NIK, provinsi, dan kabupaten wajib diisi" }, { status: 400 });
+    // Validasi semua field biodata & kontak wajib
+    const requiredFields = [
+      { key: "namaLengkap", label: "Nama Lengkap" },
+      { key: "tempatLahir", label: "Tempat Lahir" },
+      { key: "tanggalLahir", label: "Tanggal Lahir" },
+      { key: "alamat", label: "Alamat" },
+      { key: "email", label: "Email" },
+      { key: "hp", label: "No. HP" },
+      { key: "provinsiId", label: "Provinsi" },
+      { key: "kabupatenId", label: "Kabupaten/Kota" },
+    ];
+    for (const f of requiredFields) {
+      if (!body[f.key] || !String(body[f.key]).trim()) {
+        return NextResponse.json({ success: false, error: `${f.label} wajib diisi` }, { status: 400 });
+      }
     }
 
     // Validasi provinsi & kabupaten

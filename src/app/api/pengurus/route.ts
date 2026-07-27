@@ -57,8 +57,19 @@ export async function POST(req: NextRequest) {
     let anggotaIdToUse: number;
     if (isManualMode) {
       const nd = body.newAnggotaData;
-      if (!nd.namaLengkap || !nd.namaLengkap.trim()) {
-        return NextResponse.json({ success: false, error: "Nama lengkap wajib diisi untuk orang baru." }, { status: 400 });
+      // Validasi semua field biodata & kontak wajib
+      const requiredFields = [
+        { key: "namaLengkap", label: "Nama Lengkap" },
+        { key: "tempatLahir", label: "Tempat Lahir" },
+        { key: "tanggalLahir", label: "Tanggal Lahir" },
+        { key: "alamat", label: "Alamat" },
+        { key: "email", label: "Email" },
+        { key: "hp", label: "No. HP" },
+      ];
+      for (const f of requiredFields) {
+        if (!nd[f.key] || !String(nd[f.key]).trim()) {
+          return NextResponse.json({ success: false, error: `${f.label} wajib diisi untuk orang baru.` }, { status: 400 });
+        }
       }
       // Validasi level & wilayah
       if (body.level === "PROVINSI" && !body.provinsiId) {

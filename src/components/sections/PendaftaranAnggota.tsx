@@ -120,6 +120,40 @@ export default function PendaftaranAnggota() {
     setSubmitting(true);
     setSubmitError("");
     try {
+      // Validasi semua field biodata & kontak wajib
+      const requiredFields = [
+        { key: "namaLengkap", label: "Nama Lengkap" },
+        { key: "nik", label: "NIK" },
+        { key: "tempatLahir", label: "Tempat Lahir" },
+        { key: "tanggalLahir", label: "Tanggal Lahir" },
+        { key: "jenisKelamin", label: "Jenis Kelamin" },
+        { key: "alamat", label: "Alamat" },
+        { key: "provinsi", label: "Provinsi" },
+        { key: "kabupaten", label: "Kabupaten/Kota" },
+        { key: "email", label: "Email" },
+        { key: "nomorHP", label: "Nomor HP" },
+        { key: "whatsapp", label: "WhatsApp" },
+      ] as const;
+      for (const f of requiredFields) {
+        const val = form[f.key];
+        if (!val || !String(val).trim()) {
+          setSubmitError(`${f.label} wajib diisi`);
+          setSubmitting(false);
+          // Navigate to step 1 if biodata field, step 2 if kontak
+          const step1Fields = ["namaLengkap", "nik", "tempatLahir", "tanggalLahir", "jenisKelamin", "alamat", "provinsi", "kabupaten"];
+          if (step1Fields.includes(f.key)) setStep(1);
+          else setStep(2);
+          return;
+        }
+      }
+      // Validasi semua persyaratan harus dicentang
+      if (!form.persyaratan.every(Boolean)) {
+        setSubmitError("Semua persyaratan kepengurusan harus dicentang");
+        setStep(3);
+        setSubmitting(false);
+        return;
+      }
+
       const payload = {
         namaLengkap: form.namaLengkap,
         nik: form.nik,
