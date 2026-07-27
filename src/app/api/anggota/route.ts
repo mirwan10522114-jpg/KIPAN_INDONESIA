@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { generateNIA } from "@/lib/nia";
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,8 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Nama, NIK, provinsi, dan kabupaten wajib diisi" }, { status: 400 });
     }
 
-    // Generate NIA: KIPAN-PROVKODE-KABKODE-YEAR-SEQ
-    const tahun = new Date().getFullYear();
+    // Validasi provinsi & kabupaten
     const prov = await db.provinsi.findUnique({ where: { id: parseInt(body.provinsiId) } });
     const kab = await db.kabupaten.findUnique({ where: { id: parseInt(body.kabupatenId) } });
 
@@ -52,20 +52,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Provinsi atau kabupaten tidak ditemukan" }, { status: 400 });
     }
 
-    const countThisYear = await db.anggota.count({
-      where: {
-        provinsiId: parseInt(body.provinsiId),
-        kabupatenId: parseInt(body.kabupatenId),
-        tanggalAngkat: { gte: new Date(tahun, 0, 1) },
-      },
-    });
-
-    const seq = String(countThisYear + 1).padStart(5, "0");
-    const nia = `KIPAN-${prov.kode}-${kab.kode}-${tahun}-${seq}`;
-
+    // Create anggota dulu TANPA nia (placeholder), lalu generate NIA pakai anggota.id
     const anggota = await db.anggota.create({
       data: {
-        nia,
+        nia: "TEMP-" + Date.now(), // placeholder, akan di-update
         namaLengkap: body.namaLengkap,
         nik: body.nik,
         tempatLahir: body.tempatLahir || "",
@@ -96,7 +86,25 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, data: anggota, message: `Anggota berhasil ditambahkan dengan NIA: ${nia}` });
+    // Generate NIA dengan global sequence (pakai anggota.id)
+    const tahun = new Date().getFullYear();
+    const nia = await generateNIA(anggota.id, {
+      provinsiId: parseInt(body.provinsiId),
+      kabupatenId: parseInt(body.kabupatenId),
+      tahun,
+    });
+
+    // Update anggota dengan NIA yang benar
+    const updated = await db.anggota.update({
+      where: { id: anggota.id },
+      data: { nia },
+      include: {
+        provinsi: { select: { nama: true, kode: true } },
+        kabupaten: { select: { nama: true, kode: true } },
+      },
+    });
+
+    return NextResponse.json({ success: true, data: updated, message: `Anggota berhasil ditambahkan dengan NIA: ${nia}` });
   } catch (error) {
     console.error("POST /api/anggota error:", error);
     return NextResponse.json({ success: false, error: "Gagal menambahkan anggota" }, { status: 500 });

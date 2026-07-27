@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { generateNIA } from "@/lib/nia";
 
 export async function GET(req: NextRequest) {
   try {
@@ -67,25 +68,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: "Provinsi & Kabupaten/Kota wajib dipilih." }, { status: 400 });
       }
 
-      // Generate NIA
-      const prov = await db.provinsi.findUnique({ where: { id: parseInt(body.provinsiId) } });
-      const kab = body.kabupatenId ? await db.kabupaten.findUnique({ where: { id: parseInt(body.kabupatenId) } }) : null;
-      const tahun = new Date().getFullYear();
-      const countThisYear = await db.anggota.count({
-        where: {
-          provinsiId: parseInt(body.provinsiId),
-          ...(body.kabupatenId ? { kabupatenId: parseInt(body.kabupatenId) } : {}),
-          tanggalAngkat: { gte: new Date(tahun, 0, 1) },
-        },
-      });
-      const seq = String(countThisYear + 1).padStart(5, "0");
-      const kabKode = kab?.kode || "0000";
-      const nia = `KIPAN-${prov?.kode || "XX"}-${kabKode}-${tahun}-${seq}`;
-
-      // Create anggota baru
+      // Create anggota baru dulu TANPA nia (nia akan di-generate setelah dapat ID)
       const newAnggota = await db.anggota.create({
         data: {
-          nia,
+          nia: "TEMP-" + Date.now(), // placeholder, akan di-update
           namaLengkap: nd.namaLengkap.trim(),
           nik: nd.nik || "",
           tempatLahir: nd.tempatLahir || "",
@@ -102,6 +88,21 @@ export async function POST(req: NextRequest) {
           tanggalAngkat: new Date(),
         },
       });
+
+      // Generate NIA dengan global sequence (pakai newAnggota.id)
+      const tahun = new Date().getFullYear();
+      const nia = await generateNIA(newAnggota.id, {
+        provinsiId: parseInt(body.provinsiId),
+        kabupatenId: body.kabupatenId ? parseInt(body.kabupatenId) : null,
+        tahun,
+      });
+
+      // Update anggota dengan NIA yang benar
+      await db.anggota.update({
+        where: { id: newAnggota.id },
+        data: { nia },
+      });
+
       anggotaIdToUse = newAnggota.id;
     } else {
       anggotaIdToUse = parseInt(body.anggotaId);

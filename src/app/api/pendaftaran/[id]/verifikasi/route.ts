@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { generateNIA } from "@/lib/nia";
 
 // PATCH /api/pendaftaran/[id]/verifikasi — Update status pendaftaran
 // Body: { status: "DISETUJUI" | "DITOLAK" | "PERBAIKAN" | "DIVERIFIKASI", catatan?: string, jabatanId?: number }
@@ -50,26 +51,10 @@ export async function PATCH(
 
     // Jika disetujui, buat record Anggota (data person) + Pengurus (jabatan)
     if (status === "DISETUJUI") {
-      // Generate NIA: KIPAN-PROVKODE-KABKODE-YEAR-SEQ
-      const tahun = new Date().getFullYear();
-      const prov = await db.provinsi.findUnique({ where: { id: pendaftaran.provinsiId } });
-      const kab = await db.kabupaten.findUnique({ where: { id: pendaftaran.kabupatenId } });
-
-      const countAnggotaThisYear = await db.anggota.count({
-        where: {
-          provinsiId: pendaftaran.provinsiId,
-          kabupatenId: pendaftaran.kabupatenId,
-          tanggalAngkat: { gte: new Date(tahun, 0, 1) },
-        },
-      });
-
-      const seq = String(countAnggotaThisYear + 1).padStart(5, "0");
-      const nia = `KIPAN-${prov?.kode}-${kab?.kode}-${tahun}-${seq}`;
-
-      // 1. Buat record Anggota (data person)
+      // 1. Buat record Anggota (data person) dengan NIA placeholder
       const newAnggota = await db.anggota.create({
         data: {
-          nia,
+          nia: "TEMP-" + Date.now(), // placeholder, akan di-update setelah dapat ID
           namaLengkap: pendaftaran.namaLengkap,
           nik: pendaftaran.nik,
           tempatLahir: pendaftaran.tempatLahir,
@@ -97,6 +82,19 @@ export async function PATCH(
           tanggalAngkat: new Date(),
           tanggalDaftar: pendaftaran.createdAt,
         },
+      });
+
+      // Generate NIA dengan global sequence (pakai newAnggota.id)
+      const tahun = new Date().getFullYear();
+      const nia = await generateNIA(newAnggota.id, {
+        provinsiId: pendaftaran.provinsiId,
+        kabupatenId: pendaftaran.kabupatenId,
+        tahun,
+      });
+      // Update anggota dengan NIA yang benar
+      await db.anggota.update({
+        where: { id: newAnggota.id },
+        data: { nia },
       });
 
       // 2. Tentukan jabatanId — default ke "Anggota" di "Divisi Organisasi dan Keanggotaan" level Kabupaten
