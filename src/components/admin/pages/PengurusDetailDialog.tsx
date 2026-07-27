@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import SafeImage from "@/components/ui/safe-image";
+import { QRCodeSVG } from "qrcode.react";
+import html2canvas from "html2canvas";
 
 const TABS = [
   { id: "profil", label: "Profil", icon: Info },
@@ -333,7 +335,7 @@ export default function PengurusDetailDialog({
                               </div>
                             </div>
 
-                            {/* Member info — Photo + Details */}
+                            {/* Member info — Photo + QR + Details */}
                             <div className="flex items-center gap-3 flex-1">
                               <div className="shrink-0">
                                 <SafeImage src={p?.foto} alt={p?.namaLengkap || ""} className="w-16 h-20 rounded-lg object-cover border-2 border-yellow-500/60" />
@@ -349,6 +351,10 @@ export default function PengurusDetailDialog({
                                 <div className="text-[10px] text-blue-100 truncate">
                                   {p?.jabatanNama}{p?.jabatanBidang && p?.jabatanBidang !== "Pengurus Harian" ? ` • ${p.jabatanBidang}` : ""}
                                 </div>
+                              </div>
+                              {/* QR Code */}
+                              <div className="shrink-0 bg-white p-1 rounded-md">
+                                <QRCodeSVG value={p?.nia || "KIPAN"} size={48} level="M" />
                               </div>
                             </div>
 
@@ -380,6 +386,8 @@ export default function PengurusDetailDialog({
                               if (!p) return;
                               const printWin = window.open("", "_blank");
                               if (!printWin) return;
+                              // Generate QR code as SVG string for print window
+                              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=48x48&data=${encodeURIComponent(p.nia || 'KIPAN')}`;
                               printWin.document.write(`
                                 <html><head><title>KTA - ${p.nia}</title>
                                 <style>
@@ -404,6 +412,8 @@ export default function PengurusDetailDialog({
                                   .field-value { font-size:11px; color:#dbeafe; margin-bottom:6px; }
                                   .field-value.name { font-size:14px; font-weight:bold; color:white; }
                                   .field-value.nip { font-family:monospace; font-size:10px; }
+                                  .qr-box { background:white; padding:4px; border-radius:4px; }
+                                  .qr-img { width:48px; height:48px; }
                                   .footer { display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px; padding-top:8px; border-top:1px solid rgba(234,179,8,0.2); position:relative; }
                                   .footer-item .label { font-size:7px; color:#eab308; text-transform:uppercase; }
                                   .footer-item .value { font-size:9px; color:white; font-weight:600; }
@@ -435,6 +445,7 @@ export default function PengurusDetailDialog({
                                       <div class="field-label">Jabatan</div>
                                       <div class="field-value">${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' &bull; ' + p.jabatanBidang : ''}</div>
                                     </div>
+                                    <div class="qr-box"><img src="${qrUrl}" class="qr-img" alt="QR" /></div>
                                   </div>
                                   <div class="footer">
                                     <div class="footer-item">
@@ -462,20 +473,37 @@ export default function PengurusDetailDialog({
                             <CreditCard className="w-4 h-4" /> Cetak Kartu
                           </button>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               if (!p) return;
-                              const text = `KARTU PENGURUS KIPAN INDONESIA\n=================================\n\nNIP: ${p.nia}\nNama: ${p.namaLengkap}\nJabatan: ${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' (' + p.jabatanBidang + ')' : ''}\nLevel: ${p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten'}\nWilayah: ${p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-')}\nStatus: ${p.status}\nSK: ${p.nomorSK || '-'}\nMulai Menjabat: ${p.tanggalMulai ? new Date(p.tanggalMulai).toLocaleDateString('id-ID') : '-'}\nBerlaku: Seumur Hidup\n\nKIPAN Indonesia\nKader Inti Pemuda Anti Narkoba\nSekretariat Nasional`;
-                              const blob = new Blob([text], { type: "text/plain" });
-                              const url = URL.createObjectURL(blob);
-                              const link = document.createElement("a");
-                              link.href = url;
-                              link.download = `KTA-${p.nia}.txt`;
-                              link.click();
-                              URL.revokeObjectURL(url);
+                              try {
+                                const cardEl = document.getElementById("kta-card-pengurus");
+                                if (cardEl) {
+                                  const canvas = await html2canvas(cardEl, { scale: 2, backgroundColor: null, useCORS: true });
+                                  const link = document.createElement("a");
+                                  link.download = `KTA-${p.nia}.png`;
+                                  link.href = canvas.toDataURL("image/png");
+                                  link.click();
+                                  toast.success("KTA berhasil di-download sebagai PNG");
+                                } else {
+                                  throw new Error("KTA card element tidak ditemukan");
+                                }
+                              } catch (err) {
+                                console.error("html2canvas error:", err);
+                                // Fallback: download text
+                                const text = `KARTU PENGURUS KIPAN INDONESIA\n=================================\n\nNIP: ${p.nia}\nNama: ${p.namaLengkap}\nJabatan: ${p.jabatanNama || '-'}${p.jabatanBidang && p.jabatanBidang !== 'Pengurus Harian' ? ' (' + p.jabatanBidang + ')' : ''}\nLevel: ${p.level === 'NASIONAL' ? 'Nasional' : p.level === 'PROVINSI' ? 'Provinsi' : 'Kabupaten'}\nWilayah: ${p.level === 'NASIONAL' ? 'Indonesia' : (p.kabupaten?.nama || p.provinsi?.nama || '-')}\nStatus: ${p.status}\nSK: ${p.nomorSK || '-'}\nMulai Menjabat: ${p.tanggalMulai ? new Date(p.tanggalMulai).toLocaleDateString('id-ID') : '-'}\nBerlaku: Seumur Hidup\n\nKIPAN Indonesia\nKader Inti Pemuda Anti Narkoba\nSekretariat Nasional`;
+                                const blob = new Blob([text], { type: "text/plain" });
+                                const url = URL.createObjectURL(blob);
+                                const link = document.createElement("a");
+                                link.href = url;
+                                link.download = `KTA-${p.nia}.txt`;
+                                link.click();
+                                URL.revokeObjectURL(url);
+                                toast.info("Fallback: KTA di-download sebagai text");
+                              }
                             }}
                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700"
                           >
-                            <Download className="w-4 h-4" /> Download
+                            <Download className="w-4 h-4" /> Download PNG
                           </button>
                         </div>
                       </div>
