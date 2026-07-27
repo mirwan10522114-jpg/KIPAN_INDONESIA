@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 // ============================================================
-// PATCH /api/jabatan/[id] — Update jabatan (nama, bidang, urutan, status)
+// PATCH /api/jabatan/[id] — Update jabatan (nama, bidang, urutan, status, level)
 // ============================================================
 export async function PATCH(
   req: NextRequest,
@@ -13,10 +13,18 @@ export async function PATCH(
     const id = parseInt(idStr);
     const body = await req.json();
 
+    // Get current jabatan untuk cek uniqueness
+    const current = await db.jabatan.findUnique({ where: { id } });
+    if (!current) {
+      return NextResponse.json(
+        { success: false, error: "Jabatan tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+
     const data: any = {};
     if (body.nama !== undefined) data.nama = body.nama;
     if (body.bidang !== undefined) data.bidang = body.bidang;
-    if (body.urutan !== undefined) data.urutan = Number(body.urutan);
     if (body.status !== undefined) data.status = body.status;
     if (body.level !== undefined) {
       const validLevels = ["Nasional", "Provinsi", "Kabupaten"];
@@ -27,6 +35,40 @@ export async function PATCH(
         );
       }
       data.level = body.level;
+    }
+
+    // Validasi urutan: harus positive integer
+    if (body.urutan !== undefined) {
+      const urutanNum = Number(body.urutan);
+      if (isNaN(urutanNum) || urutanNum < 1 || !Number.isInteger(urutanNum)) {
+        return NextResponse.json(
+          { success: false, error: "Urutan harus berupa angka positif (minimal 1)." },
+          { status: 400 }
+        );
+      }
+      data.urutan = urutanNum;
+    }
+
+    // Uniqueness check: jika nama/bidang/level berubah, cek kombinasi (nama, bidang, level)
+    const newNama = data.nama ?? current.nama;
+    const newBidang = data.bidang ?? current.bidang;
+    const newLevel = data.level ?? current.level;
+
+    if (data.nama !== undefined || data.bidang !== undefined || data.level !== undefined) {
+      const existing = await db.jabatan.findFirst({
+        where: {
+          nama: newNama,
+          bidang: newBidang,
+          level: newLevel,
+          id: { not: id }, // exclude current
+        },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { success: false, error: `Jabatan "${newNama}" dengan bidang "${newBidang}" di level ${newLevel} sudah ada.` },
+          { status: 400 }
+        );
+      }
     }
 
     const updated = await db.jabatan.update({
@@ -46,7 +88,9 @@ export async function PATCH(
 }
 
 // ============================================================
-// DELETE /api/jabatan/[id] — Hapus jabatan (jika tidak dipakai pengurus)
+// DELETE /api/jabatan/[id] — Soft delete jabatan (set status=Nonaktif)
+// Jika masih dipakai pengurus AKTIF → tolak
+// Jika hanya dipakai pengurus Selesai/Diberhentikan → soft delete (FK safe)
 // ============================================================
 export async function DELETE(
   req: NextRequest,
@@ -56,20 +100,26 @@ export async function DELETE(
     const { id: idStr } = await context.params;
     const id = parseInt(idStr);
 
-    // Cek apakah dipakai pengurus
-    const pengurusCount = await db.pengurus.count({ where: { jabatanId: id } });
-    if (pengurusCount > 0) {
+    // Cek apakah dipakai pengurus AKTIF
+    const activePengurusCount = await db.pengurus.count({
+      where: { jabatanId: id, status: "Aktif" },
+    });
+    if (activePengurusCount > 0) {
       return NextResponse.json(
-        { success: false, error: `Jabatan tidak bisa dihapus karena masih dipakai oleh ${pengurusCount} pengurus. Nonaktifkan saja.` },
+        { success: false, error: `Jabatan tidak bisa dihapus karena masih dipakai oleh ${activePengurusCount} pengurus aktif. Nonaktifkan saja.` },
         { status: 400 }
       );
     }
 
-    await db.jabatan.delete({ where: { id } });
+    // Soft delete: set status = "Nonaktif" (bukan hard delete, karena FK ke pengurus)
+    await db.jabatan.update({
+      where: { id },
+      data: { status: "Nonaktif" },
+    });
 
     return NextResponse.json({
       success: true,
-      message: "Jabatan berhasil dihapus",
+      message: "Jabatan berhasil dinonaktifkan (soft delete). Data riwayat pengurus tetap terjaga.",
     });
   } catch (error) {
     console.error("DELETE /api/jabatan/[id] error:", error);
