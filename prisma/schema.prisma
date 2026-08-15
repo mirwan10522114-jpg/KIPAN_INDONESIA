@@ -80,6 +80,7 @@ model Kabupaten {
 
 model Pendaftaran {
   id            Int      @id @default(autoincrement())
+  nomorPendaftaran String @unique // Format: REG-YYYYMM-XXXX (untuk tracking oleh pendaftar)
   namaLengkap   String
   nik           String
   tempatLahir   String

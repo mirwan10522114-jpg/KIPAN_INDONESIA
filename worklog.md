@@ -77,3 +77,49 @@ Stage Summary:
 - Penambahan jabatan & bidang (individual + bulk) berfungsi
 - Penambahan anggota berfungsi
 - Error handling sekarang konsisten: error asli Prisma (P2002 duplikat, P2003 FK invalid, dst) diteruskan ke user dengan pesan Indonesia yang jelas, bukan generic "Gagal menyimpan"
+
+---
+Task ID: FIX-PENDAFTARAN-FLOW-COMPLETE
+Agent: main (Super Z)
+Task: 4 perbaikan: reset NIP sequence, pop-up bagus untuk Tolak/Verifikasi/Perbaiki, tracking pendaftaran di landing page, auto-hapus pendaftar setelah disetujui
+
+Work Log:
+- Reset NIP sequence: hapus semua data test anggota/pengurus/pendaftaran + reset SQLite autoincrement. Pendaftar pertama yang asli sekarang dapat NIP 00001
+- Tambah field `nomorPendaftaran` (unique, format REG-YYYYMM-XXXX) di schema Pendaftaran
+- Update POST /api/pendaftaran: auto-generate nomorPendaftaran berurutan per bulan, return ke frontend
+- Update PendaftaranAnggota.tsx: tampilkan nomorPendaftaran dengan card biru + tombol copy setelah submit sukses
+- Buat endpoint GET /api/pendaftaran/track?nomor=XXX (public, return info minimal: nama, status, timeline, catatan — tanpa data sensitif)
+- Buat komponen LacakPendaftaran.tsx (section baru di landing page): search box + result card dengan timeline, status badge, catatan admin
+- Tambahkan link "Lacak Pendaftaran" di Navbar (desktop + mobile)
+- Update PATCH /api/pendaftaran/[id]/verifikasi: hapus pendaftar + riwayat setelah DISETUJUI (data sudah dipindah ke anggota & pengurus)
+- Update VerifikasiPage.tsx: ganti prompt() browser dengan dialog modal bagus untuk Tolak (rose), Perbaikan (amber), Verifikasi (blue). Setiap dialog punya textarea catatan + info pendaftar + validasi
+- Tambah notifikasi inline (fallback) untuk VerifikasiPage
+- Update PendaftaranPage.tsx admin: tampilkan nomorPendaftaran di tabel daftar pendaftar
+- Update VerifikasiPage.tsx: tampilkan nomorPendaftaran di header detail pendaftar
+- Tambah field `nomorPendaftaran` ke type PendaftaranPage (ganti type ke `any[]` karena type lama dari admin-data.ts outdated)
+
+Test Results (E2E via curl):
+- STEP 1: Submit pendaftaran → return nomorPendaftaran=REG-202608-0001 ✓
+- STEP 2: Approve pendaftaran → message: "Data pendaftar telah dihapus dari daftar verifikasi" ✓
+- STEP 3: Track pendaftaran yang sudah disetujui → HTTP 404 dengan pesan jelas "sudah disetujui, data pendaftar dihapus" ✓
+- STEP 4: Cek NIP anggota baru → KIPAN-JB-3204-2026-00001 (MULAI DARI 00001!) ✓
+- STEP 5: Cek pengurus baru → anggotaId=1, level=KABUPATEN, nomorSK=SK-AUTO/KIPAN-JB-3204-2026-00001/2026 ✓
+
+Files modified:
+- prisma/schema.prisma — tambah field nomorPendaftaran
+- src/app/api/pendaftaran/route.ts — auto-generate nomorPendaftaran
+- src/app/api/pendaftaran/track/route.ts (NEW) — public tracking endpoint
+- src/app/api/pendaftaran/[id]/verifikasi/route.ts — hapus pendaftar setelah DISETUJUI
+- src/components/sections/PendaftaranAnggota.tsx — tampilkan nomorPendaftaran di success page
+- src/components/sections/LacakPendaftaran.tsx (NEW) — section tracking di landing page
+- src/components/sections/Navbar.tsx — tambah link Lacak Pendaftaran
+- src/app/page.tsx — include LacakPendaftaran di landing page
+- src/components/admin/pages/VerifikasiPage.tsx — dialog bagus untuk Tolak/Perbaikan/Verifikasi
+- src/components/admin/pages/PendaftaranPage.tsx — tampilkan nomorPendaftaran di tabel
+
+Stage Summary:
+- ✅ NIP sequence direset — pendaftar pertama dapat NIP 00001
+- ✅ Pop-up konfirmasi bagus untuk Tolak/Verifikasi/Perbaiki (sebelumnya pakai prompt() browser)
+- ✅ Tracking pendaftaran di landing page via nomor pendaftaran (REG-YYYYMM-XXXX)
+- ✅ Data pendaftar otomatis dihapus setelah disetujui → tidak mengotori daftar verifikasi
+- ✅ Tracking endpoint return 404 dengan pesan ramah jika pendaftar sudah disetujui (memberi tahu user bahwa dia sekarang jadi Pengurus)

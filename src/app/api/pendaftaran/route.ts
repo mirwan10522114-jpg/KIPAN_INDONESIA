@@ -131,8 +131,26 @@ export async function POST(req: NextRequest) {
       console.log(`[pendaftaran] Auto-created kabupaten: ${kabupaten.nama} (${kabupaten.kode})`);
     }
 
+    // Generate nomor pendaftaran unik: REG-YYYYMM-XXXX (4 digit sequence per bulan)
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const prefix = `REG-${yyyy}${mm}-`;
+    const lastReg = await db.pendaftaran.findFirst({
+      where: { nomorPendaftaran: { startsWith: prefix } },
+      orderBy: { nomorPendaftaran: "desc" },
+      select: { nomorPendaftaran: true },
+    });
+    let seq = 1;
+    if (lastReg) {
+      const lastSeqStr = lastReg.nomorPendaftaran.slice(-4);
+      seq = parseInt(lastSeqStr) + 1;
+    }
+    const nomorPendaftaran = `${prefix}${String(seq).padStart(4, "0")}`;
+
     const pendaftaran = await db.pendaftaran.create({
       data: {
+        nomorPendaftaran,
         namaLengkap: body.namaLengkap,
         nik: body.nik,
         tempatLahir: body.tempatLahir,
@@ -174,7 +192,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       data: pendaftaran,
-      message: "Pendaftaran berhasil dikirim! Tim KIPAN akan memverifikasi dalam 3-5 hari kerja.",
+      nomorPendaftaran,
+      message: "Pendaftaran berhasil dikirim! Simpan Nomor Pendaftaran Anda untuk tracking status. Tim KIPAN akan memverifikasi dalam 3-5 hari kerja.",
     });
   } catch (error) {
     // Tangani Prisma error secara spesifik

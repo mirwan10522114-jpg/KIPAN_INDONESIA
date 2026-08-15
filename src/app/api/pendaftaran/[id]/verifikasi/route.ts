@@ -158,6 +158,18 @@ export async function PATCH(
           oleh: "Sistem",
         },
       });
+
+      // HAPUS data pendaftar setelah berhasil dijadikan pengurus
+      // (riwayat sudah disimpan, anggota & pengurus sudah dibuat)
+      // Ini memastikan data calon pengurus tidak mengotori daftar verifikasi
+      // Tracking pendaftaran via nomorPendaftaran akan return 404 dengan pesan "sudah disetujui"
+      await db.pendaftaranRiwayat.deleteMany({
+        where: { pendaftaranId: id },
+      });
+      await db.pendaftaran.delete({
+        where: { id },
+      });
+      console.log(`[verifikasi] Pendaftaran id=${id} dihapus setelah disetujui (NIP: ${nia})`);
     }
 
     const aksiLog = status === "DISETUJUI" ? "approve" : status === "DITOLAK" ? "reject" : "update";
@@ -169,7 +181,7 @@ export async function PATCH(
       success: true,
       data: pendaftaran,
       message: status === "DISETUJUI"
-        ? "Pendaftaran disetujui. Otomatis dibuatkan record Pengurus dengan jabatan 'Anggota Divisi'."
+        ? "Pendaftaran disetujui. Otomatis dibuatkan record Pengurus dengan jabatan 'Anggota Divisi'. Data pendaftar telah dihapus dari daftar verifikasi (karena sudah menjadi pengurus)."
         : `Status pendaftaran diperbarui menjadi ${status}`,
     });
   } catch (error) {
