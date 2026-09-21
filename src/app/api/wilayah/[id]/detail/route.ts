@@ -33,16 +33,17 @@ export async function GET(
                   namaLengkap: true,
                   foto: true,
                   email: true,
-                  hp: true,
+                  
                   nia: true,
                 },
               },
-              jabatan: { select: { nama: true, bidang: true, level: true, urutan: true } },
+              suratKeputusan: { select: { judul: true, nomorSK: true } },
               kabupaten: { select: { nama: true } },
+              jabatan: { select: { nama: true } },
             },
             orderBy: [
               { level: "asc" },
-              { jabatan: { urutan: "asc" } },
+              { tanggalMulai: "asc" },
             ],
           },
         },
@@ -58,7 +59,7 @@ export async function GET(
       const totalKabupaten = await db.kabupaten.count({ where: { provinsiId: id } });
 
       // Monthly growth (last 6 months) — count pengurus baru
-      const monthlyGrowth = [];
+      const monthlyGrowth: Array<{ bulan: string; jumlah: number }> = [];
       for (let i = 5; i >= 0; i--) {
         const monthStart = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
         const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() - i + 1, 1);
@@ -82,7 +83,7 @@ export async function GET(
             kode: provinsi.kode,
             nama: provinsi.nama,
             status: provinsi.status,
-            ketua: provinsi.ketua,
+            ketua: provinsi.pengurus.find(p => p.jabatan?.nama.toLowerCase().includes("ketua") && p.status === "Aktif")?.anggota?.namaLengkap || "-",
             type: "provinsi",
             createdAt: provinsi.createdAt,
             updatedAt: provinsi.updatedAt,
@@ -91,7 +92,7 @@ export async function GET(
             id: k.id,
             kode: k.kode,
             nama: k.nama,
-            ketua: k.ketua,
+            ketua: "-",
             status: k.status,
             jumlahPengurus: k._count.pengurus,
           })),
@@ -101,16 +102,16 @@ export async function GET(
             .map((p) => ({
               id: p.id,
               namaLengkap: p.anggota?.namaLengkap || "-",
-              jabatan: p.jabatan?.nama || "-",
-              bidang: p.jabatan?.bidang || "-",
+              jabatan: p.jabatan?.nama || (p.level === "NASIONAL" ? "Pengurus Nasional" : p.level === "PROVINSI" ? "Pengurus Provinsi" : "Pengurus Kabupaten/Kota"),
+              bidang: p.suratKeputusan?.judul || "-",
               level: p.level,
               foto: p.anggota?.foto,
               email: p.anggota?.email,
-              hp: p.anggota?.hp,
+              
               status: p.status,
               tanggalMulai: p.tanggalMulai,
               tanggalSelesai: p.tanggalSelesai,
-              nomorSK: p.nomorSK,
+              nomorSK: p.suratKeputusan?.nomorSK || "-",
               wilayah: p.kabupaten?.nama || provinsi.nama,
             })),
           statistik: {
@@ -121,7 +122,7 @@ export async function GET(
           },
           activity: [
             { tanggal: provinsi.createdAt, aksi: "Provinsi dibuat", oleh: "System" },
-            ...(provinsi.ketua ? [{ tanggal: provinsi.updatedAt, aksi: `Ketua: ${provinsi.ketua}`, oleh: "Admin" }] : []),
+            { tanggal: provinsi.updatedAt, aksi: "Data diupdate", oleh: "Admin" }
           ],
         },
       });
@@ -140,15 +141,16 @@ export async function GET(
                 namaLengkap: true,
                 foto: true,
                 email: true,
-                hp: true,
+                
                 nia: true,
               },
             },
-            jabatan: { select: { nama: true, bidang: true, level: true, urutan: true } },
+            suratKeputusan: { select: { judul: true, nomorSK: true } },
+            jabatan: { select: { nama: true } },
           },
           orderBy: [
             { level: "asc" },
-            { jabatan: { urutan: "asc" } },
+            { tanggalMulai: "asc" },
           ],
         },
       },
@@ -161,7 +163,7 @@ export async function GET(
     const totalPengurus = await db.pengurus.count({ where: { kabupatenId: id, level: "KABUPATEN" } });
     const pengurusAktif = await db.pengurus.count({ where: { kabupatenId: id, level: "KABUPATEN", status: "Aktif" } });
 
-    const monthlyGrowth = [];
+    const monthlyGrowth: Array<{ bulan: string; jumlah: number }> = [];
     for (let i = 5; i >= 0; i--) {
       const monthStart = new Date(new Date().getFullYear(), new Date().getMonth() - i, 1);
       const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() - i + 1, 1);
@@ -186,7 +188,7 @@ export async function GET(
           kode: kabupaten.kode,
           nama: kabupaten.nama,
           status: kabupaten.status,
-          ketua: kabupaten.ketua,
+          ketua: kabupaten.pengurus.find(p => p.jabatan?.nama.toLowerCase().includes("ketua") && p.status === "Aktif")?.anggota?.namaLengkap || "-",
           type: "kabupaten",
           provinsiNama: kabupaten.provinsi?.nama,
           createdAt: kabupaten.createdAt,
@@ -195,16 +197,16 @@ export async function GET(
         pengurusList: kabupaten.pengurus.map((p) => ({
           id: p.id,
           namaLengkap: p.anggota?.namaLengkap || "-",
-          jabatan: p.jabatan?.nama || "-",
-          bidang: p.jabatan?.bidang || "-",
+          jabatan: p.jabatan?.nama || (p.level === "NASIONAL" ? "Pengurus Nasional" : p.level === "PROVINSI" ? "Pengurus Provinsi" : "Pengurus Kabupaten/Kota"),
+          bidang: p.suratKeputusan?.judul || "-",
           level: p.level,
           foto: p.anggota?.foto,
           email: p.anggota?.email,
-          hp: p.anggota?.hp,
+          
           status: p.status,
           tanggalMulai: p.tanggalMulai,
           tanggalSelesai: p.tanggalSelesai,
-          nomorSK: p.nomorSK,
+          nomorSK: p.suratKeputusan?.nomorSK || "-",
           wilayah: kabupaten.nama,
         })),
         statistik: {
@@ -215,7 +217,7 @@ export async function GET(
         },
         activity: [
           { tanggal: kabupaten.createdAt, aksi: "Kabupaten/Kota dibuat", oleh: "System" },
-          ...(kabupaten.ketua ? [{ tanggal: kabupaten.updatedAt, aksi: `Ketua: ${kabupaten.ketua}`, oleh: "Admin" }] : []),
+          { tanggal: kabupaten.updatedAt, aksi: "Data diupdate", oleh: "Admin" }
         ],
       },
     });

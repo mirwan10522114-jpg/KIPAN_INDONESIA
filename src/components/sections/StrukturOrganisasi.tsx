@@ -81,35 +81,46 @@ export default function StrukturOrganisasi() {
                 {/* Card */}
                 <motion.div
                   whileHover={{ scale: 1.02, y: -3 }}
-                  className={`relative bg-white rounded-3xl shadow-xl border-2 border-sky-100 p-6 lg:p-8 max-w-3xl mx-auto transition-all hover:border-sky-300 hover:shadow-2xl ${
+                  className={`relative bg-white rounded-2xl sm:rounded-3xl shadow-xl border-2 border-sky-100 p-5 sm:p-6 lg:p-8 max-w-3xl mx-auto transition-all hover:border-sky-300 hover:shadow-2xl ${
                     idx === 0 ? "ring-4 ring-sky-100" : ""
                   }`}
                 >
-                  <div className="grid sm:grid-cols-[auto_1fr_auto] gap-4 sm:gap-6 items-center">
-                    {/* Icon */}
-                    <div
-                      className={`w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br ${level.color} flex items-center justify-center shadow-lg shrink-0`}
-                    >
-                      <Icon className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
+                  <div className="flex flex-col sm:grid sm:grid-cols-[auto_1fr_auto] gap-4 sm:gap-6 items-start sm:items-center">
+                    <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+                      {/* Icon */}
+                      <div
+                        className={`w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br ${level.color} flex items-center justify-center shadow-lg shrink-0`}
+                      >
+                        <Icon className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
+                      </div>
+                      {/* Mobile count badge */}
+                      <div className="sm:hidden bg-sky-50 border border-sky-200 rounded-xl px-3 py-1.5 text-right">
+                        <div className="text-[10px] text-blue-600 uppercase tracking-wider font-semibold">
+                          Cakupan
+                        </div>
+                        <div className="text-sm font-extrabold text-blue-700">
+                          {level.count}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Content */}
-                    <div>
+                    <div className="w-full">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                           Level {idx + 1}: {level.level}
                         </span>
                       </div>
-                      <h3 className="text-lg lg:text-xl font-bold text-blue-950 mb-1">
+                      <h3 className="text-base sm:text-lg lg:text-xl font-bold text-blue-950 mb-1">
                         {level.title}
                       </h3>
-                      <p className="text-sm text-slate-600 leading-relaxed">
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                         {level.desc}
                       </p>
                     </div>
 
-                    {/* Count badge */}
-                    <div className="bg-sky-50 border border-sky-200 rounded-2xl px-4 py-3 text-center shrink-0">
+                    {/* Desktop count badge */}
+                    <div className="hidden sm:block bg-sky-50 border border-sky-200 rounded-2xl px-4 py-3 text-center shrink-0">
                       <div className="text-xs text-blue-600 uppercase tracking-wider font-semibold">
                         Cakupan
                       </div>

@@ -65,42 +65,42 @@ export default function TargetMarket() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="relative flex items-stretch gap-4 lg:gap-6 mb-4 last:mb-0"
+                className="relative flex items-stretch gap-3 sm:gap-4 lg:gap-6 mb-4 last:mb-0"
               >
                 {/* Step number circle */}
                 <div className="relative flex flex-col items-center">
                   <motion.div
                     whileHover={{ scale: 1.1, rotate: 5 }}
-                    className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-xl shadow-sky-500/30 shrink-0"
+                    className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-xl sm:rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center shadow-xl shadow-sky-500/30 shrink-0"
                   >
-                    <Icon className="w-8 h-8 lg:w-10 lg:h-10 text-white" />
+                    <Icon className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
                   </motion.div>
                   {/* Connector */}
                   {!isLast && (
-                    <div className="w-0.5 flex-1 bg-gradient-to-b from-sky-400 to-sky-200 mt-2 min-h-[40px]" />
+                    <div className="w-0.5 flex-1 bg-gradient-to-b from-sky-400 to-sky-200 mt-2 min-h-[30px] sm:min-h-[40px]" />
                   )}
                 </div>
 
                 {/* Content card */}
                 <motion.div
                   whileHover={{ y: -3 }}
-                  className="flex-1 bg-white rounded-2xl shadow-lg border border-sky-100 p-5 lg:p-6 mb-2"
+                  className="flex-1 bg-white rounded-2xl shadow-lg border border-sky-100 p-4 sm:p-5 lg:p-6 mb-2"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
                         Step {step.step}
                       </span>
                       <span className="hidden sm:inline text-sky-300">•</span>
                     </div>
-                    <h3 className="text-lg lg:text-xl font-bold text-blue-950 flex-1">
+                    <h3 className="text-base sm:text-lg lg:text-xl font-bold text-blue-950 flex-1">
                       {step.title}
                     </h3>
-                    <span className="self-start sm:self-auto inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full bg-sky-50 text-blue-700 border border-sky-200">
+                    <span className="self-start sm:self-auto inline-flex items-center gap-1 text-[11px] sm:text-xs font-semibold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full bg-sky-50 text-blue-700 border border-sky-200">
                       {step.status}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-600 mt-3 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 mt-2 sm:mt-3 leading-relaxed">
                     {step.desc}
                   </p>
                 </motion.div>
@@ -115,11 +115,11 @@ export default function TargetMarket() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mt-12"
+          className="text-center mt-10 sm:mt-12"
         >
           <a
-            href="#pendaftaran"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-sky-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            href="/pendaftaran"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-sky-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
           >
             Mulai Pendaftaran Sekarang
             <ArrowRight className="w-5 h-5" />

@@ -74,7 +74,7 @@ const SCHEMA_INFO: Record<string, { name: string; description: string; columns: 
       { name: "desa", type: "String?" },
       { name: "kodePos", type: "String?" },
       { name: "email", type: "String" },
-      { name: "hp", type: "String" },
+      
       { name: "whatsapp", type: "String?" },
       { name: "motivasi", type: "String?" },
       { name: "foto", type: "String?" },
@@ -122,7 +122,7 @@ const SCHEMA_INFO: Record<string, { name: string; description: string; columns: 
       { name: "desa", type: "String?" },
       { name: "kodePos", type: "String?" },
       { name: "email", type: "String" },
-      { name: "hp", type: "String" },
+      
       { name: "whatsapp", type: "String?" },
       { name: "foto", type: "String?" },
       { name: "status", type: "String", description: "Aktif | Nonaktif | Mengundurkan Diri | Diberhentikan | Meninggal" },
@@ -146,7 +146,7 @@ const SCHEMA_INFO: Record<string, { name: string; description: string; columns: 
       { name: "kabupatenId", type: "Int?" },
       { name: "foto", type: "String?" },
       { name: "email", type: "String" },
-      { name: "hp", type: "String?" },
+      
       { name: "status", type: "String", description: "Aktif | Nonaktif" },
       { name: "tanggalMulai", type: "DateTime" },
       { name: "tanggalSelesai", type: "DateTime?" },

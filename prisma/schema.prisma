@@ -1,8 +1,7 @@
 // ============================================================
-// SIM-KIPAN — Sistem Informasi Keanggotaan KIPAN Indonesia
+// SIM-KIPAN v2 — Sistem Informasi Keanggotaan KIPAN Indonesia
 // Prisma Schema
-// Database: SQLite (development) — bisa di-migrate ke PostgreSQL/MySQL production
-// Lihat struktur database di prisma/schema.prisma ini
+// Database: MySQL (kipan_db)
 // ============================================================
 
 generator client {
@@ -10,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -23,10 +22,17 @@ model User {
   email        String   @unique
   passwordHash String
   name         String
-  role         String   @default("CALON_ANGGOTA") // SUPER_ADMIN | ADMIN_NASIONAL | ADMIN_PROVINSI | ADMIN_KABUPATEN | ANGGOTA | CALON_ANGGOTA
-  avatar       String?
+  role         String   @default("SUPER_ADMIN") // SUPER_ADMIN | ADMIN_NASIONAL | ADMIN_PROVINSI | ADMIN_KABUPATEN
+  status       String   @default("Aktif") // Aktif | Nonaktif
+  avatar       String?  @db.LongText
+
+  provinsiId   Int?
+  kabupatenId  Int?
 
   anggota      Anggota?
+  provinsi     Provinsi? @relation(fields: [provinsiId], references: [id])
+  kabupaten    Kabupaten? @relation(fields: [kabupatenId], references: [id])
+  notifications Notification[]
 
   lastLoginAt  DateTime?
   createdAt    DateTime @default(now())
@@ -44,14 +50,15 @@ model Provinsi {
   kode         String   @unique
   nama         String
   status       String   @default("Aktif") // Aktif | Pembentukan
-  ketua        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  kabupaten    Kabupaten[]
-  anggota      Anggota[]
-  pengurus     Pengurus[]
-  pendaftaran  Pendaftaran[]
+  kabupaten       Kabupaten[]
+  anggota         Anggota[]
+  pengurus        Pengurus[]
+  pendaftaran     Pendaftaran[]
+  users           User[]
+  suratKeputusan  SuratKeputusan[]
 
   @@map("provinsi")
 }
@@ -62,14 +69,15 @@ model Kabupaten {
   nama         String
   provinsiId   Int
   status       String   @default("Aktif")
-  ketua        String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  provinsi     Provinsi @relation(fields: [provinsiId], references: [id])
-  anggota      Anggota[]
-  pengurus     Pengurus[]
-  pendaftaran  Pendaftaran[]
+  provinsi        Provinsi @relation(fields: [provinsiId], references: [id])
+  anggota         Anggota[]
+  pengurus        Pengurus[]
+  pendaftaran     Pendaftaran[]
+  users           User[]
+  suratKeputusan  SuratKeputusan[]
 
   @@map("kabupaten")
 }
@@ -99,17 +107,17 @@ model Pendaftaran {
   kodePos       String?
 
   email         String
-  hp            String
   whatsapp      String?
   motivasi      String?
 
-  foto          String?
-  ktp           String?
-  cv            String?
-  suratPernyataan String?
-  suratSehat    String?
+  foto          String?  @db.LongText
+  ktp           String?  @db.LongText
+  cv            String?  @db.LongText
+  sk            String?  @db.LongText
+  suratPernyataan String?  @db.LongText
+  suratSehat    String?  @db.LongText
 
-  // Checklist persyaratan (JSON string untuk SQLite)
+  // Checklist persyaratan (JSON string)
   persyaratan   String   @default("[]")
 
   // DRAFT | DIAJUKAN | DIVERIFIKASI | DISETUJUI | DITOLAK | PERBAIKAN
@@ -163,15 +171,15 @@ model Anggota {
   kodePos       String?
 
   email         String
-  hp            String
   whatsapp      String?
-  foto          String?
+  foto          String?  @db.LongText
 
   // Dokumen pendukung (base64 data URL atau URL file)
-  ktp           String?
-  cv            String?
-  suratPernyataan String?
-  suratSehat    String?
+  ktp           String?  @db.LongText
+  cv            String?  @db.LongText
+  sk            String?  @db.LongText
+  suratPernyataan String?  @db.LongText
+  suratSehat    String?  @db.LongText
 
   // AKTIF | NONAKTIF | MENGUNDURKAN_DIRI | DIBERHENTIKAN | MENINGGAL
   status        String   @default("AKTIF")
@@ -192,51 +200,77 @@ model Anggota {
 }
 
 // ============================================================
-// JABATAN (Master Data) — Terstruktur per BIDANG
-// Contoh bidang: "Pengurus Harian", "Divisi Organisasi dan Keanggotaan", dst.
-// Setiap bidang punya beberapa jabatan (Ketua Divisi, Sekretaris Divisi, Anggota)
+// SURAT KEPUTUSAN (SK) — Entitas utama kepengurusan
+// SK memuat daftar pengurus yang diangkat
 // ============================================================
 
-model Jabatan {
-  id            Int      @id @default(autoincrement())
-  nama          String   // Contoh: "Ketua Umum", "Ketua Divisi", "Anggota"
-  bidang        String   @default("Pengurus Harian") // Pengurus Harian | Divisi Organisasi dan Keanggotaan | dst.
-  level         String   // Nasional | Provinsi | Kabupaten
-  urutan        Int      @default(0) // urutan tampil dalam bidang
-  status        String   @default("Aktif")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+model SuratKeputusan {
+  id              Int       @id @default(autoincrement())
+  nomorSK         String    @unique
+  judul           String
+  level           String    // NASIONAL | PROVINSI | KABUPATEN
+  provinsiId      Int?
+  kabupatenId     Int?
+  tanggalTerbit   DateTime
+  tanggalBerakhir DateTime?
+  fileSK          String?   @db.LongText
+  status          String    @default("Aktif") // Aktif | TidakAktif
+  approvalStatus  String    @default("DRAFT") // DRAFT | MENUNGGU_PROVINSI | MENUNGGU_NASIONAL | DISETUJUI | DITOLAK
+  catatanPenolakan String?  @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  pengurus      Pengurus[]
+  provinsi        Provinsi?  @relation(fields: [provinsiId], references: [id])
+  kabupaten       Kabupaten? @relation(fields: [kabupatenId], references: [id])
+  pengurus        Pengurus[]
 
-  @@map("jabatan")
+  @@map("surat_keputusan")
 }
 
 // ============================================================
-// PENGURUS (Anggota + Jabatan + Wilayah + Periode)
+// PENGURUS (Anggota + SK + Wilayah)
+// Pengurus = Anggota yang tercantum dalam Surat Keputusan
+// Memiliki jabatan yang dipilih dari referensi Jabatan
 // ============================================================
 
 model Pengurus {
-  id            Int      @id @default(autoincrement())
-  anggotaId     Int
-  jabatanId     Int
-  level         String   // NASIONAL | PROVINSI | KABUPATEN
-  provinsiId    Int?
-  kabupatenId   Int?
-  status        String   @default("Aktif") // Aktif | Selesai | Diberhentikan
-  tanggalMulai  DateTime @default(now())
-  tanggalSelesai DateTime?
-  nomorSK       String   @default("")
-  fileSK        String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  anggotaId        Int
+  suratKeputusanId Int
+  level            String   // NASIONAL | PROVINSI | KABUPATEN
+  provinsiId       Int?
+  kabupatenId      Int?
+  jabatanId        Int?
+  status           String   @default("Aktif") // Aktif | Demisioner | Diberhentikan | Mengundurkan Diri | Meninggal
+  keteranganStatus String?  @db.Text
+  tanggalMulai     DateTime @default(now())
+  tanggalSelesai   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  anggota       Anggota   @relation(fields: [anggotaId], references: [id])
-  jabatan       Jabatan   @relation(fields: [jabatanId], references: [id])
-  provinsi      Provinsi?  @relation(fields: [provinsiId], references: [id])
-  kabupaten     Kabupaten? @relation(fields: [kabupatenId], references: [id])
+  anggota          Anggota        @relation(fields: [anggotaId], references: [id])
+  suratKeputusan   SuratKeputusan @relation(fields: [suratKeputusanId], references: [id])
+  provinsi         Provinsi?      @relation(fields: [provinsiId], references: [id])
+  kabupaten        Kabupaten?     @relation(fields: [kabupatenId], references: [id])
+  jabatan          Jabatan?       @relation(fields: [jabatanId], references: [id])
 
   @@map("pengurus")
+}
+
+// ============================================================
+// JABATAN (Referensi Jabatan Pengurus)
+// ============================================================
+
+model Jabatan {
+  id        Int      @id @default(autoincrement())
+  nama      String
+  level     String   // NASIONAL | PROVINSI | KABUPATEN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  pengurus  Pengurus[]
+
+  @@map("jabatan")
 }
 
 // ============================================================
@@ -248,9 +282,9 @@ model Berita {
   judul         String
   slug          String   @unique
   kategori      String   // Nasional | Provinsi | Kabupaten
-  excerpt       String
-  konten        String
-  thumbnail     String?
+  excerpt       String   @db.Text
+  konten        String   @db.LongText
+  thumbnail     String?  @db.LongText
   penulis       String
   status        String   @default("Draft") // Draft | Published
   publishedAt   DateTime?
@@ -268,7 +302,7 @@ model Galeri {
   id            Int      @id @default(autoincrement())
   judul         String
   album         String?
-  foto          String
+  foto          String   @db.LongText
   lokasi        String?
   kategori      String   @default("Kegiatan") // Kegiatan | Pelatihan | Sosialisasi | Rapat | Kampanye
   createdAt     DateTime @default(now())
@@ -307,7 +341,7 @@ model ProfilOrganisasi {
   nama          String
   namaLengkap   String
   tagline       String?
-  logo          String?
+  logo          String?  @db.LongText
   email         String?
   telepon       String?
   alamat        String?
@@ -325,12 +359,31 @@ model ProfilOrganisasi {
 
 model ActivityLog {
   id        Int      @id @default(autoincrement())
-  table     String   // "pengurus" | "wilayah" | "jabatan" | "anggota" | "pendaftaran"
+  table     String   // "pengurus" | "wilayah" | "surat_keputusan" | "anggota" | "pendaftaran"
   recordId  Int
-  aksi      String   // "create" | "update" | "delete" | "ganti_jabatan" | "approve" | "reject"
+  aksi      String   // "create" | "update" | "delete" | "approve" | "reject" | "nonaktifkan_sk"
   oleh      String   @default("Admin") // "Admin" | "Sistem"
   detail    String?  // JSON string dengan perubahan
   createdAt DateTime @default(now())
 
   @@map("activity_log")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  title     String
+  message   String
+  type      String   // PENDAFTARAN | SK | VERIFIKASI | SISTEM
+  link      String?  
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }

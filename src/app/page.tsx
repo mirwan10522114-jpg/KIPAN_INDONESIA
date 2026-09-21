@@ -4,12 +4,7 @@ import About from "@/components/sections/About";
 import StrukturOrganisasi from "@/components/sections/StrukturOrganisasi";
 import Services from "@/components/sections/Services";
 import TargetMarket from "@/components/sections/TargetMarket";
-import Gallery from "@/components/sections/Gallery";
-import Products from "@/components/sections/Products";
 import Testimonials from "@/components/sections/Testimonials";
-import PendaftaranAnggota from "@/components/sections/PendaftaranAnggota";
-import CTASection from "@/components/sections/CTASection";
-import Contact from "@/components/sections/Contact";
 import Footer from "@/components/sections/Footer";
 import FloatingWhatsApp from "@/components/sections/FloatingWhatsApp";
 import AdminPanel from "@/components/admin/AdminPanel";
@@ -22,14 +17,8 @@ export default function Home() {
         <Hero />
         <About />
         <StrukturOrganisasi />
-        <Services />
-        <TargetMarket />
-        <Gallery />
-        <Products />
         <Testimonials />
-        <PendaftaranAnggota />
-        <CTASection />
-        <Contact />
+        <TargetMarket />
       </main>
       <Footer />
       <FloatingWhatsApp />

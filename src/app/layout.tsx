@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,6 +17,18 @@ const playfair = Playfair_Display({
   style: ["normal", "italic"],
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0284c7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
+};
 
 export const metadata: Metadata = {
   title: "KIPAN Indonesia — Kader Inti Pemuda Anti Narkoba",
@@ -56,9 +68,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" className="scroll-smooth overflow-x-hidden" suppressHydrationWarning>
       <body
-        className={`${poppins.variable} ${playfair.variable} font-sans antialiased bg-white text-slate-800`}
+        className={`${poppins.variable} ${playfair.variable} font-sans antialiased bg-white text-slate-800 overflow-x-hidden w-full max-w-full`}
       >
         {children}
         <Toaster />

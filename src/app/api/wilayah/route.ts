@@ -99,7 +99,6 @@ export async function POST(req: NextRequest) {
           kode: body.kode.toUpperCase(),
           nama: body.nama,
           status: body.status || "Aktif",
-          ketua: body.ketua || null,
         },
       });
 
@@ -130,7 +129,6 @@ export async function POST(req: NextRequest) {
           nama: body.nama,
           provinsiId: provinsiIdNum,
           status: body.status || "Aktif",
-          ketua: body.ketua || null,
         },
         include: { provinsi: { select: { nama: true, kode: true } } },
       });
@@ -162,11 +160,10 @@ export async function PUT(req: NextRequest) {
         data: {
           nama: body.nama,
           status: body.status,
-          ketua: body.ketua || null,
         },
       });
       await db.activityLog.create({
-        data: { table: "wilayah", recordId: provinsi.id, aksi: "update", oleh: "Admin", detail: JSON.stringify({ type: "provinsi", status: provinsi.status, ketua: provinsi.ketua }) },
+        data: { table: "wilayah", recordId: provinsi.id, aksi: "update", oleh: "Admin", detail: JSON.stringify({ type: "provinsi", status: provinsi.status }) },
       });
       return NextResponse.json({ success: true, data: provinsi, message: "Provinsi berhasil diperbarui" });
     }
@@ -183,12 +180,11 @@ export async function PUT(req: NextRequest) {
           nama: body.nama,
           provinsiId: provIdNum,
           status: body.status,
-          ketua: body.ketua || null,
         },
         include: { provinsi: { select: { nama: true, kode: true } } },
       });
       await db.activityLog.create({
-        data: { table: "wilayah", recordId: kabupaten.id, aksi: "update", oleh: "Admin", detail: JSON.stringify({ type: "kabupaten", status: kabupaten.status, ketua: kabupaten.ketua }) },
+        data: { table: "wilayah", recordId: kabupaten.id, aksi: "update", oleh: "Admin", detail: JSON.stringify({ type: "kabupaten", status: kabupaten.status }) },
       });
       return NextResponse.json({ success: true, data: kabupaten, message: "Kabupaten/Kota berhasil diperbarui" });
     }

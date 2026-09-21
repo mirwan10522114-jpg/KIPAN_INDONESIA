@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { decryptNIK } from "@/lib/encryption";
 
 // GET /api/pengurus/[id]/detail — Full detail with tabs data
 export async function GET(
@@ -19,7 +20,7 @@ export async function GET(
             kabupaten: { select: { id: true, nama: true, kode: true } },
           },
         },
-        jabatan: { select: { id: true, nama: true, bidang: true, level: true, urutan: true } },
+        suratKeputusan: { select: { id: true, nomorSK: true, judul: true, level: true, status: true, fileSK: true, tanggalTerbit: true } },
         provinsi: { select: { id: true, nama: true, kode: true } },
         kabupaten: { select: { id: true, nama: true, kode: true } },
       },
@@ -29,11 +30,11 @@ export async function GET(
       return NextResponse.json({ success: false, error: "Pengurus tidak ditemukan" }, { status: 404 });
     }
 
-    // Get ALL jabatan history for this anggota
-    const allJabatan = await db.pengurus.findMany({
+    // Get ALL SK history for this anggota
+    const allPengurus = await db.pengurus.findMany({
       where: { anggotaId: pengurus.anggotaId },
       include: {
-        jabatan: { select: { nama: true, bidang: true, level: true } },
+        suratKeputusan: { select: { nomorSK: true, judul: true, level: true, status: true } },
         provinsi: { select: { nama: true } },
         kabupaten: { select: { nama: true } },
       },
@@ -71,13 +72,16 @@ export async function GET(
           status: pengurus.status,
           tanggalMulai: pengurus.tanggalMulai,
           tanggalSelesai: pengurus.tanggalSelesai,
-          nomorSK: pengurus.nomorSK,
-          fileSK: pengurus.fileSK,
+          // From SK
+          nomorSK: pengurus.suratKeputusan?.nomorSK,
+          judulSK: pengurus.suratKeputusan?.judul,
+          statusSK: pengurus.suratKeputusan?.status,
+          fileSK: pengurus.suratKeputusan?.fileSK,
           // From anggota
           anggotaId: a.id,
           nia: a.nia,
           namaLengkap: a.namaLengkap,
-          nik: a.nik,
+          nik: decryptNIK(a.nik),
           tempatLahir: a.tempatLahir,
           tanggalLahir: a.tanggalLahir,
           jenisKelamin: a.jenisKelamin,
@@ -86,7 +90,7 @@ export async function GET(
           pekerjaan: a.pekerjaan,
           alamat: a.alamat,
           email: a.email,
-          hp: a.hp,
+          
           whatsapp: a.whatsapp,
           foto: a.foto,
           // Dokumen anggota
@@ -94,24 +98,31 @@ export async function GET(
           cv: a.cv,
           suratPernyataan: a.suratPernyataan,
           suratSehat: a.suratSehat,
-          // From jabatan
-          jabatanNama: pengurus.jabatan?.nama,
-          jabatanBidang: pengurus.jabatan?.bidang,
-          jabatanLevel: pengurus.jabatan?.level,
-          jabatanUrutan: pengurus.jabatan?.urutan,
+          // Wilayah Tambahan
+          provinsiId: a.provinsiId,
+          kabupatenId: a.kabupatenId,
+          kecamatan: a.kecamatan,
+          desa: a.desa,
+          kodePos: a.kodePos,
+          // Dokumen anggota
+          ktp: a.ktp,
+          cv: a.cv,
+          suratPernyataan: a.suratPernyataan,
+          suratSehat: a.suratSehat,
           // Wilayah
           provinsi: pengurus.provinsi || a.provinsi,
           kabupaten: pengurus.kabupaten || a.kabupaten,
         },
-        riwayatJabatan: allJabatan.map((p) => ({
+        riwayatSK: allPengurus.map((p) => ({
           id: p.id,
-          jabatan: p.jabatan?.nama || "-",
+          nomorSK: p.suratKeputusan?.nomorSK || "-",
+          judulSK: p.suratKeputusan?.judul || "-",
           level: p.level,
           wilayah: p.kabupaten?.nama || p.provinsi?.nama || "Indonesia",
           tanggalMulai: p.tanggalMulai,
           tanggalSelesai: p.tanggalSelesai,
-          nomorSK: p.nomorSK,
           status: p.status,
+          statusSK: p.suratKeputusan?.status,
         })),
         anggotaList: anggotaList.map((a) => ({
           id: a.id,

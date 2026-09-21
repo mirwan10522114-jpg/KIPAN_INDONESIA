@@ -17,20 +17,53 @@ export default function AdminLogin({ open, onClose, onSuccess }: AdminLoginProps
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const login = useAuthStore((s) => s.login);
+  const setAuthData = useAuthStore((s) => s.setAuthData);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const ok = login(username, password);
-    if (ok) {
-      toast.success("Login berhasil! Selamat datang, Admin.");
-      onSuccess();
-      setUsername("");
-      setPassword("");
-    } else {
-      setError("Username atau password salah.");
-      toast.error("Login gagal");
+    setLoading(true);
+
+    try {
+      // First try dummy login if they are explicitly using the dummy credentials for testing
+      const isDummy = ADMIN_CREDENTIALS.some(u => u.username === username.trim() && u.password === password);
+      if (isDummy && password === "123") {
+        const ok = login(username, password);
+        if (ok) {
+          toast.success("Login berhasil! (Mode Demo)");
+          onSuccess();
+          setUsername("");
+          setPassword("");
+          return;
+        }
+      }
+
+      // Real login via API
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      
+      const json = await res.json();
+      
+      if (json.success) {
+        setAuthData(json.data);
+        toast.success(`Login berhasil! Selamat datang, ${json.data.displayName}.`);
+        onSuccess();
+        setUsername("");
+        setPassword("");
+      } else {
+        setError(json.error || "Username atau password salah.");
+        toast.error("Login gagal");
+      }
+    } catch (e: any) {
+      setError("Gagal terhubung ke server.");
+      toast.error("Kesalahan jaringan");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,23 +165,11 @@ export default function AdminLogin({ open, onClose, onSuccess }: AdminLoginProps
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-cyan-500 to-sky-600 text-white py-3 rounded-lg font-semibold text-sm shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-cyan-500 to-sky-600 text-white py-3 rounded-lg font-semibold text-sm shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:hover:translate-y-0"
               >
-                Masuk ke Dashboard
+                {loading ? "Memproses..." : "Masuk ke Dashboard"}
               </button>
-
-              {/* Default credentials hint */}
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-[11px] text-amber-800 font-semibold mb-1">
-                  Akun Admin Default:
-                </p>
-                <p className="text-[11px] text-amber-700">
-                  Username: <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono">{ADMIN_CREDENTIALS.username}</code>
-                </p>
-                <p className="text-[11px] text-amber-700">
-                  Password: <code className="bg-amber-100 px-1.5 py-0.5 rounded font-mono">{ADMIN_CREDENTIALS.password}</code>
-                </p>
-              </div>
 
               {/* Shortcut hint */}
               <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center gap-2">
@@ -161,6 +182,8 @@ export default function AdminLogin({ open, onClose, onSuccess }: AdminLoginProps
                   untuk membuka admin kapan saja
                 </span>
               </div>
+
+              {/* Bantuan Login Dummy dihapus untuk produksi */}
             </form>
           </motion.div>
         </motion.div>

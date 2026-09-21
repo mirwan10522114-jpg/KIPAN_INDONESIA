@@ -23,6 +23,7 @@ import {
   Calendar,
   X,
 } from "lucide-react";
+import { useAuthStore } from "@/lib/auth-store";
 
 interface DashboardData {
   stats: {
@@ -38,7 +39,8 @@ interface DashboardData {
     totalProgram: number;
   };
   pendaftaranByStatus: Record<string, number>;
-  anggotaPerProvinsi: { nama: string; kode: string; jumlah: number }[];
+  wilayahChart: { nama: string; kode: string; jumlah: number }[];
+  wilayahChartLabel: string;
   anggotaByStatus: Record<string, number>;
   recentPendaftaran: {
     id: number;
@@ -47,9 +49,11 @@ interface DashboardData {
     waktu: string;
     kabupaten: string | null;
   }[];
+  monthlyTrend?: { bulan: string; baru: number }[];
 }
 
 export default function DashboardPage({ onNavigate }: { onNavigate?: (page: string) => void }) {
+  const { role, wilayah } = useAuthStore();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -57,11 +61,17 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
   const [drillDownProv, setDrillDownProv] = useState<string | null>(null);
   const [drillDownData, setDrillDownData] = useState<any>(null);
   const [drillDownLoading, setDrillDownLoading] = useState(false);
+  const [trendFilter, setTrendFilter] = useState("7_bulan");
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/dashboard", { cache: "no-store" });
+      const params = new URLSearchParams();
+      if (role) params.append("role", role);
+      if (wilayah) params.append("wilayah", wilayah);
+      params.append("trendFilter", trendFilter);
+      
+      const res = await fetch(`/api/dashboard?${params.toString()}`, { cache: "no-store" });
       const json = await res.json();
       if (json.success) {
         setData(json.data);
@@ -79,7 +89,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
     // Auto-refresh every 60 seconds
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [trendFilter]);
 
   if (loading || !data) {
     return (
@@ -103,7 +113,11 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
 
   const stats = data.stats;
 
-  // Quick actions (priority items)
+  // Role helpers
+  const isNasionalOrAbove = role === "SUPER_ADMIN" || role === "ADMIN_NASIONAL";
+  const isProvinsiOrAbove = isNasionalOrAbove || role === "ADMIN_PROVINSI";
+
+  // Quick actions (priority items) — filter berdasarkan role
   const quickActions = [
     {
       icon: AlertCircle,
@@ -117,11 +131,12 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
       count: data.pendaftaranByStatus.DIAJUKAN || 0,
       priority: "high",
       targetPage: "verifikasi",
+      show: true, // semua role bisa lihat
     },
     {
       icon: FileText,
       label: `${data.pendaftaranByStatus.PERBAIKAN || 0} Data Perlu Perbaikan`,
-      desc: "Calon pengurus dengan dokumen kurang",
+      desc: "Calon anggota dengan dokumen kurang",
       action: "Lihat",
       color: "from-blue-500 to-sky-500",
       bgColor: "from-blue-50 to-sky-50",
@@ -130,6 +145,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
       count: data.pendaftaranByStatus.PERBAIKAN || 0,
       priority: "medium",
       targetPage: "pendaftaran",
+      show: true,
     },
     {
       icon: UserPlus,
@@ -143,6 +159,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
       count: null,
       priority: "low",
       targetPage: "pengurus",
+      show: true,
     },
     {
       icon: Newspaper,
@@ -156,23 +173,24 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
       count: null,
       priority: "low",
       targetPage: "berita",
+      show: isNasionalOrAbove, // hanya SUPER_ADMIN & ADMIN_NASIONAL
     },
-  ];
+  ].filter((a) => a.show);
 
   // Stat cards (2 rows)
   const statCardsRow1 = [
-    { label: "Total Pengurus", value: stats.totalAnggota, icon: Users, color: "from-blue-500 to-sky-500", change: `${stats.anggotaAktif} aktif`, targetPage: "pengurus" },
-    { label: "Pengurus Aktif", value: stats.anggotaAktif, icon: CheckCircle2, color: "from-emerald-500 to-teal-500", change: `${Math.round((stats.anggotaAktif / Math.max(stats.totalAnggota, 1)) * 100)}% dari total`, targetPage: "pengurus" },
+    { label: "Total Anggota", value: stats.totalAnggota, icon: Users, color: "from-blue-500 to-sky-500", change: `${stats.anggotaAktif} aktif`, targetPage: "anggota" },
+    { label: "Anggota Aktif", value: stats.anggotaAktif, icon: CheckCircle2, color: "from-emerald-500 to-teal-500", change: `${Math.round((stats.anggotaAktif / Math.max(stats.totalAnggota, 1)) * 100)}% dari total`, targetPage: "anggota" },
     { label: "Menunggu Verifikasi", value: stats.menungguVerifikasi, icon: Clock, color: "from-amber-500 to-orange-500", change: "Perlu tindakan", targetPage: "verifikasi" },
-    { label: "Pengurus Baru Bulan Ini", value: stats.anggotaBaru, icon: UserPlus, color: "from-violet-500 to-purple-500", change: "Bulan berjalan", targetPage: "pengurus" },
+    { label: "Anggota Baru Bulan Ini", value: stats.anggotaBaru, icon: UserPlus, color: "from-violet-500 to-purple-500", change: "Bulan berjalan", targetPage: "anggota" },
   ];
 
   const statCardsRow2 = [
-    { label: "Total Penunjukan Jabatan", value: stats.totalPengurus, icon: UserCog, color: "from-cyan-500 to-blue-500", change: `${stats.totalProvinsi} provinsi`, targetPage: "pengurus" },
-    { label: "Provinsi Terdaftar", value: stats.totalProvinsi, icon: MapPin, color: "from-sky-500 to-indigo-500", change: "dari 38 provinsi", targetPage: "wilayah" },
-    { label: "Kabupaten Terdaftar", value: stats.totalKabupaten, icon: Building2, color: "from-teal-500 to-cyan-500", change: "dari 514 kab/kota", targetPage: "wilayah" },
-    { label: "Coverage Wilayah", value: `${Math.round((stats.totalKabupaten / 514) * 100)}%`, icon: Globe, color: "from-indigo-500 to-violet-500", change: "Nasional", targetPage: "wilayah" },
-  ];
+    { label: "Total Pengurus", value: stats.totalPengurus, icon: UserCog, color: "from-cyan-500 to-blue-500", change: isNasionalOrAbove ? `${stats.totalProvinsi} provinsi` : "Pengurus aktif", targetPage: "pengurus", show: true },
+    { label: "Provinsi Terdaftar", value: stats.totalProvinsi, icon: MapPin, color: "from-sky-500 to-indigo-500", change: "dari 38 provinsi", targetPage: "wilayah", show: isNasionalOrAbove },
+    { label: "Kabupaten Terdaftar", value: stats.totalKabupaten, icon: Building2, color: "from-teal-500 to-cyan-500", change: "dari 514 kab/kota", targetPage: "wilayah", show: isProvinsiOrAbove },
+    { label: "Coverage Wilayah", value: `${Math.round((stats.totalKabupaten / 514) * 100)}%`, icon: Globe, color: "from-indigo-500 to-violet-500", change: "Nasional", targetPage: "wilayah", show: isNasionalOrAbove },
+  ].filter(s => s.show);
 
   // Format waktu relatif
   const formatRelativeTime = (dateStr: string) => {
@@ -212,10 +230,13 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
     { label: "Ditolak", value: data.pendaftaranByStatus.DITOLAK || 0, color: "bg-rose-100 text-rose-700" },
   ];
 
-  // Chart data - ALL provinsi with anggota
-  const allProvinsiWithData = data.anggotaPerProvinsi;
-  const maxAnggota = Math.max(...allProvinsiWithData.map((p) => p.jumlah), 1);
-  const visibleProvinsi = showAllProvinsi ? allProvinsiWithData : allProvinsiWithData.slice(0, 8);
+  // Chart data - dari API (adaptif per role)
+  const allWilayahData = data.wilayahChart || [];
+  const chartLabel = data.wilayahChartLabel || "Anggota per Wilayah";
+  const maxAnggota = Math.max(...allWilayahData.map((p) => p.jumlah), 1);
+  const visibleProvinsi = showAllProvinsi ? allWilayahData : allWilayahData.slice(0, 8);
+  // Alias compat
+  const allProvinsiWithData = allWilayahData;
 
   const handleProvinsiClick = async (provinsiNama: string) => {
     setDrillDownProv(provinsiNama);
@@ -244,12 +265,12 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
     }
   };
 
-  // Perlu tindakan
+  // Perlu tindakan — filter sesuai role
   const perluTindakan = [
-    { icon: AlertCircle, text: `${data.pendaftaranByStatus.DIAJUKAN || 0} Pendaftaran Baru`, color: "text-amber-600", bg: "bg-amber-50", targetPage: "verifikasi" },
-    { icon: FileText, text: `${data.pendaftaranByStatus.PERBAIKAN || 0} Dokumen Kurang`, color: "text-blue-600", bg: "bg-blue-50", targetPage: "pendaftaran" },
-    { icon: UserCog, text: `${stats.totalPengurus} Profil Pengurus`, color: "text-violet-600", bg: "bg-violet-50", targetPage: "pengurus" },
-  ];
+    { icon: AlertCircle, text: `${data.pendaftaranByStatus.DIAJUKAN || 0} Pendaftaran Baru`, color: "text-amber-600", bg: "bg-amber-50", targetPage: "verifikasi", show: true },
+    { icon: FileText, text: `${data.pendaftaranByStatus.PERBAIKAN || 0} Dokumen Kurang`, color: "text-blue-600", bg: "bg-blue-50", targetPage: "pendaftaran", show: true },
+    { icon: UserCog, text: `${stats.totalPengurus} Profil Pengurus`, color: "text-violet-600", bg: "bg-violet-50", targetPage: "pengurus", show: isProvinsiOrAbove },
+  ].filter((i) => i.show);
 
   return (
     <div className="space-y-6">
@@ -257,7 +278,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-blue-950">
-            Selamat Datang, Super Admin 👋
+            Selamat Datang, {role === "SUPER_ADMIN" ? "Super Admin" : role === "ADMIN_NASIONAL" ? "Admin Nasional" : role === "ADMIN_PROVINSI" ? "Admin Provinsi" : "Admin Kabupaten"} 👋
           </h1>
           <div className="flex items-center gap-2 mt-1.5 text-sm text-slate-500">
             <Shield className="w-3.5 h-3.5 text-blue-600" />
@@ -294,7 +315,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {quickActions.map((action, idx) => {
             const Icon = action.icon;
-            const isPriority = action.priority === "high" && action.count > 0;
+            const isPriority = action.priority === "high" && (action.count ?? 0) > 0;
             return (
               <motion.div
                 key={idx}
@@ -504,7 +525,6 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
 
       {/* ============ TOP PROVINSI & STATUS ANGGOTA ============ */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Top Provinsi dengan Bar Chart */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -513,14 +533,14 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <MapPin className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-blue-950">Pengurus per Provinsi</h3>
+              <h3 className="font-bold text-blue-950">{chartLabel}</h3>
             </div>
             {allProvinsiWithData.length > 8 && (
               <button
                 onClick={() => setShowAllProvinsi(!showAllProvinsi)}
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-wider"
               >
-                {showAllProvinsi ? "Tampilkan sedikit" : `Lihat semua (${allProvinsiWithData.length})`}
+                {showAllProvinsi ? "Tutup" : "Lihat Semua"}
               </button>
             )}
           </div>
@@ -532,21 +552,21 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
             {visibleProvinsi.map((p, idx) => (
               <div
                 key={idx}
-                onClick={() => handleProvinsiClick(p.nama)}
-                className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 rounded-lg p-1 -m-1 transition-colors group"
-                title={`Klik untuk lihat detail ${p.nama}`}
+                onClick={() => role === "SUPER_ADMIN" || role === "ADMIN_NASIONAL" ? handleProvinsiClick(p.nama) : undefined}
+                className={`flex items-center gap-3 rounded-lg p-1 -m-1 transition-colors group ${role === "SUPER_ADMIN" || role === "ADMIN_NASIONAL" ? "cursor-pointer hover:bg-slate-50" : ""}`}
+                title={role === "SUPER_ADMIN" || role === "ADMIN_NASIONAL" ? `Klik untuk lihat detail ${p.nama}` : p.nama}
               >
                 <span className="text-xs font-bold text-slate-400 w-6">#{idx + 1}</span>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">{p.nama}</span>
-                    <span className="text-xs font-bold text-blue-600 group-hover:underline">{p.jumlah.toLocaleString("id-ID")} pengurus →</span>
+                    <span className="text-xs font-bold text-blue-600">{p.jumlah.toLocaleString("id-ID")} anggota</span>
                   </div>
                   <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${(p.jumlah / maxAnggota) * 100}%` }}
-                      transition={{ delay: idx * 0.04, duration: 0.4 }}
+                      transition={{ duration: 1, ease: "easeOut" }}
                       className="h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full"
                     />
                   </div>
@@ -554,12 +574,12 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
               </div>
             ))}
             {visibleProvinsi.length === 0 && (
-              <p className="text-sm text-slate-500 text-center py-4">Belum ada data pengurus per provinsi</p>
+              <p className="text-sm text-slate-500 text-center py-4">Belum ada data {chartLabel.toLowerCase()}</p>
             )}
           </div>
         </motion.div>
 
-        {/* Distribusi Status Pengurus */}
+        {/* Distribusi Status Anggota */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -568,7 +588,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-blue-600" />
-              <h3 className="font-bold text-blue-950">Distribusi Status Pengurus</h3>
+              <h3 className="font-bold text-blue-950">Distribusi Status Anggota</h3>
             </div>
             <span className="text-xs text-slate-400">Total {stats.totalAnggota}</span>
           </div>
@@ -737,7 +757,8 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
         </motion.div>
       </div>
 
-      {/* ============ COVERAGE WILAYAH ============ */}
+      {/* ============ COVERAGE WILAYAH — hanya untuk SUPER_ADMIN & ADMIN_NASIONAL ============ */}
+      {isNasionalOrAbove && (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -821,6 +842,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
           </div>
         </div>
       </motion.div>
+      )}
 
       {/* ============ CHART: TREND ANGGOTA ============ */}
       <motion.div
@@ -828,15 +850,27 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6"
       >
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-blue-600" />
-            <h3 className="font-bold text-blue-950">Tren Pertumbuhan Pengurus (7 Bulan Terakhir)</h3>
+            <h3 className="font-bold text-blue-950">Tren Pertumbuhan Anggota</h3>
           </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="inline-flex items-center gap-1 text-blue-600">
-              <span className="w-2 h-2 bg-blue-500 rounded-full" /> Pengurus Baru
-            </span>
+          <div className="flex items-center gap-3">
+            <select
+              value={trendFilter}
+              onChange={(e) => setTrendFilter(e.target.value)}
+              className="text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-blue-500"
+            >
+              <option value="7_hari">7 Hari Terakhir</option>
+              <option value="30_hari">30 Hari Terakhir</option>
+              <option value="7_bulan">7 Bulan Terakhir</option>
+              <option value="12_bulan">1 Tahun Terakhir</option>
+            </select>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="inline-flex items-center gap-1 text-blue-600">
+                <span className="w-2 h-2 bg-blue-500 rounded-full" /> Anggota Baru
+              </span>
+            </div>
           </div>
         </div>
         <LineChart data={data.monthlyTrend || []} />
@@ -907,7 +941,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-semibold text-slate-800 truncate">{p.namaLengkap}</div>
                               <div className="text-xs text-slate-500 truncate">
-                                {p.jabatan}{p.bidang && p.bidang !== "Pengurus Harian" ? ` • ${p.bidang}` : ""}
+                                {p.jabatan}
                               </div>
                             </div>
                             <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-semibold shrink-0 ${

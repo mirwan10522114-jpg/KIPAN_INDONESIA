@@ -7,8 +7,6 @@ import { db } from "@/lib/db";
 // Aturan: HANYA tampilkan pengurus yang level-nya sesuai dengan wilayah:
 //   - type=provinsi → hanya pengurus dengan level="PROVINSI" & provinsiId=id
 //   - type=kabupaten → hanya pengurus dengan level="KABUPATEN" & kabupatenId=id
-// JANGAN tampilkan pengurus level lebih tinggi (misal: saat klik provinsi Bali,
-// jangan tampilkan pengurus Nasional meskipun mereka punya provinsiId=Bali)
 // ============================================================
 export async function GET(
   req: NextRequest,
@@ -24,12 +22,15 @@ export async function GET(
     const where: any = {};
     if (type === "provinsi") {
       where.provinsiId = id;
-      where.level = "PROVINSI"; // PENTING: hanya pengurus level Provinsi
+      where.level = "PROVINSI";
     } else if (type === "kabupaten") {
       where.kabupatenId = id;
-      where.level = "KABUPATEN"; // PENTING: hanya pengurus level Kabupaten
+      where.level = "KABUPATEN";
     }
-    if (!includeAll) where.status = "Aktif";
+    if (!includeAll) {
+      where.status = "Aktif";
+      where.suratKeputusan = { status: "Aktif" };
+    }
 
     const pengurus = await db.pengurus.findMany({
       where,
@@ -39,15 +40,14 @@ export async function GET(
             id: true,
             namaLengkap: true,
             nia: true,
-            foto: true,
             email: true,
-            hp: true,
+            whatsapp: true,
+            foto: true,
           },
         },
-        jabatan: { select: { nama: true, bidang: true, urutan: true } },
+        suratKeputusan: { select: { nomorSK: true, judul: true } },
       },
       orderBy: [
-        { jabatan: { urutan: "asc" } },
         { anggota: { namaLengkap: "asc" } },
       ],
     });
@@ -58,8 +58,8 @@ export async function GET(
       namaLengkap: p.anggota?.namaLengkap || "-",
       nia: p.anggota?.nia,
       foto: p.anggota?.foto,
-      jabatan: p.jabatan?.nama,
-      bidang: p.jabatan?.bidang,
+      nomorSK: p.suratKeputusan?.nomorSK,
+      judulSK: p.suratKeputusan?.judul,
       level: p.level,
       status: p.status,
     }));

@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Eye, Download, X, QrCode, CreditCard, RefreshCw, Plus, UserPlus, FileText } from "lucide-react";
+import { Search, Eye, Download, X, QrCode, CreditCard, RefreshCw, Plus, UserPlus, FileText, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import AnggotaDetailDialog from "./AnggotaDetailDialog";
 import { exportAnggotaPdf } from "@/lib/pdf-export";
 import { fetchJsonSafe } from "@/lib/fetch-helper";
+import { useAuthStore } from "@/lib/auth-store";
+
+// Fix React hydration issues by adding a consistent row index (1, 2, 3...)
 
 export default function AnggotaPage({
   initialFilter,
@@ -15,6 +18,7 @@ export default function AnggotaPage({
   initialFilter?: Record<string, string> | null;
   onNavigate?: (page: string) => void;
 }) {
+  const { role, wilayah } = useAuthStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("Semua");
   const [provFilter, setProvFilter] = useState("Semua");
@@ -26,16 +30,91 @@ export default function AnggotaPage({
   const [addForm, setAddForm] = useState({
     namaLengkap: "", nik: "", tempatLahir: "", tanggalLahir: "",
     jenisKelamin: "L", alamat: "", provinsiId: "", kabupatenId: "",
-    email: "", hp: "", pekerjaan: "",
+    email: "", whatsapp: "", pekerjaan: "",
   });
   const [kabupatenList, setKabupatenList] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
 
+  // Promote states
+  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [promoteTarget, setPromoteTarget] = useState<any>(null);
+  const [skList, setSkList] = useState<any[]>([]);
+  const [jabatanList, setJabatanList] = useState<any[]>([]);
+  const [promoteForm, setPromoteForm] = useState({
+    suratKeputusanId: "",
+    jabatanId: "",
+    level: "KABUPATEN",
+    status: "Aktif",
+    tanggalMulai: new Date().toISOString().split("T")[0],
+  });
+  const [promoting, setPromoting] = useState(false);
+
+  // Edit Anggota states
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editAnggotaTarget, setEditAnggotaTarget] = useState<any>(null);
+  const [editAnggotaForm, setEditAnggotaForm] = useState({
+    namaLengkap: "",
+    status: "Aktif",
+    keteranganStatus: "",
+    pekerjaan: "",
+    alamat: "",
+    email: "",
+    whatsapp: "",
+  });
+  const [editAnggotaSaving, setEditAnggotaSaving] = useState(false);
+
+  const openEditAnggota = (anggota: any) => {
+    setEditAnggotaTarget(anggota);
+    setEditAnggotaForm({
+      namaLengkap: anggota.namaLengkap || "",
+      status: anggota.status || "AKTIF",
+      keteranganStatus: anggota.keteranganStatus || "",
+      pekerjaan: anggota.pekerjaan || "",
+      alamat: anggota.alamat || "",
+      email: anggota.email || "",
+      whatsapp: anggota.whatsapp || "",
+    });
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEditAnggota = async () => {
+    if (!editAnggotaTarget) return;
+    if (editAnggotaForm.status !== "Aktif" && !editAnggotaForm.keteranganStatus.trim()) {
+      toast.error("Keterangan/Alasan wajib diisi jika status diubah.");
+      return;
+    }
+    setEditAnggotaSaving(true);
+    try {
+      const res = await fetch(`/api/anggota/${editAnggotaTarget.id}?role=${role}&wilayah=${wilayah || ""}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editAnggotaForm),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Data anggota berhasil diperbarui");
+        setShowEditDialog(false);
+        setEditAnggotaTarget(null);
+        fetchData();
+      } else {
+        toast.error(json.error || "Gagal menyimpan");
+      }
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setEditAnggotaSaving(false);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
+      const params = new URLSearchParams();
+      if (role) params.append("role", role);
+      if (wilayah) params.append("wilayah", wilayah);
+
       const [anggotaRes, wilayahRes] = await Promise.all([
-        fetch("/api/anggota", { cache: "no-store" }),
+        fetch(`/api/anggota?${params.toString()}`, { cache: "no-store" }),
         fetch("/api/wilayah?type=provinsi", { cache: "no-store" }),
       ]);
       const anggotaJson = await anggotaRes.json();
@@ -207,27 +286,28 @@ export default function AnggotaPage({
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-12 text-center">No</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">NIP</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Wilayah</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Angkatan</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Provinsi</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Kab/Kota</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Kecamatan</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Status</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map((a) => (
+              {filtered.map((a, idx) => (
                 <tr key={a.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSelectedId(a.id)}>
+                  <td className="px-4 py-3 text-sm text-slate-500 text-center">{idx + 1}</td>
                   <td className="px-4 py-3 text-sm font-mono text-blue-600">{a.nia}</td>
                   <td className="px-4 py-3">
                     <div className="text-sm font-semibold text-blue-950">{a.namaLengkap}</div>
                     <div className="text-xs text-slate-500">{a.pekerjaan}</div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">
-                    <div>{a.kabupaten?.nama}</div>
-                    <div className="text-xs text-slate-400">{a.provinsi?.nama}</div>
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm text-slate-600">{a.angkatan || "-"}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{a.provinsi?.nama || "-"}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{a.kabupaten?.nama || "-"}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{a.kecamatan || "-"}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                       a.status === "Aktif" ? "bg-emerald-100 text-emerald-700" :
@@ -256,44 +336,299 @@ export default function AnggotaPage({
       <AnggotaDetailDialog
         anggotaId={selectedId}
         onClose={() => setSelectedId(null)}
-        onEdit={() => { setSelectedId(null); toast.info("Form edit anggota akan dibuka"); }}
+        onEdit={() => {
+          setSelectedId(null);
+          const target = data.find((a) => a.id === selectedId);
+          if (target) openEditAnggota(target);
+        }}
         onPromote={(id) => {
           setSelectedId(null);
-          // Promote anggota to pengurus
-          fetch("/api/anggota", { method: "OPTIONS" }).then(() => {});
-          // Call promote API
-          fetch(`/api/anggota/${id}/detail`, { cache: "no-store" })
-            .then((r) => r.json())
-            .then(async (json) => {
-              if (json.success) {
-                const a = json.data.anggota;
-                const res = await fetch("/api/pengurus", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    namaLengkap: a.namaLengkap,
-                    jabatan: "Pengurus",
-                    level: "KABUPATEN",
-                    provinsiId: a.provinsi?.id ? String(a.provinsi.id) : undefined,
-                    kabupatenId: a.kabupaten?.id ? String(a.kabupaten.id) : undefined,
-                    foto: a.foto,
-                    email: a.email,
-                    hp: a.hp,
-                    status: "Aktif",
-                    tanggalMulai: new Date().toISOString().split("T")[0],
-                    nomorSK: `SK-PROMOTE/${a.nia}/${new Date().getFullYear()}`,
-                  }),
-                });
-                const result = await res.json();
-                if (result.success) {
-                  toast.success(`Anggota ${a.namaLengkap} berhasil dijadikan pengurus!`);
-                } else {
-                  toast.error(result.error || "Gagal promote");
-                }
-              }
+          const target = data.find((a) => a.id === id);
+          if (target) {
+            setPromoteTarget(target);
+            // Fetch SKs & Jabatan
+            Promise.all([
+              fetch("/api/surat-keputusan", { cache: "no-store" }).then((r) => r.json()),
+              fetch("/api/jabatan", { cache: "no-store" }).then((r) => r.json()),
+            ]).then(([skRes, jabRes]) => {
+              if (skRes.success) setSkList(skRes.data.filter((sk: any) => sk.status === "Aktif"));
+              if (jabRes.success) setJabatanList(jabRes.data);
+              setShowPromoteDialog(true);
+            }).catch(() => {
+              toast.error("Gagal mengambil data SK / Jabatan");
             });
+          }
         }}
       />
+
+      {/* Edit Anggota Dialog */}
+      <AnimatePresence>
+        {showEditDialog && editAnggotaTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowEditDialog(false)}
+            className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
+            >
+              <div className="bg-gradient-to-r from-blue-600 to-sky-500 p-5 rounded-t-2xl flex items-center justify-between">
+                <div className="flex items-center gap-3 text-white">
+                  <Edit2 className="w-5 h-5" />
+                  <div>
+                    <h3 className="font-bold text-lg">Edit Data Anggota</h3>
+                    <p className="text-blue-100 text-xs">{editAnggotaTarget.nia} — {editAnggotaTarget.namaLengkap}</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowEditDialog(false)} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                  <X className="w-4 h-4 text-white" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* Status — field terpenting */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Status Keanggotaan</label>
+                  <select
+                    value={editAnggotaForm.status}
+                    onChange={(e) => setEditAnggotaForm({ ...editAnggotaForm, status: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none bg-white font-semibold"
+                  >
+                    <option value="Aktif">✅ Aktif</option>
+                    <option value="Nonaktif">⬜ Nonaktif</option>
+                    <option value="Mengundurkan Diri">🔶 Mengundurkan Diri</option>
+                    <option value="Diberhentikan">🔴 Diberhentikan</option>
+                    <option value="Meninggal">⚫ Meninggal Dunia</option>
+                  </select>
+                </div>
+
+                {editAnggotaForm.status !== "Aktif" && (
+                  <div className="mb-4">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Keterangan / Alasan <span className="text-rose-500">*</span></label>
+                    <textarea
+                      required
+                      rows={2}
+                      value={editAnggotaForm.keteranganStatus}
+                      onChange={(e) => setEditAnggotaForm({ ...editAnggotaForm, keteranganStatus: e.target.value })}
+                      placeholder="Wajib diisi jika status diubah..."
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none resize-none"
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nama Lengkap</label>
+                    <input
+                      type="text"
+                      value={editAnggotaForm.namaLengkap}
+                      onChange={(e) => setEditAnggotaForm({ ...editAnggotaForm, namaLengkap: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Pekerjaan</label>
+                    <input
+                      type="text"
+                      value={editAnggotaForm.pekerjaan}
+                      onChange={(e) => setEditAnggotaForm({ ...editAnggotaForm, pekerjaan: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Alamat</label>
+                    <textarea
+                      rows={2}
+                      value={editAnggotaForm.alamat}
+                      onChange={(e) => setEditAnggotaForm({ ...editAnggotaForm, alamat: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none resize-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">Email</label>
+                      <input
+                        type="email"
+                        value={editAnggotaForm.email}
+                        onChange={(e) => setEditAnggotaForm({ ...editAnggotaForm, email: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">WhatsApp</label>
+                      <input
+                        type="tel"
+                        value={editAnggotaForm.whatsapp}
+                        onChange={(e) => setEditAnggotaForm({ ...editAnggotaForm, whatsapp: e.target.value })}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={() => setShowEditDialog(false)}
+                    className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleSaveEditAnggota}
+                    disabled={editAnggotaSaving}
+                    className="px-5 py-2 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {editAnggotaSaving ? (
+                      <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Menyimpan...</>
+                    ) : (
+                      <><Edit2 className="w-3.5 h-3.5" /> Simpan Perubahan</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Promote Dialog */}
+      <AnimatePresence>
+        {showPromoteDialog && promoteTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowPromoteDialog(false)}
+            className="fixed inset-0 z-[300] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden"
+            >
+              <div className="relative bg-gradient-to-r from-violet-600 to-purple-500 p-5 text-white">
+                <button onClick={() => setShowPromoteDialog(false)} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <UserPlus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold">Jadikan Pengurus</h2>
+                    <p className="text-xs text-violet-100">{promoteTarget.namaLengkap} - {promoteTarget.nia}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Pilih Surat Keputusan (SK) *</label>
+                  <select
+                    value={promoteForm.suratKeputusanId}
+                    onChange={(e) => {
+                      const skId = e.target.value;
+                      const sk = skList.find((s) => s.id.toString() === skId);
+                      setPromoteForm({ ...promoteForm, suratKeputusanId: skId, level: sk?.level || "KABUPATEN" });
+                    }}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                  >
+                    <option value="">Pilih SK Aktif...</option>
+                    {skList.map((sk) => (
+                      <option key={sk.id} value={sk.id}>{sk.nomorSK} - {sk.judul}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Jabatan *</label>
+                  <select
+                    value={promoteForm.jabatanId}
+                    onChange={(e) => setPromoteForm({ ...promoteForm, jabatanId: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                  >
+                    <option value="">Pilih Jabatan...</option>
+                    {jabatanList.map((j) => (
+                      <option key={j.id} value={j.id}>{j.nama} ({j.level})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Level Kepengurusan</label>
+                    <input
+                      type="text"
+                      value={promoteForm.level}
+                      readOnly
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-500 outline-none cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Tanggal Mulai Jabatan *</label>
+                    <input
+                      type="date"
+                      value={promoteForm.tanggalMulai}
+                      onChange={(e) => setPromoteForm({ ...promoteForm, tanggalMulai: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
+                <button onClick={() => setShowPromoteDialog(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+                <button
+                  onClick={async () => {
+                    if (!promoteForm.suratKeputusanId || !promoteForm.jabatanId) {
+                      toast.error("Surat Keputusan dan Jabatan wajib dipilih");
+                      return;
+                    }
+                    setPromoting(true);
+                    try {
+                      const res = await fetch(`/api/pengurus?role=${role}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          anggotaId: promoteTarget.id,
+                          suratKeputusanId: promoteForm.suratKeputusanId,
+                          jabatanId: promoteForm.jabatanId,
+                          level: promoteForm.level,
+                          status: promoteForm.status,
+                          tanggalMulai: promoteForm.tanggalMulai,
+                          provinsiId: promoteTarget.provinsi?.id ? String(promoteTarget.provinsi.id) : undefined,
+                          kabupatenId: promoteTarget.kabupaten?.id ? String(promoteTarget.kabupaten.id) : undefined,
+                        }),
+                      });
+                      const json = await res.json();
+                      if (json.success) {
+                        toast.success(json.message || `Berhasil menjadikan ${promoteTarget.namaLengkap} sebagai pengurus`);
+                        setShowPromoteDialog(false);
+                      } else {
+                        toast.error(json.error || "Gagal menjadikan pengurus");
+                      }
+                    } catch (e: any) {
+                      toast.error("Terjadi kesalahan: " + e.message);
+                    } finally {
+                      setPromoting(false);
+                    }
+                  }}
+                  disabled={promoting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-700 disabled:opacity-50"
+                >
+                  {promoting ? "Memproses..." : "Simpan Pengurus"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add Anggota Dialog */}
       <AnimatePresence>
@@ -396,8 +731,8 @@ export default function AnggotaPage({
                     <input type="email" value={addForm.email} onChange={(e) => setAddForm({ ...addForm, email: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">No. HP</label>
-                    <input type="tel" value={addForm.hp} onChange={(e) => setAddForm({ ...addForm, hp: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">No. WhatsApp</label>
+                    <input type="tel" value={addForm.whatsapp} onChange={(e) => setAddForm({ ...addForm, whatsapp: e.target.value })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none" />
                   </div>
                 </div>
 
@@ -416,7 +751,11 @@ export default function AnggotaPage({
                         <label className="block text-xs font-semibold text-slate-700 mb-1">{doc.label}</label>
                         <input
                           type="file"
-                          accept="image/*,.pdf"
+                          accept={
+                            doc.key === "foto" ? "image/jpeg,image/png,image/jpg" :
+                            doc.key === "ktp" ? "image/jpeg,image/png,image/jpg,.pdf" :
+                            ".pdf"
+                          }
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
@@ -440,16 +779,25 @@ export default function AnggotaPage({
                               type="button"
                               onClick={() => {
                                 const url = (addForm as any)[doc.key];
-                                const w = window.open();
-                                if (w) {
-                                  if (url.startsWith("data:image/")) {
-                                    w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
-                                  } else if (url.startsWith("data:application/pdf")) {
-                                    w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0"><iframe src="${url}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
-                                  } else {
-                                    w.document.write(`<html><head><title>${doc.label}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh"><a href="${url}" download="${doc.label}" style="padding:12px 24px;background:#0ea5e9;color:white;text-decoration:none;border-radius:8px">Download ${doc.label}</a></body></html>`);
+                                const parts = url.split(",");
+                                const header = parts[0];
+                                const base64 = parts[1];
+                                const mimeMatch = header.match(/:(.*?);/);
+                                if (mimeMatch && base64) {
+                                  const mimeType = mimeMatch[1];
+                                  try {
+                                    const binary = atob(base64);
+                                    const array = new Uint8Array(binary.length);
+                                    for (let i = 0; i < binary.length; i++) {
+                                      array[i] = binary.charCodeAt(i);
+                                    }
+                                    const blob = new Blob([array], { type: mimeType });
+                                    const objectUrl = URL.createObjectURL(blob);
+                                    window.open(objectUrl, "_blank");
+                                  } catch (e) {
+                                    console.error("Failed to decode base64", e);
+                                    alert("Gagal membuka dokumen. Format file tidak valid.");
                                   }
-                                  w.document.close();
                                 }
                               }}
                               className="text-[10px] text-blue-600 hover:text-blue-700 underline"
@@ -481,7 +829,7 @@ export default function AnggotaPage({
                     }
                     setSaving(true);
                     try {
-                      const result = await fetchJsonSafe<any>("/api/anggota", {
+                      const result = await fetchJsonSafe<any>(`/api/anggota?role=${role}&wilayah=${wilayah || ""}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(addForm),
@@ -490,7 +838,7 @@ export default function AnggotaPage({
                         toast.success(result.data.message);
                         setShowAddDialog(false);
                         fetchData();
-                        setAddForm({ namaLengkap: "", nik: "", tempatLahir: "", tanggalLahir: "", jenisKelamin: "L", alamat: "", provinsiId: "", kabupatenId: "", email: "", hp: "", pekerjaan: "" });
+                        setAddForm({ namaLengkap: "", nik: "", tempatLahir: "", tanggalLahir: "", jenisKelamin: "L", alamat: "", provinsiId: "", kabupatenId: "", email: "", whatsapp: "", pekerjaan: "" });
                       } else {
                         toast.error(result.error || "Gagal menambahkan anggota");
                       }

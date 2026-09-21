@@ -3,20 +3,18 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, ZoomIn, Upload, ImageOff, ChevronLeft, ChevronRight } from "lucide-react";
-import { GALLERY_ITEMS, GALLERY_CATEGORIES, COMPANY } from "@/lib/data";
-import type { GalleryItem } from "@/lib/data";
 import { useContentStore } from "@/lib/content-store";
 import SafeImage from "@/components/ui/safe-image";
 
 export default function Gallery() {
   const [filter, setFilter] = useState<string>("Semua");
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
-  const storeGallery = useContentStore((s) => s.gallery);
   const company = useContentStore((s) => s.company);
-  const [apiGallery, setApiGallery] = useState<GalleryItem[]>([]);
-  const [useApi, setUseApi] = useState(false);
+  const [apiGallery, setApiGallery] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<string[]>(["Semua"]);
 
-  // Fetch galeri from API for consistency with admin
+  // Fetch galeri from API — no hardcode fallback
   useEffect(() => {
     fetch("/api/galeri", { cache: "no-store" })
       .then((res) => res.json())
@@ -30,13 +28,16 @@ export default function Gallery() {
             location: g.lokasi || "Indonesia",
           }));
           setApiGallery(mapped);
-          setUseApi(true);
+          // Derive categories from actual data
+          const cats = ["Semua", ...Array.from(new Set(mapped.map((g: any) => g.category).filter(Boolean)))] as string[];
+          setCategories(cats);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  const gallery = useApi ? apiGallery : storeGallery;
+  const gallery = apiGallery;
 
   const filtered =
     filter === "Semua"
@@ -126,7 +127,7 @@ export default function Gallery() {
           transition={{ duration: 0.5 }}
           className="flex flex-wrap gap-2 mb-10"
         >
-          {GALLERY_CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <motion.button
               key={cat}
               whileTap={{ scale: 0.95 }}
@@ -220,13 +221,13 @@ export default function Gallery() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mt-12"
+          className="text-center mt-10 sm:mt-12"
         >
           <a
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-500 to-blue-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold px-7 py-4 rounded-full shadow-lg shadow-sky-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
           >
             Lihat Portfolio Lengkap via WhatsApp
           </a>
@@ -241,15 +242,15 @@ export default function Gallery() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeLightbox}
-            className="fixed inset-0 z-[100] bg-950/95 backdrop-blur-md flex items-center justify-center p-4 lg:p-8"
+            className="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 lg:p-8"
           >
             {/* Close button */}
             <button
               onClick={closeLightbox}
-              className="absolute top-4 right-4 lg:top-6 lg:right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
+              className="absolute top-3 right-3 sm:top-6 sm:right-6 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-20"
               aria-label="Close"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
             {/* Prev/Next buttons */}
@@ -257,17 +258,17 @@ export default function Gallery() {
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-4 lg:left-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
+                  className="absolute left-2 sm:left-4 lg:left-8 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center text-white transition-colors z-20 backdrop-blur-sm shadow-lg"
                   aria-label="Previous"
                 >
-                  <ChevronLeft className="w-6 h-6" />
+                  <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-4 lg:right-8 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors z-10"
+                  className="absolute right-2 sm:right-4 lg:right-8 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center text-white transition-colors z-20 backdrop-blur-sm shadow-lg"
                   aria-label="Next"
                 >
-                  <ChevronRight className="w-6 h-6" />
+                  <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </>
             )}
@@ -278,26 +279,26 @@ export default function Gallery() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl"
+              className="relative max-w-4xl w-full bg-slate-900 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl max-h-[85dvh] flex flex-col"
             >
-              <div className="relative">
+              <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-slate-950">
                 <SafeImage
                   src={filtered[lightboxIdx]?.image}
                   alt={filtered[lightboxIdx]?.title || "Gallery image"}
-                  className="w-full max-h-[70vh] object-contain bg-950"
+                  className="w-full max-h-[60dvh] sm:max-h-[70dvh] object-contain"
                   loading="eager"
                 />
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-950/95 via-950/80 to-transparent">
-                  <span className="inline-block bg-gradient-to-r from-500 to-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full mb-2">
+                <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent">
+                  <span className="inline-block bg-gradient-to-r from-sky-500 to-blue-600 text-white text-[11px] sm:text-xs font-semibold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full mb-1 sm:mb-2">
                     {filtered[lightboxIdx].category}
                   </span>
-                  <h3 className="text-2xl font-bold text-white">
+                  <h3 className="text-base sm:text-2xl font-bold text-white line-clamp-2">
                     {filtered[lightboxIdx].title}
                   </h3>
-                  <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center justify-between mt-1 sm:mt-2">
                     <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4 text-300" />
-                      <span className="text-sm text-100">
+                      <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-300 shrink-0" />
+                      <span className="text-xs sm:text-sm text-sky-100">
                         {filtered[lightboxIdx].location}
                       </span>
                     </div>

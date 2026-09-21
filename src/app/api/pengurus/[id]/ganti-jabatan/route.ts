@@ -90,55 +90,49 @@ export async function PATCH(
           tanggalSelesai: new Date(),
         },
       });
-      const otherNames = otherActiveList
-        .map(p => `"${p.jabatan?.nama}" (${p.jabatan?.bidang}) level ${p.level}`)
-        .join(", ");
-      endedInfo = ` Jabatan lama (${otherNames}) otomatis diakhiri.`;
-    }
+    const otherNames = otherActiveList
+      .map(p => `"${p.jabatan?.nama}" level ${p.level}`)
+      .join(", ");
+    endedInfo = ` Jabatan lama (${otherNames}) otomatis diakhiri.`;
+  }
 
-    // Generate nomorSK yang clean
-    const tahun = new Date().getFullYear();
-    const skNumber = currentPengurus.nomorSK && currentPengurus.nomorSK.trim()
-      ? `SK-GANTI/${currentPengurus.nomorSK}/${tahun}`
-      : `SK/${tahun}/${currentPengurus.id}`;
-
-    // Buat record pengurus baru dengan jabatan baru
-    const newPengurus = await db.pengurus.create({
-      data: {
-        anggotaId: currentPengurus.anggotaId,
-        jabatanId: parseInt(jabatanId),
-        level: currentPengurus.level,
-        provinsiId: currentPengurus.provinsiId,
-        kabupatenId: currentPengurus.kabupatenId,
-        status: "Aktif",
-        tanggalMulai: new Date(),
-        nomorSK: skNumber,
+  // Buat record pengurus baru dengan jabatan baru
+  const newPengurus = await db.pengurus.create({
+    data: {
+      anggotaId: currentPengurus.anggotaId,
+      suratKeputusanId: currentPengurus.suratKeputusanId,
+      jabatanId: parseInt(jabatanId),
+      level: currentPengurus.level,
+      provinsiId: currentPengurus.provinsiId,
+      kabupatenId: currentPengurus.kabupatenId,
+      status: "Aktif",
+      tanggalMulai: new Date(),
+    },
+    include: {
+      anggota: {
+        select: { id: true, namaLengkap: true, nia: true, foto: true, email: true,  },
       },
-      include: {
-        anggota: {
-          select: { id: true, namaLengkap: true, nia: true, foto: true, email: true, hp: true },
-        },
-        jabatan: { select: { nama: true, bidang: true, level: true, urutan: true } },
-        provinsi: { select: { nama: true } },
-        kabupaten: { select: { nama: true } },
-      },
-    });
+      jabatan: { select: { nama: true, level: true } },
+      provinsi: { select: { nama: true } },
+      kabupaten: { select: { nama: true } },
+    },
+  });
 
-    await db.activityLog.create({
-      data: {
-        table: "pengurus",
-        recordId: newPengurus.id,
-        aksi: "ganti_jabatan",
-        oleh: "Admin",
-        detail: JSON.stringify({ oldPengurusId: id, newJabatan: newJabatan.nama, bidang: newJabatan.bidang, level: newPengurus.level }),
-      },
-    });
+  await db.activityLog.create({
+    data: {
+      table: "pengurus",
+      recordId: newPengurus.id,
+      aksi: "ganti_jabatan",
+      oleh: "Admin",
+      detail: JSON.stringify({ oldPengurusId: id, newJabatan: newJabatan.nama, level: newPengurus.level }),
+    },
+  });
 
-    return NextResponse.json({
-      success: true,
-      data: newPengurus,
-      message: `Jabatan berhasil diganti ke "${newJabatan.nama}" (bidang: ${newJabatan.bidang}, level: ${newPengurus.level}).${endedInfo}`,
-    });
+  return NextResponse.json({
+    success: true,
+    data: newPengurus,
+    message: `Jabatan berhasil diganti ke "${newJabatan.nama}" (level: ${newPengurus.level}).${endedInfo}`,
+  });
   } catch (error) {
     console.error("PATCH /api/pengurus/[id]/ganti-jabatan error:", error);
     return NextResponse.json(

@@ -8,7 +8,7 @@ import type { Pendaftaran } from "@/lib/admin-data";
 export default function PendaftaranPage({ onVerify }: { onVerify: (id: number) => void }) {
   const [statusFilter, setStatusFilter] = useState("Semua");
   const [search, setSearch] = useState("");
-  const [data, setData] = useState<Pendaftaran[]>([]);
+  const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -36,7 +36,7 @@ export default function PendaftaranPage({ onVerify }: { onVerify: (id: number) =
 
   const filtered = data.filter((p) => {
     const matchStatus = statusFilter === "Semua" || p.status === statusFilter;
-    const matchSearch = p.namaLengkap.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = (p.namaLengkap || p.nama || "").toLowerCase().includes(search.toLowerCase());
     return matchStatus && matchSearch;
   });
 
@@ -127,6 +127,7 @@ export default function PendaftaranPage({ onVerify }: { onVerify: (id: number) =
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-12 text-center">No</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Kabupaten</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Tanggal Daftar</th>
@@ -135,33 +136,34 @@ export default function PendaftaranPage({ onVerify }: { onVerify: (id: number) =
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filtered.map((p) => (
+              {filtered.map((p, idx) => (
                 <tr key={p.id} className="hover:bg-slate-50">
+                  <td className="px-4 py-3 text-sm text-slate-500 text-center">{idx + 1}</td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-semibold text-blue-950">{p.namaLengkap}</div>
+                    <div className="text-sm font-semibold text-blue-950">{p.namaLengkap || p.nama || "-"}</div>
                     <div className="text-xs text-slate-500">{p.email}</div>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">
-                    <div>{p.kabupaten?.nama || p.kabupaten || "-"}</div>
-                    <div className="text-xs text-slate-400">{p.provinsi?.nama || p.provinsi || "-"}</div>
+                    <div>{typeof p.kabupaten === "object" ? p.kabupaten?.nama : (p.kabupaten || p.kabupatenNama || "-")}</div>
+                    <div className="text-xs text-slate-400">{typeof p.provinsi === "object" ? p.provinsi?.nama : (p.provinsi || p.provinsiNama || "-")}</div>
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">
-                    {new Date(p.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
+                    {p.createdAt ? new Date(p.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : (p.tanggalDaftar || "-")}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                      p.status === "DISETUJUI" ? "bg-emerald-100 text-emerald-700" :
-                      p.status === "DITOLAK" ? "bg-rose-100 text-rose-700" :
-                      p.status === "DIVERIFIKASI" ? "bg-blue-100 text-blue-700" :
-                      p.status === "PERBAIKAN" ? "bg-amber-100 text-amber-700" :
-                      p.status === "DIAJUKAN" ? "bg-cyan-100 text-cyan-700" :
+                      String(p.status).toUpperCase() === "DISETUJUI" ? "bg-emerald-100 text-emerald-700" :
+                      String(p.status).toUpperCase() === "DITOLAK" ? "bg-rose-100 text-rose-700" :
+                      String(p.status).toUpperCase() === "DIVERIFIKASI" ? "bg-blue-100 text-blue-700" :
+                      String(p.status).toUpperCase() === "PERBAIKAN" ? "bg-amber-100 text-amber-700" :
+                      String(p.status).toUpperCase() === "DIAJUKAN" ? "bg-cyan-100 text-cyan-700" :
                       "bg-slate-100 text-slate-600"
                     }`}>
-                      {p.status === "DIAJUKAN" ? "Diajukan" :
-                       p.status === "DIVERIFIKASI" ? "Diverifikasi" :
-                       p.status === "DISETUJUI" ? "Disetujui" :
-                       p.status === "DITOLAK" ? "Ditolak" :
-                       p.status === "PERBAIKAN" ? "Perbaikan" : "Draft"}
+                      {String(p.status).toUpperCase() === "DIAJUKAN" ? "Diajukan" :
+                       String(p.status).toUpperCase() === "DIVERIFIKASI" ? "Diverifikasi" :
+                       String(p.status).toUpperCase() === "DISETUJUI" ? "Disetujui" :
+                       String(p.status).toUpperCase() === "DITOLAK" ? "Ditolak" :
+                       String(p.status).toUpperCase() === "PERBAIKAN" ? "Perbaikan" : (p.status || "Draft")}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">

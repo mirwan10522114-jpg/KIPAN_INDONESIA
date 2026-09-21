@@ -46,6 +46,12 @@ export default function AnggotaDetailDialog({
 
   const a = data?.anggota;
   const formatTanggal = (d: string) => d ? new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-";
+  const hitungUmur = (d: string) => {
+    if (!d) return "-";
+    const dob = new Date(d);
+    const diff = Date.now() - dob.getTime();
+    return Math.abs(new Date(diff).getUTCFullYear() - 1970) + " Tahun";
+  };
 
   return (
     <AnimatePresence>
@@ -65,8 +71,7 @@ export default function AnggotaDetailDialog({
               <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
                 <X className="w-4 h-4" />
               </button>
-              <div className="flex items-start gap-4">
-                <SafeImage src={a?.foto} alt={a?.namaLengkap || ""} className="w-20 h-20 rounded-2xl object-cover border-4 border-white/30" loading="eager" />
+              <div className="flex flex-col-reverse md:flex-row items-start gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-mono bg-white/20 px-2 py-0.5 rounded">{a?.nia}</span>
@@ -79,14 +84,13 @@ export default function AnggotaDetailDialog({
                     {a?.kabupaten?.nama}, {a?.provinsi?.nama}
                   </p>
                   <div className="flex flex-wrap gap-4 mt-3 text-sm">
-                    <div className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /><span>Angkatan: {a?.angkatan || "-"}</span></div>
                     <div className="flex items-center gap-1.5"><Mail className="w-4 h-4" /><span>{a?.email}</span></div>
-                    <div className="flex items-center gap-1.5"><Phone className="w-4 h-4" /><span>{a?.hp}</span></div>
+                    <div className="flex items-center gap-1.5"><Phone className="w-4 h-4" /><span>{a?.whatsapp}</span></div>
                   </div>
                 </div>
-                {/* QR Code placeholder */}
-                <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
-                  <QrCode className="w-10 h-10" />
+                {/* Photo in the top right */}
+                <div className="shrink-0 self-end md:self-auto flex items-center justify-end w-full md:w-auto">
+                  <SafeImage src={a?.foto} alt={a?.namaLengkap || ""} className="w-24 h-32 md:w-28 md:h-36 rounded-xl object-cover border-4 border-white/30 shadow-lg" loading="eager" />
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 mt-4">
@@ -101,7 +105,7 @@ export default function AnggotaDetailDialog({
                     // Generate a simple text-based PDF download
                     const a = data?.anggota;
                     if (!a) return;
-                    const text = `KARTU PENGURUS KIPAN INDONESIA\n\nNIP: ${a.nia}\nNama: ${a.namaLengkap}\nWilayah: ${a.kabupaten?.nama || "-"}, ${a.provinsi?.nama || "-"}\nStatus: ${a.status}\nAngkatan: ${a.angkatan || "-"}\nTanggal Daftar: ${a.tanggalDaftar ? new Date(a.tanggalDaftar).toLocaleDateString("id-ID") : "-"}\n\nKIPAN Indonesia`;
+                    const text = `KARTU PENGURUS KIPAN INDONESIA\n\nNIP: ${a.nia}\nNama: ${a.namaLengkap}\nWilayah: ${a.kabupaten?.nama || "-"}, ${a.provinsi?.nama || "-"}\nStatus: ${a.status}\nTanggal Daftar: ${a.tanggalDaftar ? new Date(a.tanggalDaftar).toLocaleDateString("id-ID") : "-"}\n\nKIPAN Indonesia`;
                     const blob = new Blob([text], { type: "text/plain" });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement("a");
@@ -161,6 +165,7 @@ export default function AnggotaDetailDialog({
                           <InfoRow label="Nama Lengkap" value={a?.namaLengkap} />
                           <InfoRow label="Tempat Lahir" value={a?.tempatLahir} />
                           <InfoRow label="Tanggal Lahir" value={a?.tanggalLahir ? formatTanggal(a.tanggalLahir) : "-"} />
+                          <InfoRow label="Umur" value={a?.tanggalLahir ? hitungUmur(a.tanggalLahir) : "-"} />
                           <InfoRow label="Jenis Kelamin" value={a?.jenisKelamin === "L" ? "Laki-laki" : "Perempuan"} />
                           <InfoRow label="Agama" value={a?.agama || "-"} />
                           <InfoRow label="Pendidikan" value={a?.pendidikan || "-"} />
@@ -180,9 +185,8 @@ export default function AnggotaDetailDialog({
                       <div>
                         <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3">Kontak</h3>
                         <div className="grid grid-cols-2 gap-4 text-sm">
-                          <InfoRow label="Email" value={a?.email} />
-                          <InfoRow label="No. HP" value={a?.hp} />
-                          <InfoRow label="WhatsApp" value={a?.whatsapp || "-"} />
+                          <InfoRow label="Email" value={a?.email || "-"} />
+                          <InfoRow label="No. WhatsApp" value={a?.whatsapp || "-"} />
                         </div>
                       </div>
                     </div>
@@ -226,10 +230,6 @@ export default function AnggotaDetailDialog({
                         {/* Footer */}
                         <div className="relative flex items-center justify-between mt-4 text-[10px]">
                           <div>
-                            <div className="opacity-60">Angkatan</div>
-                            <div className="font-semibold">{a?.angkatan || "-"}</div>
-                          </div>
-                          <div>
                             <div className="opacity-60">Status</div>
                             <div className="font-semibold">{a?.status}</div>
                           </div>
@@ -270,14 +270,13 @@ export default function AnggotaDetailDialog({
                                 </div>
                                 <div class="info">
                                   ${a.foto ? `<img src="${a.foto}" class="photo" />` : `<div class="photo" style="background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center">${(a.namaLengkap||'?').charAt(0)}</div>`}
-                                  <div>
-                                    <div style="font-weight:bold;font-size:15px">${a.namaLengkap}</div>
+                                  <div style="flex:1;min-width:0">
+                                  <div style="font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.namaLengkap}</div>
                                     <div style="font-size:10px;opacity:0.7;font-family:monospace">${a.nia}</div>
                                     <div style="font-size:10px;opacity:0.7;margin-top:2px">${a.kabupaten?.nama || '-'}, ${a.provinsi?.nama || '-'}</div>
                                   </div>
                                 </div>
                                 <div class="footer">
-                                  <div><div>Angkatan</div><div>${a.angkatan || '-'}</div></div>
                                   <div><div>Status</div><div>${a.status}</div></div>
                                   <div><div>Berlaku</div><div>Seumur Hidup</div></div>
                                 </div>
@@ -294,7 +293,7 @@ export default function AnggotaDetailDialog({
                         <button
                           onClick={() => {
                             if (!a) return;
-                            const text = `KARTU PENGURUS KIPAN INDONESIA\n\nNIP: ${a.nia}\nNama: ${a.namaLengkap}\nWilayah: ${a.kabupaten?.nama || "-"}, ${a.provinsi?.nama || "-"}\nStatus: ${a.status}\nAngkatan: ${a.angkatan || "-"}\nTanggal Daftar: ${a.tanggalDaftar ? new Date(a.tanggalDaftar).toLocaleDateString("id-ID") : "-"}\nTanggal Diangkat: ${a.tanggalAngkat ? new Date(a.tanggalAngkat).toLocaleDateString("id-ID") : "-"}\n\nKIPAN Indonesia`;
+                            const text = `KARTU PENGURUS KIPAN INDONESIA\n\nNIP: ${a.nia}\nNama: ${a.namaLengkap}\nWilayah: ${a.kabupaten?.nama || "-"}, ${a.provinsi?.nama || "-"}\nStatus: ${a.status}\nTanggal Daftar: ${a.tanggalDaftar ? new Date(a.tanggalDaftar).toLocaleDateString("id-ID") : "-"}\nTanggal Diangkat: ${a.tanggalAngkat ? new Date(a.tanggalAngkat).toLocaleDateString("id-ID") : "-"}\n\nKIPAN Indonesia`;
                             const blob = new Blob([text], { type: "text/plain" });
                             const url = URL.createObjectURL(blob);
                             const link = document.createElement("a");
@@ -312,8 +311,13 @@ export default function AnggotaDetailDialog({
                       {/* Data Keanggotaan */}
                       <div className="grid grid-cols-2 gap-4 text-sm pt-2">
                         <InfoRow label="NIP" value={a?.nia} />
-                        <InfoRow label="Status" value={a?.status} />
-                        <InfoRow label="Angkatan" value={a?.angkatan || "-"} />
+                        <InfoRow label="Status Keanggotaan" value={a?.status} />
+                        {a?.status !== "Aktif" && a?.keteranganStatus && (
+                          <div className="col-span-2 bg-slate-50 p-3 rounded-lg border border-slate-100 mt-1">
+                            <div className="text-xs text-slate-500 mb-1">Keterangan / Alasan Status</div>
+                            <div className="text-sm font-medium text-slate-800">{a.keteranganStatus}</div>
+                          </div>
+                        )}
                         <InfoRow label="Tanggal Daftar" value={a?.tanggalDaftar ? formatTanggal(a.tanggalDaftar) : "-"} />
                         <InfoRow label="Tanggal Diangkat" value={a?.tanggalAngkat ? formatTanggal(a.tanggalAngkat) : "-"} />
                         <InfoRow label="Provinsi" value={a?.provinsi?.nama || "-"} />
@@ -329,6 +333,7 @@ export default function AnggotaDetailDialog({
                         { nama: "KTP", uploaded: !!a?.ktp, icon: FileText, url: a?.ktp },
                         { nama: "Pas Foto", uploaded: !!a?.foto, icon: FileText, url: a?.foto },
                         { nama: "CV/Resume", uploaded: !!a?.cv, icon: FileText, url: a?.cv },
+                        { nama: "SK (Pendaftaran)", uploaded: !!a?.sk, icon: FileText, url: a?.sk },
                         { nama: "Surat Pernyataan", uploaded: !!a?.suratPernyataan, icon: FileText, url: a?.suratPernyataan },
                         { nama: "Surat Sehat", uploaded: !!a?.suratSehat, icon: FileText, url: a?.suratSehat },
                       ].map((d, idx) => {
@@ -350,17 +355,26 @@ export default function AnggotaDetailDialog({
                                   onClick={() => {
                                     // Untuk data URL (base64) atau URL normal, buka di tab baru
                                     if (d.url!.startsWith("data:")) {
-                                      // Base64: buka di jendela baru dengan preview
-                                      const w = window.open();
-                                      if (w) {
-                                        if (d.url!.startsWith("data:image/")) {
-                                          w.document.write(`<html><head><title>${d.nama}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${d.url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
-                                        } else if (d.url!.startsWith("data:application/pdf")) {
-                                          w.document.write(`<html><head><title>${d.nama}</title></head><body style="margin:0"><iframe src="${d.url}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
-                                        } else {
-                                          w.document.write(`<html><head><title>${d.nama}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh"><a href="${d.url}" download="${d.nama}" style="padding:12px 24px;background:#0ea5e9;color:white;text-decoration:none;border-radius:8px">Download ${d.nama}</a></body></html>`);
+                                      // Base64: convert to Blob to avoid browser restrictions on data URLs
+                                      const parts = d.url!.split(",");
+                                      const header = parts[0];
+                                      const base64 = parts[1];
+                                      const mimeMatch = header.match(/:(.*?);/);
+                                      if (mimeMatch && base64) {
+                                        const mimeType = mimeMatch[1];
+                                        try {
+                                          const binary = atob(base64);
+                                          const array = new Uint8Array(binary.length);
+                                          for (let i = 0; i < binary.length; i++) {
+                                            array[i] = binary.charCodeAt(i);
+                                          }
+                                          const blob = new Blob([array], { type: mimeType });
+                                          const objectUrl = URL.createObjectURL(blob);
+                                          window.open(objectUrl, "_blank");
+                                        } catch (e) {
+                                          console.error("Failed to decode base64", e);
+                                          alert("Gagal membuka dokumen. Format file tidak valid.");
                                         }
-                                        w.document.close();
                                       }
                                     } else {
                                       window.open(d.url, "_blank");

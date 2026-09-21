@@ -3,9 +3,9 @@ import { db } from "@/lib/db";
 import { generateNIP } from "@/lib/nip";
 
 // PATCH /api/pendaftaran/[id]/verifikasi — Update status pendaftaran
-// Body: { status: "DISETUJUI" | "DITOLAK" | "PERBAIKAN" | "DIVERIFIKASI", catatan?: string, jabatanId?: number }
-// Jika DISETUJUI: otomatis buat Anggota (data person) + Pengurus dengan jabatan dari admin pilih
-// Jika jabatanId tidak diberikan, default = jabatan "Anggota" pertama yang ditemukan di level Kabupaten
+// Body: { status: "DISETUJUI" | "DITOLAK" | "PERBAIKAN" | "DIVERIFIKASI", catatan?: string }
+// Jika DISETUJUI: otomatis buat Anggota (data person) + terbitkan NIA
+// TIDAK membuat Pengurus — promosi ke Pengurus dilakukan terpisah oleh Admin via menu Manajemen Pengurus
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -14,7 +14,7 @@ export async function PATCH(
     const { id: idStr } = await context.params;
     const id = parseInt(idStr);
     const body = await req.json();
-    const { status, catatan, jabatanId } = body;
+    const { status, catatan } = body;
 
     const validStatus = ["DIAJUKAN", "DIVERIFIKASI", "DISETUJUI", "DITOLAK", "PERBAIKAN"];
     if (!validStatus.includes(status)) {
@@ -22,6 +22,18 @@ export async function PATCH(
         { success: false, error: "Status tidak valid" },
         { status: 400 }
       );
+    }
+
+    const currentPendaftaran = await db.pendaftaran.findUnique({ where: { id }, select: { kabupatenId: true } });
+    if (!currentPendaftaran) {
+      return NextResponse.json({ success: false, error: "Data pendaftaran tidak ditemukan" }, { status: 404 });
+    }
+
+    const role = req.nextUrl.searchParams.get("role") || "SUPER_ADMIN";
+    const wilayah = req.nextUrl.searchParams.get("wilayah");
+
+    if (role === "ADMIN_KABUPATEN" && wilayah && parseInt(wilayah) !== currentPendaftaran.kabupatenId) {
+      return NextResponse.json({ success: false, error: "Akses ditolak: Anda hanya dapat memverifikasi pendaftaran dari wilayah kabupaten Anda." }, { status: 403 });
     }
 
     const pendaftaran = await db.pendaftaran.update({
@@ -34,7 +46,7 @@ export async function PATCH(
 
     // Tambah riwayat
     const aksiText =
-      status === "DISETUJUI" ? "Disetujui, menjadi Pengurus" :
+      status === "DISETUJUI" ? "Disetujui, menjadi Anggota KIPAN" :
       status === "DITOLAK" ? "Pendaftaran ditolak" :
       status === "PERBAIKAN" ? "Diminta perbaikan dokumen" :
       status === "DIVERIFIKASI" ? "Verifikasi berkas dimulai" :
@@ -49,38 +61,12 @@ export async function PATCH(
       },
     });
 
-    // Jika disetujui, buat record Anggota (data person) + Pengurus (jabatan)
+    // Jika disetujui, buat record Anggota (data person) + NIA
+    // TIDAK membuat Pengurus — itu dilakukan terpisah
     if (status === "DISETUJUI") {
-      // Tentukan jabatanId SEBELUM transaction (default ke "Anggota" di "Divisi Organisasi dan Keanggotaan")
-      let finalJabatanId = jabatanId;
-      if (!finalJabatanId) {
-        const defaultJabatan = await db.jabatan.findFirst({
-          where: {
-            nama: "Anggota",
-            bidang: "Divisi Organisasi dan Keanggotaan",
-            level: "Kabupaten",
-          },
-        });
-        if (!defaultJabatan) {
-          const fallback = await db.jabatan.findFirst({
-            where: { nama: "Anggota", level: "Kabupaten" },
-          });
-          finalJabatanId = fallback?.id;
-        } else {
-          finalJabatanId = defaultJabatan.id;
-        }
-      }
-
-      if (!finalJabatanId) {
-        return NextResponse.json(
-          { success: false, error: "Jabatan 'Anggota' belum tersedia. Tambahkan dulu di menu Bidang & Jabatan." },
-          { status: 400 }
-        );
-      }
-
-      // Transaction: create anggota → generate NIP → update NIP → create pengurus
-      const { nia, newAnggotaId } = await db.$transaction(async (tx) => {
-        // 1. Create anggota dengan NIP placeholder
+      // Transaction: create anggota → generate NIP → update NIP
+      const { nia } = await db.$transaction(async (tx) => {
+        // 1. Create anggota dengan NIA placeholder
         const newAnggota = await tx.anggota.create({
           data: {
             nia: "TEMP-" + Date.now(),
@@ -99,21 +85,20 @@ export async function PATCH(
             desa: pendaftaran.desa,
             kodePos: pendaftaran.kodePos,
             email: pendaftaran.email,
-            hp: pendaftaran.hp,
+            
             whatsapp: pendaftaran.whatsapp,
             foto: pendaftaran.foto,
             ktp: pendaftaran.ktp,
             cv: pendaftaran.cv,
             suratPernyataan: pendaftaran.suratPernyataan,
             suratSehat: pendaftaran.suratSehat,
-            status: "Aktif",
-            angkatan: "XII",
+            status: "AKTIF",
             tanggalAngkat: new Date(),
             tanggalDaftar: pendaftaran.createdAt,
           },
         });
 
-        // 2. Generate NIP dengan global sequence
+        // 2. Generate NIA dengan global sequence
         const tahun = new Date().getFullYear();
         const nia = await generateNIP(newAnggota.id, {
           provinsiId: pendaftaran.provinsiId,
@@ -121,32 +106,11 @@ export async function PATCH(
           tahun,
         }, tx);
 
-        // 3. Update anggota dengan NIP yang benar
+        // 3. Update anggota dengan NIA yang benar
         await tx.anggota.update({
           where: { id: newAnggota.id },
           data: { nia },
         });
-
-        // 4. Cek apakah anggota sudah punya jabatan aktif
-        const existingPengurus = await tx.pengurus.findFirst({
-          where: { anggotaId: newAnggota.id, status: "Aktif" },
-        });
-
-        if (!existingPengurus) {
-          // 5. Create record Pengurus dengan jabatan pilihan
-          await tx.pengurus.create({
-            data: {
-              anggotaId: newAnggota.id,
-              jabatanId: parseInt(finalJabatanId),
-              level: "KABUPATEN",
-              provinsiId: pendaftaran.provinsiId,
-              kabupatenId: pendaftaran.kabupatenId,
-              status: "Aktif",
-              tanggalMulai: new Date(),
-              nomorSK: `SK-AUTO/${nia}/${tahun}`,
-            },
-          });
-        }
 
         return { nia, newAnggotaId: newAnggota.id };
       });
@@ -154,22 +118,19 @@ export async function PATCH(
       await db.pendaftaranRiwayat.create({
         data: {
           pendaftaranId: id,
-          aksi: `Menjadi Pengurus dengan NIP: ${nia}`,
+          aksi: `Menjadi Anggota KIPAN dengan NIA: ${nia}`,
           oleh: "Sistem",
         },
       });
 
-      // HAPUS data pendaftar setelah berhasil dijadikan pengurus
-      // (riwayat sudah disimpan, anggota & pengurus sudah dibuat)
-      // Ini memastikan data calon pengurus tidak mengotori daftar verifikasi
-      // Tracking pendaftaran via nomorPendaftaran akan return 404 dengan pesan "sudah disetujui"
+      // Hapus data pendaftar setelah berhasil dijadikan anggota
       await db.pendaftaranRiwayat.deleteMany({
         where: { pendaftaranId: id },
       });
       await db.pendaftaran.delete({
         where: { id },
       });
-      console.log(`[verifikasi] Pendaftaran id=${id} dihapus setelah disetujui (NIP: ${nia})`);
+      console.log(`[verifikasi] Pendaftaran id=${id} dihapus setelah disetujui (NIA: ${nia})`);
     }
 
     const aksiLog = status === "DISETUJUI" ? "approve" : status === "DITOLAK" ? "reject" : "update";
@@ -177,11 +138,23 @@ export async function PATCH(
       data: { table: "pendaftaran", recordId: id, aksi: aksiLog, oleh: "Admin", detail: JSON.stringify({ status, catatan: catatan || null }) },
     });
 
+    // Notify Admins
+    import("@/lib/notification-service").then(({ notifyAdmins }) => {
+      notifyAdmins({
+        title: "Pembaruan Status Verifikasi",
+        message: `Pendaftaran ${pendaftaran.namaLengkap} ${status === "DISETUJUI" ? "disetujui menjadi Anggota" : `diperbarui menjadi ${status}`}.`,
+        type: "VERIFIKASI",
+        link: "#admin?page=verifikasi",
+        provinsiId: pendaftaran.provinsiId,
+        kabupatenId: pendaftaran.kabupatenId,
+      });
+    }).catch(e => console.error("Failed to load notification-service", e));
+
     return NextResponse.json({
       success: true,
       data: pendaftaran,
       message: status === "DISETUJUI"
-        ? "Pendaftaran disetujui. Otomatis dibuatkan record Pengurus dengan jabatan 'Anggota Divisi'. Data pendaftar telah dihapus dari daftar verifikasi (karena sudah menjadi pengurus)."
+        ? "Pendaftaran disetujui. Pendaftar resmi menjadi Anggota KIPAN. Untuk menjadikan Pengurus, gunakan menu Manajemen Pengurus → Tambah ke SK."
         : `Status pendaftaran diperbarui menjadi ${status}`,
     });
   } catch (error) {

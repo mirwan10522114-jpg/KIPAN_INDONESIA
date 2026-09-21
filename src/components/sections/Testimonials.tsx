@@ -24,21 +24,22 @@ const FILTERS = ["Semua", "Nasional", "Provinsi", "Kabupaten"] as const;
 
 export default function Testimonials() {
   const storePengurus = useContentStore((s) => s.pengurus);
-  const stats = useContentStore((s) => s.testimonialStats);
+  const storeStats = useContentStore((s) => s.testimonialStats);
   const [filter, setFilter] = useState<string>("Semua");
   const [apiPengurus, setApiPengurus] = useState<any[]>([]);
   const [useApi, setUseApi] = useState(false);
+  const [apiStats, setApiStats] = useState<any[] | null>(null);
 
-  // Fetch pengurus from API for consistency with admin
+  // Fetch pengurus & real stats from API for consistency with admin
   useEffect(() => {
-    fetch("/api/pengurus", { cache: "no-store" })
+    fetch("/api/pengurus?limit=50", { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
-        if (json.success && json.data.length > 0) {
-          const mapped = json.data.map((p: any) => ({
+        if (json.success) {
+          const mapped = (json.data || []).map((p: any) => ({
             id: p.id,
             name: p.anggota?.namaLengkap || "-",
-            role: p.jabatan?.nama || "-",
+            role: "Pengurus",
             level: (p.level || "").toLowerCase() === "nasional" ? "Nasional" : (p.level || "").toLowerCase() === "provinsi" ? "Provinsi" : "Kabupaten",
             wilayah: (p.level || "").toLowerCase() === "nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || p.anggota?.kabupaten?.nama || p.anggota?.provinsi?.nama || ""),
             photo: p.anggota?.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
@@ -49,9 +50,33 @@ export default function Testimonials() {
         }
       })
       .catch(() => {});
+
+    // Sinkronisasi 4 kartu statistik dengan data dashboard admin
+    fetch("/api/dashboard", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data?.stats) {
+          const s = json.data.stats;
+          const totalP = s.totalPengurus || s.totalAnggota || 0;
+          const aktifP = s.anggotaAktif || totalP;
+          const activePercent = totalP > 0 ? `${Math.round((aktifP / totalP) * 100)}%` : "—";
+          const nasionalValue = s.pengurusNasional > 0
+            ? `${s.pengurusNasional}`
+            : (totalP > 0 ? `${totalP}` : "—");
+          const provValue = s.totalProvinsi > 0 ? String(s.totalProvinsi) : "—";
+
+          setApiStats([
+            { value: activePercent, label: "Pengurus Aktif", icon: "Users" },
+            { value: nasionalValue, label: "Pengurus Nasional", icon: "Award" },
+            { value: provValue, label: "Provinsi Tersebar", icon: "MapPin" },
+          ]);
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  const pengurus = useApi ? apiPengurus : storePengurus;
+  const pengurus = useApi ? apiPengurus : [];
+  const stats = apiStats || storeStats;
 
   const filtered =
     filter === "Semua"
@@ -95,7 +120,7 @@ export default function Testimonials() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-14 max-w-5xl mx-auto"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-14 max-w-4xl mx-auto"
         >
           {stats.map((stat, idx) => {
             const Icon = STATS_ICON_MAP[stat.icon] || Star;
@@ -202,9 +227,16 @@ export default function Testimonials() {
 
         {/* Empty state */}
         {filtered.length === 0 && (
-          <div className="text-center py-20">
-            <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500">Belum ada pengurus pada kategori ini.</p>
+          <div className="text-center py-16 px-6 bg-white/70 backdrop-blur-sm rounded-3xl border-2 border-dashed border-sky-200 max-w-lg mx-auto shadow-sm my-4">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-sky-100 flex items-center justify-center mb-3 text-blue-600">
+              <Users className="w-7 h-7" />
+            </div>
+            <h3 className="text-lg font-bold text-blue-950 mb-1">
+              Belum Ada Data Pengurus
+            </h3>
+            <p className="text-sm text-slate-500 leading-relaxed max-w-sm mx-auto">
+              Data pengurus resmi KIPAN akan otomatis ditampilkan di sini setelah ditambahkan dan diverifikasi melalui database atau panel admin.
+            </p>
           </div>
         )}
       </div>

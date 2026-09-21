@@ -37,7 +37,7 @@ export interface Anggota {
   kecamatan: string;
   alamat: string;
   email: string;
-  hp: string;
+
   whatsapp: string;
   pendidikan: string;
   pekerjaan: string;
@@ -63,7 +63,7 @@ export interface Pendaftaran {
   kabupaten: string;
   kecamatan: string;
   email: string;
-  hp: string;
+
   whatsapp: string;
   motivasi: string;
   status: "Draft" | "Diajukan" | "Diverifikasi" | "Disetujui" | "Ditolak" | "Perbaikan";
@@ -83,7 +83,7 @@ export interface Pengurus {
   provinsiNama?: string;
   kabupatenNama?: string;
   email: string;
-  hp: string;
+
   status: "Aktif" | "Nonaktif" | "Dibekukan";
   tanggalMulai: string;
   tanggalSelesai?: string;
@@ -156,7 +156,7 @@ export const ANGGOTA_LIST: Anggota[] = [
     nama: "Ahmad Fauzi", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     jenisKelamin: "L", tempatLahir: "Bandung", tanggalLahir: "1995-04-15",
     provinsi: "Jawa Barat", kabupaten: "Bandung Barat", kecamatan: "Ngamprah", alamat: "Jl. Karya Bakti No. 24",
-    email: "ahmad.fauzi@email.com", hp: "081234567890", whatsapp: "081234567890",
+    email: "ahmad.fauzi@email.com", whatsapp: "081234567890",
     pendidikan: "S1", pekerjaan: "Wiraswasta",
     status: "Aktif", tanggalDaftar: "2024-01-15", tanggalAngkat: "2024-02-20", angkatan: "XII",
   },
@@ -165,7 +165,7 @@ export const ANGGOTA_LIST: Anggota[] = [
     nama: "Siti Nurhaliza", foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
     jenisKelamin: "P", tempatLahir: "Jakarta", tanggalLahir: "1998-08-22",
     provinsi: "DKI Jakarta", kabupaten: "Jakarta Selatan", kecamatan: "Kebayoran", alamat: "Jl. Mawar No. 5",
-    email: "siti.nurhaliza@email.com", hp: "082134567891", whatsapp: "082134567891",
+    email: "siti.nurhaliza@email.com", whatsapp: "082134567891",
     pendidikan: "S1", pekerjaan: "PNS",
     status: "Aktif", tanggalDaftar: "2024-02-10", tanggalAngkat: "2024-03-15", angkatan: "XII",
   },
@@ -174,7 +174,7 @@ export const ANGGOTA_LIST: Anggota[] = [
     nama: "Budi Santoso", foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
     jenisKelamin: "L", tempatLahir: "Cimahi", tanggalLahir: "1993-12-03",
     provinsi: "Jawa Barat", kabupaten: "Bandung", kecamatan: "Coblong", alamat: "Jl. Asia Afrika No. 88",
-    email: "budi.santoso@email.com", hp: "081345678902", whatsapp: "081345678902",
+    email: "budi.santoso@email.com", whatsapp: "081345678902",
     pendidikan: "D3", pekerjaan: "Karyawan Swasta",
     status: "Aktif", tanggalDaftar: "2024-01-20", tanggalAngkat: "2024-02-25", angkatan: "XII",
   },
@@ -183,7 +183,7 @@ export const ANGGOTA_LIST: Anggota[] = [
     nama: "Dewi Lestari", foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
     jenisKelamin: "P", tempatLahir: "Surabaya", tanggalLahir: "1996-06-18",
     provinsi: "Jawa Timur", kabupaten: "Surabaya", kecamatan: "Gubeng", alamat: "Jl. Pemuda No. 12",
-    email: "dewi.lestari@email.com", hp: "081456789013", whatsapp: "081456789013",
+    email: "dewi.lestari@email.com", whatsapp: "081456789013",
     pendidikan: "S2", pekerjaan: "Dosen",
     status: "Aktif", tanggalDaftar: "2023-11-05", tanggalAngkat: "2023-12-10", angkatan: "XI",
   },
@@ -192,7 +192,7 @@ export const ANGGOTA_LIST: Anggota[] = [
     nama: "Rizal Mahendra", foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80",
     jenisKelamin: "L", tempatLahir: "Serang", tanggalLahir: "1994-03-25",
     provinsi: "Banten", kabupaten: "Serang", kecamatan: "Serang", alamat: "Jl. Veteran No. 7",
-    email: "rizal.mahendra@email.com", hp: "081567890124", whatsapp: "081567890124",
+    email: "rizal.mahendra@email.com", whatsapp: "081567890124",
     pendidikan: "S1", pekerjaan: "Wiraswasta",
     status: "Nonaktif", tanggalDaftar: "2024-03-01", tanggalAngkat: "2024-04-05", angkatan: "XII",
   },
@@ -201,7 +201,7 @@ export const ANGGOTA_LIST: Anggota[] = [
     nama: "Maya Sari", foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80",
     jenisKelamin: "P", tempatLahir: "Semarang", tanggalLahir: "1997-09-12",
     provinsi: "Jawa Tengah", kabupaten: "Semarang", kecamatan: "Gajahmungkur", alamat: "Jl. Pahlawan No. 45",
-    email: "maya.sari@email.com", hp: "081678901235", whatsapp: "081678901235",
+    email: "maya.sari@email.com", whatsapp: "081678901235",
     pendidikan: "S1", pekerjaan: "Guru",
     status: "Aktif", tanggalDaftar: "2024-02-15", tanggalAngkat: "2024-03-20", angkatan: "XII",
   },
@@ -213,7 +213,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     nik: "3273251506950001", tempatLahir: "Bandung", tanggalLahir: "1995-06-15", jenisKelamin: "L",
     agama: "Islam", pendidikan: "S1", pekerjaan: "Karyawan Swasta",
     alamat: "Jl. Cibadak No. 10", provinsi: "Jawa Barat", kabupaten: "Bandung", kecamatan: "Coblong",
-    email: "indra.kusuma@email.com", hp: "081789012346", whatsapp: "081789012346",
+    email: "indra.kusuma@email.com", whatsapp: "081789012346",
     motivasi: "Saya ingin berkontribusi aktif dalam pencegahan narkoba di komunitas saya.",
     status: "Diajukan", tanggalDaftar: "2025-01-10",
     dokumen: [
@@ -233,7 +233,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     nik: "3174072208980002", tempatLahir: "Jakarta", tanggalLahir: "1998-08-22", jenisKelamin: "P",
     agama: "Islam", pendidikan: "S1", pekerjaan: "Mahasiswa",
     alamat: "Jl. Senayan No. 5", provinsi: "DKI Jakarta", kabupaten: "Jakarta Selatan", kecamatan: "Kebayoran",
-    email: "putri.maharani@email.com", hp: "081890123457", whatsapp: "081890123457",
+    email: "putri.maharani@email.com", whatsapp: "081890123457",
     motivasi: "Sebagai mahasiswa, saya ingin menjadi agent of change di kampus.",
     status: "Diverifikasi", tanggalDaftar: "2025-01-08",
     dokumen: [
@@ -254,7 +254,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     nik: "3578030503940003", tempatLahir: "Surabaya", tanggalLahir: "1994-03-05", jenisKelamin: "L",
     agama: "Kristen", pendidikan: "D3", pekerjaan: "Wiraswasta",
     alamat: "Jl. Pemuda No. 12", provinsi: "Jawa Timur", kabupaten: "Surabaya", kecamatan: "Gubeng",
-    email: "doni.pratama@email.com", hp: "081901234568", whatsapp: "081901234568",
+    email: "doni.pratama@email.com", whatsapp: "081901234568",
     motivasi: "Ingin membantu pencegahan narkoba di lingkungan tempat tinggal.",
     status: "Perbaikan", tanggalDaftar: "2025-01-05",
     dokumen: [
@@ -275,7 +275,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     nik: "5171024512970004", tempatLahir: "Denpasar", tanggalLahir: "1997-12-05", jenisKelamin: "P",
     agama: "Hindu", pendidikan: "S1", pekerjaan: "Pegawai Swasta",
     alamat: "Jl. Diponegoro No. 8", provinsi: "Bali", kabupaten: "Denpasar", kecamatan: "Denpasar Selatan",
-    email: "ratna.sari@email.com", hp: "08101234569", whatsapp: "08101234569",
+    email: "ratna.sari@email.com", whatsapp: "08101234569",
     motivasi: "Bergabung dengan komunitas yang peduli masa depan generasi muda Bali.",
     status: "Disetujui", tanggalDaftar: "2024-12-20",
     dokumen: [
@@ -297,7 +297,7 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
     nik: "3273014403890005", tempatLahir: "Cimahi", tanggalLahir: "1989-03-04", jenisKelamin: "L",
     agama: "Islam", pendidikan: "SMA", pekerjaan: "Buruh",
     alamat: "Jl. Baros No. 22", provinsi: "Jawa Barat", kabupaten: "Bandung Barat", kecamatan: "Ngamprah",
-    email: "eko.wijaya@email.com", hp: "08112345670", whatsapp: "08112345670",
+    email: "eko.wijaya@email.com", whatsapp: "08112345670",
     motivasi: "Ingin berkontribusi untuk lingkungan yang lebih sehat.",
     status: "Ditolak", tanggalDaftar: "2024-12-15",
     dokumen: [
@@ -317,16 +317,16 @@ export const PENDAFTARAN_LIST: Pendaftaran[] = [
 ];
 
 export const PENGURUS_LIST: Pengurus[] = [
-  { id: 1, nama: "Drs. H. Sutrisno, M.Si", foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua Umum Pusat", level: "Nasional", wilayah: "Indonesia", email: "ketum@kipan.id", hp: "081234500001", status: "Aktif", tanggalMulai: "2020-01-15", tanggalSelesai: "2027-01-15", nomorSK: "SK-001/KIPAN/PUSAT/2020", fileSK: "#", tempatLahir: "Jakarta", tanggalLahir: "1965-03-10", alamat: "Jl. Sudirman No. 1, Jakarta" },
-  { id: 2, nama: "Dr. Siti Aminah, M.Kes", foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80", jabatan: "Sekretaris Jenderal", level: "Nasional", wilayah: "Indonesia", email: "sekjen@kipan.id", hp: "081234500002", status: "Aktif", tanggalMulai: "2020-01-15", tanggalSelesai: "2027-01-15", nomorSK: "SK-002/KIPAN/PUSAT/2020", fileSK: "#", tempatLahir: "Surabaya", tanggalLahir: "1970-06-20", alamat: "Jl. Gatot Subroto No. 5, Jakarta" },
-  { id: 3, nama: "Ir. Bambang Wijaya", foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80", jabatan: "Bendahara Umum", level: "Nasional", wilayah: "Indonesia", email: "bendahara@kipan.id", hp: "081234500003", status: "Aktif", tanggalMulai: "2020-01-15", tanggalSelesai: "2026-12-31", nomorSK: "SK-003/KIPAN/PUSAT/2020", fileSK: "#", tempatLahir: "Bandung", tanggalLahir: "1968-09-15", alamat: "Jl. Asia Afrika No. 20, Bandung" },
-  { id: 4, nama: "Hendra Gunawan, S.Sos", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Provinsi Jawa Barat", level: "Provinsi", wilayah: "Jawa Barat", provinsiNama: "Jawa Barat", email: "jabar@kipan.id", hp: "081234500004", status: "Aktif", tanggalMulai: "2020-03-10", tanggalSelesai: "2027-03-10", nomorSK: "SK-004/KIPAN/JBR/2020", fileSK: "#", tempatLahir: "Bandung", tanggalLahir: "1980-04-12", alamat: "Jl. Diponegoro No. 15, Bandung" },
-  { id: 5, nama: "Rina Marlina, S.Pd", foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Provinsi DKI Jakarta", level: "Provinsi", wilayah: "DKI Jakarta", provinsiNama: "DKI Jakarta", email: "jakarta@kipan.id", hp: "081234500005", status: "Aktif", tanggalMulai: "2020-03-15", tanggalSelesai: "2026-08-15", nomorSK: "SK-005/KIPAN/DKI/2020", fileSK: "#", tempatLahir: "Jakarta", tanggalLahir: "1982-07-25", alamat: "Jl. Thamrin No. 8, Jakarta" },
-  { id: 6, nama: "Agus Setiawan, S.E", foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Provinsi Banten", level: "Provinsi", wilayah: "Banten", provinsiNama: "Banten", email: "banten@kipan.id", hp: "081234500008", status: "Nonaktif", tanggalMulai: "2020-05-01", tanggalSelesai: "2025-05-01", nomorSK: "SK-008/KIPAN/BT/2020", fileSK: "#", tempatLahir: "Serang", tanggalLahir: "1978-11-30", alamat: "Jl. Veteran No. 3, Serang" },
-  { id: 7, nama: "Maya Sari, S.H", foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Kab. Bandung Barat", level: "Kabupaten", wilayah: "Bandung Barat", provinsiNama: "Jawa Barat", kabupatenNama: "Bandung Barat", email: "bandungbarat@kipan.id", hp: "081234500006", status: "Aktif", tanggalMulai: "2020-05-20", tanggalSelesai: "2026-11-20", nomorSK: "SK-006/KIPAN/JBR/BB/2020", fileSK: "#", tempatLahir: "Bandung", tanggalLahir: "1985-02-14", alamat: "Jl. Karya Bakti No. 24, Padalarang" },
-  { id: 8, nama: "Rizal Mahendra, S.T", foto: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Kab. Bandung", level: "Kabupaten", wilayah: "Bandung", provinsiNama: "Jawa Barat", kabupatenNama: "Bandung", email: "bandung@kipan.id", hp: "081234500007", status: "Aktif", tanggalMulai: "2020-05-22", tanggalSelesai: "2026-05-22", nomorSK: "SK-007/KIPAN/JBR/BDG/2020", fileSK: "#", tempatLahir: "Cimahi", tanggalLahir: "1983-08-18", alamat: "Jl. Asia Afrika No. 88, Bandung" },
-  { id: 9, nama: "Andi Wijaya", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Kab. Jakarta Pusat", level: "Kabupaten", wilayah: "Jakarta Pusat", provinsiNama: "DKI Jakarta", kabupatenNama: "Jakarta Pusat", email: "jakpus@kipan.id", hp: "081234500009", status: "Aktif", tanggalMulai: "2021-01-10", tanggalSelesai: "2026-01-10", nomorSK: "SK-009/KIPAN/DKI/JP/2021", fileSK: "#", tempatLahir: "Jakarta", tanggalLahir: "1986-05-03", alamat: "Jl. Medan Merdeka No. 2, Jakarta" },
-  { id: 10, nama: "Diana Pratiwi, M.M", foto: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Kab. Bogor", level: "Kabupaten", wilayah: "Bogor", provinsiNama: "Jawa Barat", kabupatenNama: "Bogor", email: "bogor@kipan.id", hp: "081234500010", status: "Dibekukan", tanggalMulai: "2021-02-15", tanggalSelesai: "2025-12-15", nomorSK: "SK-010/KIPAN/JBR/BGR/2021", fileSK: "#", tempatLahir: "Bogor", tanggalLahir: "1984-10-22", alamat: "Jl. Raya Bogor No. 15, Bogor" },
+  { id: 1, nama: "Drs. H. Sutrisno, M.Si", foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua Umum Pusat", level: "Nasional", wilayah: "Indonesia", email: "ketum@kipan.id", status: "Aktif", tanggalMulai: "2020-01-15", tanggalSelesai: "2027-01-15", nomorSK: "SK-001/KIPAN/PUSAT/2020", fileSK: "#", tempatLahir: "Jakarta", tanggalLahir: "1965-03-10", alamat: "Jl. Sudirman No. 1, Jakarta" },
+  { id: 2, nama: "Dr. Siti Aminah, M.Kes", foto: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80", jabatan: "Sekretaris Jenderal", level: "Nasional", wilayah: "Indonesia", email: "sekjen@kipan.id", status: "Aktif", tanggalMulai: "2020-01-15", tanggalSelesai: "2027-01-15", nomorSK: "SK-002/KIPAN/PUSAT/2020", fileSK: "#", tempatLahir: "Surabaya", tanggalLahir: "1970-06-20", alamat: "Jl. Gatot Subroto No. 5, Jakarta" },
+  { id: 3, nama: "Ir. Bambang Wijaya", foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80", jabatan: "Bendahara Umum", level: "Nasional", wilayah: "Indonesia", email: "bendahara@kipan.id", status: "Aktif", tanggalMulai: "2020-01-15", tanggalSelesai: "2026-12-31", nomorSK: "SK-003/KIPAN/PUSAT/2020", fileSK: "#", tempatLahir: "Bandung", tanggalLahir: "1968-09-15", alamat: "Jl. Asia Afrika No. 20, Bandung" },
+  { id: 4, nama: "Hendra Gunawan, S.Sos", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Provinsi Jawa Barat", level: "Provinsi", wilayah: "Jawa Barat", provinsiNama: "Jawa Barat", email: "jabar@kipan.id", status: "Aktif", tanggalMulai: "2020-03-10", tanggalSelesai: "2027-03-10", nomorSK: "SK-004/KIPAN/JBR/2020", fileSK: "#", tempatLahir: "Bandung", tanggalLahir: "1980-04-12", alamat: "Jl. Diponegoro No. 15, Bandung" },
+  { id: 5, nama: "Rina Marlina, S.Pd", foto: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Provinsi DKI Jakarta", level: "Provinsi", wilayah: "DKI Jakarta", provinsiNama: "DKI Jakarta", email: "jakarta@kipan.id", status: "Aktif", tanggalMulai: "2020-03-15", tanggalSelesai: "2026-08-15", nomorSK: "SK-005/KIPAN/DKI/2020", fileSK: "#", tempatLahir: "Jakarta", tanggalLahir: "1982-07-25", alamat: "Jl. Thamrin No. 8, Jakarta" },
+  { id: 6, nama: "Agus Setiawan, S.E", foto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Provinsi Banten", level: "Provinsi", wilayah: "Banten", provinsiNama: "Banten", email: "banten@kipan.id", status: "Nonaktif", tanggalMulai: "2020-05-01", tanggalSelesai: "2025-05-01", nomorSK: "SK-008/KIPAN/BT/2020", fileSK: "#", tempatLahir: "Serang", tanggalLahir: "1978-11-30", alamat: "Jl. Veteran No. 3, Serang" },
+  { id: 7, nama: "Maya Sari, S.H", foto: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Kab. Bandung Barat", level: "Kabupaten", wilayah: "Bandung Barat", provinsiNama: "Jawa Barat", kabupatenNama: "Bandung Barat", email: "bandungbarat@kipan.id", status: "Aktif", tanggalMulai: "2020-05-20", tanggalSelesai: "2026-11-20", nomorSK: "SK-006/KIPAN/JBR/BB/2020", fileSK: "#", tempatLahir: "Bandung", tanggalLahir: "1985-02-14", alamat: "Jl. Karya Bakti No. 24, Padalarang" },
+  { id: 8, nama: "Rizal Mahendra, S.T", foto: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Kab. Bandung", level: "Kabupaten", wilayah: "Bandung", provinsiNama: "Jawa Barat", kabupatenNama: "Bandung", email: "bandung@kipan.id", status: "Aktif", tanggalMulai: "2020-05-22", tanggalSelesai: "2026-05-22", nomorSK: "SK-007/KIPAN/JBR/BDG/2020", fileSK: "#", tempatLahir: "Cimahi", tanggalLahir: "1983-08-18", alamat: "Jl. Asia Afrika No. 88, Bandung" },
+  { id: 9, nama: "Andi Wijaya", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Kab. Jakarta Pusat", level: "Kabupaten", wilayah: "Jakarta Pusat", provinsiNama: "DKI Jakarta", kabupatenNama: "Jakarta Pusat", email: "jakpus@kipan.id", status: "Aktif", tanggalMulai: "2021-01-10", tanggalSelesai: "2026-01-10", nomorSK: "SK-009/KIPAN/DKI/JP/2021", fileSK: "#", tempatLahir: "Jakarta", tanggalLahir: "1986-05-03", alamat: "Jl. Medan Merdeka No. 2, Jakarta" },
+  { id: 10, nama: "Diana Pratiwi, M.M", foto: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80", jabatan: "Ketua KIPAN Kab. Bogor", level: "Kabupaten", wilayah: "Bogor", provinsiNama: "Jawa Barat", kabupatenNama: "Bogor", email: "bogor@kipan.id", status: "Dibekukan", tanggalMulai: "2021-02-15", tanggalSelesai: "2025-12-15", nomorSK: "SK-010/KIPAN/JBR/BGR/2021", fileSK: "#", tempatLahir: "Bogor", tanggalLahir: "1984-10-22", alamat: "Jl. Raya Bogor No. 15, Bogor" },
 ];
 
 export const BERITA_ADMIN_LIST: Berita[] = [

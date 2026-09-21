@@ -25,6 +25,7 @@ import {
   ArrowUpDown,
   Inbox,
   CheckCircle2,
+  Activity,
 } from "lucide-react";
 import { PROVINSI_LIST, KABUPATEN_LIST } from "@/lib/admin-data";
 import WilayahDetailDialog from "./WilayahDetailDialog";
@@ -99,6 +100,26 @@ export default function WilayahPage({
       }
     } catch (e) {
       toast.error("Gagal auto-fill ketua");
+    }
+  };
+
+  // Sinkronkan status wilayah otomatis berdasarkan keberadaan pengurus:
+  // Wilayah yang ada pengurus aktif -> "Aktif", yang tidak ada -> "Pembentukan"
+  const syncStatusWilayah = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/wilayah/sync-status", { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(json.message);
+        fetchData();
+      } else {
+        toast.error(json.error || "Gagal sinkronisasi status");
+      }
+    } catch (e) {
+      toast.error("Gagal sinkronisasi status wilayah");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -481,6 +502,19 @@ export default function WilayahPage({
           >
             <UserCog className="w-4 h-4" />
           </button>
+          {canEdit && (
+            <button
+              onClick={() => {
+                if (window.confirm("Sinkronkan status wilayah otomatis? Wilayah yang ada pengurus aktif akan diset 'Aktif', dan wilayah tanpa pengurus akan diset 'Pembentukan'.")) {
+                  syncStatusWilayah();
+                }
+              }}
+              className="p-2 text-slate-500 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors"
+              title="Sinkronkan Status Aktif/Pembentukan dari Keberadaan Pengurus"
+            >
+              <Activity className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={() => toast.info("Export Excel akan segera hadir")}
             className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
@@ -580,6 +614,7 @@ export default function WilayahPage({
               <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                 {tab === "provinsi" ? (
                   <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-12 text-center">No</th>
                     <Th onClick={() => handleSort("kode")} icon={getSortIcon("kode")}>Kode</Th>
                     <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama Provinsi</Th>
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider">Jml. Kab/Kota</th>
@@ -590,6 +625,7 @@ export default function WilayahPage({
                   </tr>
                 ) : (
                   <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-12 text-center">No</th>
                     <Th onClick={() => handleSort("kode")} icon={getSortIcon("kode")}>Kode</Th>
                     <Th onClick={() => handleSort("nama")} icon={getSortIcon("nama")}>Nama Kabupaten/Kota</Th>
                     <Th onClick={() => handleSort("provinsiNama")} icon={getSortIcon("provinsiNama")}>Provinsi</Th>
@@ -601,12 +637,13 @@ export default function WilayahPage({
                 )}
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {pageData.map((item: any) => (
+                {pageData.map((item: any, idx: number) => (
                   <tr
                     key={item.id}
                     className="hover:bg-slate-50 cursor-pointer transition-colors"
                     onClick={() => showDetail(item, tab)}
                   >
+                    <td className="px-4 py-3 text-sm text-slate-500 text-center">{startIdx + idx + 1}</td>
                     <td className="px-4 py-3 text-sm font-mono text-slate-600">{item.kode}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-blue-950">{item.nama}</td>
                     {tab === "provinsi" && (
@@ -641,10 +678,15 @@ export default function WilayahPage({
                       </button>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">{item.ketua || "-"}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusBadge(item.status)}`}>
+                    <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => canEdit && handleToggleStatus(item)}
+                        disabled={!canEdit}
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border transition-all ${statusBadge(item.status)} ${canEdit ? "hover:opacity-80 hover:scale-105 cursor-pointer" : ""}`}
+                        title={canEdit ? `Klik untuk ubah status (${item.status === "Aktif" ? "Ubah ke Nonaktif" : "Aktifkan"})` : item.status}
+                      >
                         {item.status}
-                      </span>
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                       <div className="relative inline-block">

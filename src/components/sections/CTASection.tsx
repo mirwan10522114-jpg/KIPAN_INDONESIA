@@ -1,11 +1,27 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { Sparkles, ArrowRight, UserPlus } from "lucide-react";
 import { useContentStore } from "@/lib/content-store";
 
 export default function CTASection() {
   const company = useContentStore((s) => s.company);
+  const [totalProvinsi, setTotalProvinsi] = useState(0);
+  const [totalKabupaten, setTotalKabupaten] = useState(0);
+
+  useEffect(() => {
+    fetch("/api/dashboard", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data?.stats) {
+          setTotalProvinsi(json.data.stats.totalProvinsi || 0);
+          setTotalKabupaten(json.data.stats.totalKabupaten || 0);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const waLink = `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(
     "Halo " + company.name + ", saya ingin informasi pendaftaran pengurus."
   )}`;
@@ -48,14 +64,14 @@ export default function CTASection() {
 
           <p className="mt-6 text-sky-100 text-base lg:text-lg leading-relaxed">
             KIPAN Indonesia membuka pendaftaran pengurus baru di seluruh{" "}
-            <span className="font-semibold text-white">38 provinsi</span> dan{" "}
-            <span className="font-semibold text-white">514 kabupaten/kota</span>.
+            <span className="font-semibold text-white">{totalProvinsi} provinsi</span> dan{" "}
+            <span className="font-semibold text-white">{totalKabupaten} kabupaten/kota</span>.
             Mari bersama mewujudkan generasi muda Indonesia yang bersih dari narkoba.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href="#pendaftaran"
+              href="/pendaftaran"
               className="group inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-400 to-blue-600 text-white font-semibold px-8 py-4 rounded-full shadow-2xl shadow-sky-500/40 hover:shadow-sky-500/60 hover:-translate-y-1 transition-all"
             >
               <UserPlus className="w-5 h-5 group-hover:rotate-12 transition-transform" />

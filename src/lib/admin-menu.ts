@@ -1,5 +1,5 @@
 // ============================================================
-// KIPAN ADMIN — Menu Configuration
+// KIPAN ADMIN — Menu Configuration (v2 — tanpa Jabatan, tambah SK)
 // ============================================================
 
 import {
@@ -17,7 +17,8 @@ import {
   Building2,
   UserCog,
   Database,
-  Award,
+  Users,
+  FileCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ export interface MenuItem {
   label: string;
   icon: LucideIcon;
   group?: string;
+  allowedRoles?: string[];
 }
 
 export interface MenuGroup {
@@ -37,46 +39,49 @@ export const MENU_GROUPS: MenuGroup[] = [
   {
     label: "",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI", "ADMIN_KABUPATEN"] },
     ],
   },
   {
     label: "Master Data",
     items: [
-      { id: "wilayah", label: "Wilayah", icon: MapPin },
-      { id: "pengurus", label: "Pengurus", icon: UserCog },
-      { id: "jabatan", label: "Bidang & Jabatan", icon: Award },
+      { id: "wilayah", label: "Wilayah", icon: MapPin, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
+      { id: "anggota", label: "Data Anggota", icon: Users, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI", "ADMIN_KABUPATEN"] },
+      { id: "surat-keputusan", label: "Surat Keputusan", icon: FileCheck, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI", "ADMIN_KABUPATEN"] },
+      { id: "jabatan", label: "Jabatan", icon: UserCog, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
+      { id: "pengurus", label: "Pengurus", icon: UserCog, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI", "ADMIN_KABUPATEN"] },
     ],
   },
   {
     label: "Pendaftaran",
     items: [
-      { id: "pendaftaran", label: "Pendaftaran Baru", icon: FileText },
-      { id: "verifikasi", label: "Verifikasi Anggota", icon: ClipboardCheck },
+      { id: "pendaftaran", label: "Pendaftaran Baru", icon: FileText, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_KABUPATEN"] },
+      { id: "verifikasi", label: "Verifikasi Anggota", icon: ClipboardCheck, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_KABUPATEN"] },
     ],
   },
   {
-    label: "Konten Website",
+    label: "CMS Publikasi",
     items: [
-      { id: "berita", label: "Berita", icon: Newspaper },
-      { id: "galeri", label: "Galeri", icon: Image },
-      { id: "program", label: "Program Kerja", icon: Calendar },
+      { id: "berita", label: "Berita & Artikel", icon: Newspaper, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
+      { id: "galeri", label: "Galeri Kegiatan", icon: Image, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
+      { id: "program", label: "Program Kerja", icon: Calendar, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
     ],
   },
   {
     label: "Laporan",
     items: [
-      { id: "statistik", label: "Statistik Anggota", icon: BarChart3 },
-      { id: "laporan", label: "Laporan Keanggotaan", icon: FileBarChart },
+      { id: "statistik", label: "Statistik", icon: BarChart3, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
+      { id: "laporan", label: "Cetak Laporan", icon: FileBarChart, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"] },
     ],
   },
   {
-    label: "Sistem",
+    label: "Pengaturan",
     items: [
-      { id: "database", label: "Struktur Database", icon: Database },
-      { id: "role", label: "Role & Permission", icon: Shield },
-      { id: "profil", label: "Profil Organisasi", icon: Building2 },
-      { id: "akun", label: "Akun Saya", icon: UserCheck },
+      { id: "role", label: "Role & Wewenang", icon: Shield, allowedRoles: ["SUPER_ADMIN"] },
+      { id: "users", label: "Manajemen User", icon: Users, allowedRoles: ["SUPER_ADMIN"] },
+      { id: "profil", label: "Profil Organisasi", icon: Building2, allowedRoles: ["SUPER_ADMIN"] },
+      { id: "database", label: "Database Backup", icon: Database, allowedRoles: ["SUPER_ADMIN"] },
+      { id: "akun", label: "Akun Saya", icon: UserCheck, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI", "ADMIN_KABUPATEN"] },
     ],
   },
 ];
@@ -84,17 +89,20 @@ export const MENU_GROUPS: MenuGroup[] = [
 export const PAGE_TITLES: Record<string, string> = {
   dashboard: "Dashboard",
   wilayah: "Master Wilayah",
+  anggota: "Data Anggota (Relawan)",
+  "surat-keputusan": "Surat Keputusan",
+  jabatan: "Master Jabatan",
   pengurus: "Manajemen Pengurus",
   pendaftaran: "Pendaftaran Baru",
-  verifikasi: "Verifikasi Pengurus",
+  verifikasi: "Verifikasi Anggota",
   berita: "Berita & Konten",
   galeri: "Galeri",
   program: "Program Kerja",
-  statistik: "Statistik Pengurus",
-  laporan: "Laporan Pengurus",
+  statistik: "Statistik Anggota",
+  laporan: "Laporan Keanggotaan",
+  users: "Manajemen Pengguna",
   database: "Struktur Database",
   role: "Role & Permission",
   profil: "Profil Organisasi",
   akun: "Akun Saya",
-  jabatan: "Bidang & Jabatan",
 };

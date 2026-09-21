@@ -227,7 +227,7 @@ export function exportPengurusPdf(data: any[], filters?: { search?: string; leve
       { header: "Level", dataKey: "level" },
       { header: "Wilayah", dataKey: "wilayah" },
       { header: "Email", dataKey: "email" },
-      { header: "HP", dataKey: "hp" },
+      { header: "WhatsApp", dataKey: "whatsapp" },
       { header: "Status", dataKey: "status" },
     ],
     rows: data.map((d) => ({
@@ -237,7 +237,7 @@ export function exportPengurusPdf(data: any[], filters?: { search?: string; leve
       level: d.level || "-",
       wilayah: d.wilayah || "-",
       email: d.email || "-",
-      hp: d.hp || "-",
+      whatsapp: d.whatsapp || "-",
       status: d.status || "-",
     })),
   });
@@ -273,9 +273,8 @@ export function exportAnggotaPdf(data: any[], filters?: { search?: string; statu
       { header: "Jenis Kelamin", dataKey: "jenisKelamin" },
       { header: "Kabupaten", dataKey: "kabupaten" },
       { header: "Provinsi", dataKey: "provinsi" },
-      { header: "Angkatan", dataKey: "angkatan" },
       { header: "Email", dataKey: "email" },
-      { header: "HP", dataKey: "hp" },
+      { header: "WhatsApp", dataKey: "whatsapp" },
       { header: "Status", dataKey: "status" },
     ],
     rows: data.map((d) => ({
@@ -284,9 +283,8 @@ export function exportAnggotaPdf(data: any[], filters?: { search?: string; statu
       jenisKelamin: d.jenisKelamin === "L" ? "Laki-laki" : d.jenisKelamin === "P" ? "Perempuan" : "-",
       kabupaten: d.kabupaten?.nama || "-",
       provinsi: d.provinsi?.nama || "-",
-      angkatan: d.angkatan || "-",
       email: d.email || "-",
-      hp: d.hp || "-",
+      whatsapp: d.whatsapp || "-",
       status: d.status || "-",
     })),
   });

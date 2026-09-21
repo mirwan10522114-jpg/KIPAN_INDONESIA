@@ -1,4 +1,20 @@
-import type { ProductItem } from "@/lib/content-store";
+export interface ProductItem {
+  id: number;
+  name: string;
+  category: string;
+  price?: string;
+  rating?: number;
+  image: string;
+  description?: string;
+  shortDesc?: string;
+  longDesc?: string;
+  inStock?: boolean;
+  featured?: boolean;
+  badge?: string;
+  brands?: string[];
+  specs?: { label: string; options: string[] }[];
+  [key: string]: any;
+}
 
 // ============================================================
 // DEFAULT PRODUCTS — 20 kategori perlengkapan kolam renang

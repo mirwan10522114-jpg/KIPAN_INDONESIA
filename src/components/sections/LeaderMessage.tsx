@@ -12,7 +12,17 @@ export default function LeaderMessage() {
     target: sectionRef,
     offset: ["start end", "end start"],
   });
-  const leader = useContentStore((s) => s.leader);
+  const company = useContentStore((s) => s.company);
+  const leader = (useContentStore((s) => (s as any).leader)) || {
+    name: "Ketua Umum KIPAN",
+    title: "Pimpinan Nasional",
+    quote: "Pemuda bersih dari narkoba, Indonesia maju.",
+    vision: "",
+    bullets: [],
+    photo: "",
+  };
+  // Compute years dynamically
+  const yearsExperience = new Date().getFullYear() - (company.establishedYear || 2020);
 
   // Parallax effect on photo
   const photoY = useTransform(scrollYProgress, [0, 1], [40, -40]);
@@ -109,7 +119,7 @@ export default function LeaderMessage() {
                     <div className="mt-3 inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full">
                       <span className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
                       <span className="text-xs text-sky-100">
-                        Founder sejak 1997
+                        Sejak {company.establishedYear || company.establishedDate}
                       </span>
                     </div>
                   </div>
@@ -127,7 +137,7 @@ export default function LeaderMessage() {
                     Pengalaman
                   </span>
                 </div>
-                <div className="text-3xl font-extrabold leading-none">25+</div>
+                <div className="text-3xl font-extrabold leading-none">{yearsExperience}+</div>
                 <div className="text-xs opacity-90 mt-1">Tahun</div>
               </motion.div>
             </motion.div>
@@ -204,7 +214,7 @@ export default function LeaderMessage() {
                 {leader.name}
               </div>
               <div className="text-sky-200 text-sm mt-2 font-medium tracking-wide">
-                {leader.role}, Dunia Pool & Pond
+                {leader.role}, {company.name}
               </div>
             </motion.div>
           </motion.div>

@@ -27,7 +27,7 @@ export default function Footer() {
       <div className="absolute -top-20 -right-20 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl" />
       <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
 
-      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16">
+      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-16 pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]">
         <div className="grid lg:grid-cols-12 gap-10">
           {/* Brand */}
           <div className="lg:col-span-4">
@@ -165,9 +165,18 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} {company.name} Indonesia. All
             Rights Reserved.
           </p>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="w-2 h-2 bg-sky-400 rounded-full animate-pulse" />
-            Melayani 38 provinsi &amp; 514 kabupaten/kota
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-500">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-sky-400 rounded-full animate-pulse" />
+              Melayani 38 provinsi &amp; 514 kabupaten/kota
+            </span>
+            <span className="text-slate-700 hidden sm:inline">•</span>
+            <a
+              href="#admin"
+              className="text-slate-500 hover:text-sky-400 transition-colors py-1 px-2 rounded"
+            >
+              Akses Admin
+            </a>
           </div>
         </div>
       </div>

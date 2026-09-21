@@ -28,7 +28,7 @@ export default function FloatingWhatsApp() {
           initial={{ opacity: 0, scale: 0 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0 }}
-          className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3"
+          className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] right-[calc(1.25rem+env(safe-area-inset-right,0px))] z-50 flex flex-col items-end gap-3"
         >
           {/* Tooltip card */}
           <AnimatePresence>
@@ -37,7 +37,7 @@ export default function FloatingWhatsApp() {
                 initial={{ opacity: 0, y: 10, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                className="bg-white rounded-2xl shadow-2xl p-4 w-72 border border-slate-100"
+                className="bg-white rounded-2xl shadow-2xl p-4 w-72 max-w-[calc(100vw-2.5rem)] border border-slate-100"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -46,32 +46,32 @@ export default function FloatingWhatsApp() {
                     </div>
                     <div>
                       <div className="text-sm font-bold text-sky-950">
-                        Tim Dunia Pool
+                        Sekretariat KIPAN
                       </div>
-                      <div className="text-xs text-sky-500 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-sky-500 rounded-full" />
-                        Online sekarang
+                      <div className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                        Online aktif
                       </div>
                     </div>
                   </div>
                   <button
                     onClick={() => setOpen(false)}
-                    className="text-slate-400 hover:text-slate-600"
+                    className="text-slate-400 hover:text-slate-600 p-1"
+                    aria-label="Tutup"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-xs text-slate-600 mb-3">
-                  Halo! Ada yang bisa kami bantu? Konsultasi proyek kolam Anda
-                  sekarang — gratis.
+                <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+                  Halo! Ada yang ingin ditanyakan seputar pendaftaran pengurus atau program kerja KIPAN Indonesia?
                 </p>
                 <a
                   href={waLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full text-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:shadow-lg transition-shadow"
+                  className="block w-full text-center bg-gradient-to-r from-sky-500 to-blue-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:shadow-lg transition-shadow active:scale-[0.98]"
                 >
-                  Mulai Chat
+                  Mulai Chat WhatsApp
                 </a>
               </motion.div>
             )}
@@ -80,10 +80,10 @@ export default function FloatingWhatsApp() {
           {/* Floating button */}
           <button
             onClick={() => setOpen(!open)}
-            className="relative w-14 h-14 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 shadow-2xl shadow-sky-500/40 flex items-center justify-center hover:scale-110 transition-transform"
+            className="relative w-14 h-14 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 shadow-2xl shadow-sky-500/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
             aria-label="WhatsApp"
           >
-            <span className="absolute inset-0 rounded-full bg-sky-400 animate-slow-ping" />
+            <span className="absolute inset-0 rounded-full bg-sky-400 animate-slow-ping pointer-events-none" />
             {open ? (
               <X className="w-6 h-6 text-white relative" />
             ) : (

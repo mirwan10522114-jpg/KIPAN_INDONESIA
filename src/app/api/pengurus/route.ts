@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { generateNIP } from "@/lib/nip";
 import { handleApiError, safeParseInt } from "@/lib/api-error";
+import { decryptNIK } from "@/lib/encryption";
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,10 +10,12 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20");
     const search = searchParams.get("search") || "";
     const level = searchParams.get("level") || "";
-    const bidang = searchParams.get("bidang") || "";
     const status = searchParams.get("status") || "";
     const provinsiId = searchParams.get("provinsiId") || "";
     const kabupatenId = searchParams.get("kabupatenId") || "";
+    const suratKeputusanId = searchParams.get("suratKeputusanId") || "";
+    const role = searchParams.get("role");
+    const wilayah = searchParams.get("wilayah");
 
     // Build where clause — server-side filtering
     const where: any = {};
@@ -21,14 +23,39 @@ export async function GET(req: NextRequest) {
     if (status && status !== "Semua") where.status = status;
     if (provinsiId && provinsiId !== "Semua") where.provinsiId = parseInt(provinsiId);
     if (kabupatenId && kabupatenId !== "Semua") where.kabupatenId = parseInt(kabupatenId);
-    if (bidang && bidang !== "Semua") where.jabatan = { bidang };
+
+    if (role === "ADMIN_PROVINSI" && wilayah) {
+      const w = wilayah.replace("Provinsi ", "").trim();
+      const prov = await db.provinsi.findFirst({ where: { nama: w } });
+      if (prov) {
+        where.provinsiId = prov.id;
+      } else {
+        where.provinsiId = -1;
+      }
+    } else if (role === "ADMIN_KABUPATEN" && wilayah) {
+      const w = wilayah.replace("Kabupaten ", "Kab. ").trim();
+      const kab = await db.kabupaten.findFirst({ where: { nama: w } });
+      if (kab) {
+        where.kabupatenId = kab.id;
+      } else {
+        where.kabupatenId = -1;
+      }
+    }
+    
+    // Sesuai PRD v3: Tampilan global pengurus HANYA untuk SK yang DISETUJUI
+    // Jika tidak sedang melihat spesifik SK, filter berdasarkan approvalStatus
+    if (suratKeputusanId && suratKeputusanId !== "Semua") {
+      where.suratKeputusanId = parseInt(suratKeputusanId);
+    } else {
+      where.suratKeputusan = { approvalStatus: "DISETUJUI" };
+    }
+
     if (search) {
       where.OR = [
         { anggota: { namaLengkap: { contains: search } } },
         { anggota: { nia: { contains: search } } },
-        { jabatan: { nama: { contains: search } } },
-        { jabatan: { bidang: { contains: search } } },
-        { nomorSK: { contains: search } },
+        { suratKeputusan: { nomorSK: { contains: search } } },
+        { suratKeputusan: { judul: { contains: search } } },
       ];
     }
 
@@ -47,18 +74,28 @@ export async function GET(req: NextRequest) {
             kabupaten: { select: { nama: true, kode: true } },
           },
         },
-        jabatan: { select: { nama: true, bidang: true, level: true, urutan: true } },
+        suratKeputusan: { select: { nomorSK: true, judul: true, level: true, status: true, fileSK: true } },
         provinsi: { select: { nama: true, kode: true } },
         kabupaten: { select: { nama: true, kode: true } },
+        jabatan: { select: { nama: true } },
       },
-      orderBy: [{ level: "asc" }, { jabatan: { urutan: "asc" } }],
+      orderBy: [{ level: "asc" }, { createdAt: "desc" }],
       skip,
       take: limit,
     });
 
+    const pengurusDecrypted = pengurus.map(p => ({
+      ...p,
+      anggota: {
+        ...p.anggota,
+        nik: decryptNIK(p.anggota.nik)
+      },
+      jabatan: p.jabatan?.nama || (p.level === "NASIONAL" ? "Pengurus Nasional" : p.level === "PROVINSI" ? "Pengurus Provinsi" : "Pengurus Kabupaten/Kota")
+    }));
+
     return NextResponse.json({
       success: true,
-      data: pengurus,
+      data: pengurusDecrypted,
       total,
       page: currentPage,
       limit,
@@ -73,190 +110,56 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Validasi: jabatanId wajib dan harus numeric valid
-    const jabatanIdNum = safeParseInt(body.jabatanId);
-    if (!body.jabatanId || jabatanIdNum === null) {
-      return NextResponse.json({ success: false, error: "Jabatan wajib dipilih." }, { status: 400 });
+    // Validasi: suratKeputusanId wajib
+    const skIdNum = safeParseInt(body.suratKeputusanId);
+    if (!body.suratKeputusanId || skIdNum === null) {
+      return NextResponse.json({ success: false, error: "Surat Keputusan wajib dipilih." }, { status: 400 });
     }
 
-    // Validasi: anggotaId wajib (kecuali mode manual orang baru)
-    const isManualMode = body.isNewAnggota === true && body.newAnggotaData;
-    let anggotaIdNum: number | null = safeParseInt(body.anggotaId);
-    if (!isManualMode && (!body.anggotaId || anggotaIdNum === null)) {
-      return NextResponse.json({ success: false, error: "Anggota wajib dipilih dari database, atau gunakan mode Input Manual untuk orang baru." }, { status: 400 });
+    // Validasi: anggotaId wajib
+    const anggotaIdNum = safeParseInt(body.anggotaId);
+    if (!body.anggotaId || anggotaIdNum === null) {
+      return NextResponse.json({ success: false, error: "Anggota wajib dipilih." }, { status: 400 });
     }
 
-    // Validasi: jabatanId harus ada di database
-    const jabatanExists = await db.jabatan.findUnique({ where: { id: jabatanIdNum } });
-    if (!jabatanExists) {
-      return NextResponse.json({ success: false, error: "Jabatan tidak ditemukan. Pilih jabatan yang valid." }, { status: 400 });
+    // Validasi: SK harus ada dan aktif
+    const skExists = await db.suratKeputusan.findUnique({ where: { id: skIdNum } });
+    if (!skExists) {
+      return NextResponse.json({ success: false, error: "Surat Keputusan tidak ditemukan." }, { status: 400 });
+    }
+    if (skExists.status !== "Aktif") {
+      return NextResponse.json({ success: false, error: "SK tidak aktif." }, { status: 400 });
     }
 
-    // ===== MODE MANUAL: auto-create anggota baru (dalam transaction) =====
-    let anggotaIdToUse: number;
-    if (isManualMode) {
-      const nd = body.newAnggotaData;
-      // Validasi semua field biodata & kontak wajib
-      const requiredFields = [
-        { key: "namaLengkap", label: "Nama Lengkap" },
-        { key: "tempatLahir", label: "Tempat Lahir" },
-        { key: "tanggalLahir", label: "Tanggal Lahir" },
-        { key: "alamat", label: "Alamat" },
-        { key: "email", label: "Email" },
-        { key: "hp", label: "No. HP" },
-      ];
-      for (const f of requiredFields) {
-        if (!nd[f.key] || !String(nd[f.key]).trim()) {
-          return NextResponse.json({ success: false, error: `${f.label} wajib diisi untuk orang baru.` }, { status: 400 });
-        }
-      }
-      // Validasi level & wilayah
-      const provinsiIdNum = safeParseInt(body.provinsiId);
-      const kabupatenIdNum = safeParseInt(body.kabupatenId);
-      // Untuk mode manual, provinsiId & kabupatenId WAJIB (karena Anggota schema require keduanya),
-      // terlepas dari level pengurus (NASIONAL/PROVINSI/KABUPATEN).
-      // Wilayah ini adalah domisili anggota, bukan penempatan pengurus.
-      if (provinsiIdNum === null) {
-        return NextResponse.json({ success: false, error: "Provinsi domisili anggota wajib dipilih (untuk data biodata anggota)." }, { status: 400 });
-      }
-      if (kabupatenIdNum === null) {
-        return NextResponse.json({ success: false, error: "Kabupaten/Kota domisili anggota wajib dipilih (untuk data biodata anggota)." }, { status: 400 });
-      }
-
-      // Validasi format email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(nd.email)) {
-        return NextResponse.json({ success: false, error: "Format email tidak valid. Contoh: nama@domain.com" }, { status: 400 });
-      }
-
-      // Validasi format HP Indonesia
-      const hpRegex = /^08\d{8,12}$/;
-      if (!hpRegex.test(nd.hp.replace(/[\s-]/g, ""))) {
-        return NextResponse.json({ success: false, error: "Format No. HP tidak valid. Gunakan format: 08xxxxxxxxxx (8-13 digit setelah 08)" }, { status: 400 });
-      }
-
-      // Validasi NIK 16 digit numeric (jika diisi)
-      if (nd.nik && nd.nik.length !== 16) {
-        return NextResponse.json({ success: false, error: "NIK harus tepat 16 digit angka." }, { status: 400 });
-      }
-
-      // Validasi tanggalLahir: tidak boleh future date, minimum umur 16 tahun
-      if (nd.tanggalLahir) {
-        const lahir = new Date(nd.tanggalLahir);
-        const now = new Date();
-        if (lahir > now) {
-          return NextResponse.json({ success: false, error: "Tanggal lahir tidak boleh di masa depan." }, { status: 400 });
-        }
-        const umur = now.getFullYear() - lahir.getFullYear();
-        if (umur < 16) {
-          return NextResponse.json({ success: false, error: "Umur minimal 16 tahun untuk menjadi pengurus." }, { status: 400 });
-        }
-      }
-
-      // Validasi provinsiId exists (hanya untuk level PROVINSI & KABUPATEN)
-      if ((body.level === "PROVINSI" || body.level === "KABUPATEN") && provinsiIdNum !== null) {
-        const provExists = await db.provinsi.findUnique({ where: { id: provinsiIdNum } });
-        if (!provExists) {
-          return NextResponse.json({ success: false, error: "Provinsi tidak ditemukan di database." }, { status: 400 });
-        }
-      }
-
-      // Validasi kabupatenId exists (jika level KABUPATEN)
-      if (body.level === "KABUPATEN" && kabupatenIdNum !== null) {
-        const kabExists = await db.kabupaten.findUnique({ where: { id: kabupatenIdNum } });
-        if (!kabExists) {
-          return NextResponse.json({ success: false, error: "Kabupaten/Kota tidak ditemukan di database." }, { status: 400 });
-        }
-      }
-
-      // Transaction: create anggota → generate NIP → update NIP
-      const result = await db.$transaction(async (tx) => {
-        // 1. Create anggota dengan NIP placeholder
-        const anggotaData: any = {
-          nia: "TEMP-" + Date.now(),
-          namaLengkap: nd.namaLengkap.trim(),
-          nik: nd.nik || "",
-          tempatLahir: nd.tempatLahir || "",
-          tanggalLahir: nd.tanggalLahir ? new Date(nd.tanggalLahir) : new Date("2000-01-01"),
-          jenisKelamin: nd.jenisKelamin || "L",
-          alamat: nd.alamat || "",
-          provinsiId: provinsiIdNum!,
-          email: nd.email || "",
-          hp: nd.hp || "",
-          whatsapp: nd.hp || null,
-          foto: nd.foto || null,
-          ktp: nd.ktp || null,
-          cv: nd.cv || null,
-          suratPernyataan: nd.suratPernyataan || null,
-          suratSehat: nd.suratSehat || null,
-          status: "Aktif",
-          angkatan: body.angkatan || "XII",
-          tanggalAngkat: new Date(),
-        };
-        if (kabupatenIdNum !== null) anggotaData.kabupatenId = kabupatenIdNum;
-
-        const newAnggota = await tx.anggota.create({
-          data: anggotaData,
-        });
-
-        // 2. Generate NIP dengan global sequence
-        const tahun = new Date().getFullYear();
-        const nia = await generateNIP(newAnggota.id, {
-          provinsiId: provinsiIdNum!,
-          kabupatenId: kabupatenIdNum,
-          tahun,
-        }, tx);
-
-        // 3. Update anggota dengan NIP yang benar
-        await tx.anggota.update({
-          where: { id: newAnggota.id },
-          data: { nia },
-        });
-
-        return newAnggota.id;
-      });
-
-      anggotaIdToUse = result;
-    } else {
-      anggotaIdToUse = anggotaIdNum!;
+    const role = req.nextUrl.searchParams.get("role") || "SUPER_ADMIN";
+    if (role === "ADMIN_PROVINSI" && !["Provinsi", "Kabupaten"].includes(skExists.level)) {
+      return NextResponse.json({ success: false, error: "Tidak memiliki hak akses membuat pengurus Nasional." }, { status: 403 });
+    }
+    if (role === "ADMIN_KABUPATEN" && skExists.level !== "Kabupaten") {
+      return NextResponse.json({ success: false, error: "Hanya dapat membuat pengurus Kabupaten." }, { status: 403 });
     }
 
-    // Rule: 1 orang hanya boleh pegang 1 jabatan aktif di satu waktu.
-    // Jika user sudah punya jabatan aktif lain, OTOMATIS akhiri jabatan lama
-    const existingActiveList = await db.pengurus.findMany({
-      where: {
-        anggotaId: anggotaIdToUse,
-        status: "Aktif",
-      },
-      include: { jabatan: true },
+    // Cek apakah sudah ada di SK ini
+    const alreadyInSK = await db.pengurus.findFirst({
+      where: { anggotaId: anggotaIdNum, suratKeputusanId: skIdNum },
     });
-
-    let endedOldJabatan = "";
-    if (existingActiveList.length > 0) {
-      await db.pengurus.updateMany({
-        where: {
-          anggotaId: anggotaIdToUse,
-          status: "Aktif",
-        },
-        data: {
-          status: "Selesai",
-          tanggalSelesai: new Date(),
-        },
-      });
-      const oldJabatan = existingActiveList[0];
-      endedOldJabatan = ` Jabatan lama sebagai "${oldJabatan.jabatan?.nama}" (${oldJabatan.jabatan?.bidang}) di level ${oldJabatan.level} otomatis diakhiri.`;
+    if (alreadyInSK) {
+      return NextResponse.json(
+        { success: false, error: "Anggota ini sudah tercantum di SK tersebut." },
+        { status: 400 }
+      );
     }
 
     const data: any = {
-      anggotaId: anggotaIdToUse,
-      jabatanId: jabatanIdNum,
-      level: body.level,
+      anggotaId: anggotaIdNum,
+      suratKeputusanId: skIdNum,
+      level: body.level || skExists.level,
       status: body.status || "Aktif",
-      tanggalMulai: body.tanggalMulai ? new Date(body.tanggalMulai) : new Date(),
+      jabatanId: body.jabatanId ? safeParseInt(body.jabatanId) : null,
+      tanggalMulai: body.tanggalMulai ? new Date(body.tanggalMulai) : skExists.tanggalTerbit,
       tanggalSelesai: body.tanggalSelesai ? new Date(body.tanggalSelesai) : null,
-      nomorSK: body.nomorSK || "",
-      fileSK: body.fileSK || null,
     };
+
     if (body.level === "PROVINSI" || body.level === "KABUPATEN") {
       const provNum = safeParseInt(body.provinsiId);
       if (provNum !== null) data.provinsiId = provNum;
@@ -266,15 +169,49 @@ export async function POST(req: NextRequest) {
       if (kabNum !== null) data.kabupatenId = kabNum;
     }
 
+    // Demisionerkan pengurus lama untuk anggota ini jika ada
+    await db.pengurus.updateMany({
+      where: {
+        anggotaId: anggotaIdNum,
+        status: "Aktif",
+      },
+      data: {
+        status: "Demisioner",
+        tanggalSelesai: data.tanggalMulai,
+      }
+    });
+
     const pengurus = await db.pengurus.create({
       data,
       include: {
         anggota: { include: { provinsi: { select: { nama: true } }, kabupaten: { select: { nama: true } } } },
-        jabatan: { select: { nama: true, bidang: true, level: true, urutan: true } },
+        suratKeputusan: { select: { nomorSK: true, judul: true } },
         provinsi: { select: { nama: true } },
         kabupaten: { select: { nama: true } },
+        jabatan: { select: { nama: true } },
       },
     });
+
+    // Aktifkan wilayah jika pengurus baru berstatus Aktif
+    if (pengurus.status === "Aktif") {
+      if (pengurus.level === "PROVINSI" && pengurus.provinsiId) {
+        await db.provinsi.update({
+          where: { id: pengurus.provinsiId },
+          data: { status: "Aktif" },
+        }).catch(() => {});
+      } else if (pengurus.level === "KABUPATEN" && pengurus.kabupatenId) {
+        await db.kabupaten.update({
+          where: { id: pengurus.kabupatenId },
+          data: { status: "Aktif" },
+        }).catch(() => {});
+        if (pengurus.provinsiId) {
+          await db.provinsi.update({
+            where: { id: pengurus.provinsiId },
+            data: { status: "Aktif" },
+          }).catch(() => {});
+        }
+      }
+    }
 
     await db.activityLog.create({
       data: {
@@ -282,11 +219,15 @@ export async function POST(req: NextRequest) {
         recordId: pengurus.id,
         aksi: "create",
         oleh: "Admin",
-        detail: JSON.stringify({ anggotaId: pengurus.anggotaId, jabatanId: pengurus.jabatanId, level: pengurus.level, status: pengurus.status }),
+        detail: JSON.stringify({ anggotaId: pengurus.anggotaId, suratKeputusanId: pengurus.suratKeputusanId, jabatanId: pengurus.jabatanId, level: pengurus.level, status: pengurus.status }),
       },
     });
 
-    return NextResponse.json({ success: true, data: pengurus, message: `Pengurus berhasil ditambahkan dengan jabatan "${jabatanExists.nama}" di bidang "${jabatanExists.bidang}".${endedOldJabatan}` });
+    return NextResponse.json({
+      success: true,
+      data: pengurus,
+      message: `Pengurus berhasil ditambahkan ke SK "${skExists.nomorSK}".`
+    });
   } catch (error) {
     return handleApiError(error, "POST /api/pengurus", "Gagal menambahkan pengurus");
   }

@@ -20,6 +20,13 @@ import {
   GraduationCap,
   ScrollText,
   HandHeart,
+  Copy,
+  Check,
+  ArrowRight,
+  ChevronDown,
+  Lock,
+  Shield,
+  Cpu,
 } from "lucide-react";
 import { useContentStore } from "@/lib/content-store";
 import {
@@ -54,11 +61,9 @@ interface FormData {
   provinsi: string;
   kabupaten: string;
   kecamatan: string;
-  desa: string;
   kodePos: string;
   // Kontak
   email: string;
-  nomorHP: string;
   whatsapp: string;
   // Persyaratan checklist
   persyaratan: boolean[];
@@ -70,6 +75,7 @@ interface FormData {
   cv?: string;
   suratPernyataan?: string;
   suratSehat?: string;
+  sk?: string;
 }
 
 const STEPS = [
@@ -81,8 +87,11 @@ const STEPS = [
 
 export default function PendaftaranAnggota() {
   const persyaratan = useContentStore((s) => s.persyaratan);
+  const [openSteps, setOpenSteps] = useState<number[]>([]); // All closed by default
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [nomorPendaftaran, setNomorPendaftaran] = useState("");
+  const [copied, setCopied] = useState(false);
   const [form, setForm] = useState<FormData>({
     namaLengkap: "",
     nik: "",
@@ -97,10 +106,8 @@ export default function PendaftaranAnggota() {
     provinsi: "",
     kabupaten: "",
     kecamatan: "",
-    desa: "",
     kodePos: "",
     email: "",
-    nomorHP: "",
     whatsapp: "",
     persyaratan: persyaratan.map(() => false),
     motivasi: "",
@@ -109,6 +116,42 @@ export default function PendaftaranAnggota() {
   const update = (field: keyof FormData, value: string | boolean[]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
+
+  const [kecamatanList, setKecamatanList] = useState<{kode: string, nama: string}[]>([]);
+  const [loadingKecamatan, setLoadingKecamatan] = useState(false);
+
+  useEffect(() => {
+    if (!form.kabupaten || !form.provinsi) {
+      setKecamatanList([]);
+      return;
+    }
+    const prov = MASTER_PROVINSI.find((p) => p.nama === form.provinsi);
+    if (!prov) return;
+    const kab = MASTER_KABUPATEN.find((k) => k.nama === form.kabupaten && k.provinsiKode === prov.kode);
+    if (!kab) return;
+
+    const localKec = getKecamatanByKabupaten(kab.kode);
+    if (localKec.length > 0) {
+      setKecamatanList(localKec);
+      return;
+    }
+
+    setLoadingKecamatan(true);
+    fetch(`https://emsifa.github.io/api-wilayah-indonesia/api/districts/${kab.kode}.json`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const formatted = data.map((d: any) => ({
+            kode: d.id,
+            nama: d.name,
+          }));
+          formatted.sort((a, b) => a.nama.localeCompare(b.nama));
+          setKecamatanList(formatted);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingKecamatan(false));
+  }, [form.kabupaten, form.provinsi]);
 
   const nextStep = () => setStep((s) => Math.min(s + 1, STEPS.length));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
@@ -120,36 +163,39 @@ export default function PendaftaranAnggota() {
     setSubmitting(true);
     setSubmitError("");
     try {
-      // Validasi semua field biodata & kontak wajib
+      // Validasi semua field wajib
       const requiredFields = [
         { key: "namaLengkap", label: "Nama Lengkap" },
         { key: "nik", label: "NIK" },
         { key: "tempatLahir", label: "Tempat Lahir" },
         { key: "tanggalLahir", label: "Tanggal Lahir" },
         { key: "jenisKelamin", label: "Jenis Kelamin" },
-        { key: "alamat", label: "Alamat" },
+        { key: "agama", label: "Agama" },
+        { key: "pendidikan", label: "Pendidikan" },
+        { key: "pekerjaan", label: "Pekerjaan" },
+        { key: "alamat", label: "Alamat Lengkap" },
         { key: "provinsi", label: "Provinsi" },
         { key: "kabupaten", label: "Kabupaten/Kota" },
+        { key: "kecamatan", label: "Kecamatan" },
+        { key: "kodePos", label: "Kode Pos" },
         { key: "email", label: "Email" },
-        { key: "nomorHP", label: "Nomor HP" },
         { key: "whatsapp", label: "WhatsApp" },
       ] as const;
+      
       for (const f of requiredFields) {
         const val = form[f.key];
         if (!val || !String(val).trim()) {
           setSubmitError(`${f.label} wajib diisi`);
           setSubmitting(false);
-          // Navigate to step 1 if biodata field, step 2 if kontak
-          const step1Fields = ["namaLengkap", "nik", "tempatLahir", "tanggalLahir", "jenisKelamin", "alamat", "provinsi", "kabupaten"];
-          if (step1Fields.includes(f.key)) setStep(1);
-          else setStep(2);
+          // Scroll ke form jika error (optional)
+          window.scrollTo({ top: document.getElementById("pendaftaran")?.offsetTop || 0, behavior: "smooth" });
           return;
         }
       }
+      
       // Validasi semua persyaratan harus dicentang
       if (!form.persyaratan.every(Boolean)) {
         setSubmitError("Semua persyaratan kepengurusan harus dicentang");
-        setStep(3);
         setSubmitting(false);
         return;
       }
@@ -185,10 +231,8 @@ export default function PendaftaranAnggota() {
         provinsiNama: provMaster.nama,
         kabupatenNama: kabMaster.nama,
         kecamatan: form.kecamatan,
-        desa: form.desa,
         kodePos: form.kodePos,
         email: form.email,
-        hp: form.nomorHP,
         whatsapp: form.whatsapp,
         motivasi: form.motivasi,
         persyaratan: form.persyaratan,
@@ -196,6 +240,7 @@ export default function PendaftaranAnggota() {
         foto: form.foto || null,
         ktp: form.ktp || null,
         cv: form.cv || null,
+        sk: form.sk || null,
         suratPernyataan: form.suratPernyataan || null,
         suratSehat: form.suratSehat || null,
       };
@@ -215,12 +260,22 @@ export default function PendaftaranAnggota() {
       if (!data.success) {
         throw new Error(data.error || `Gagal submit pendaftaran (HTTP ${res.status})`);
       }
+      if (data.data?.nomorPendaftaran) {
+        setNomorPendaftaran(data.data.nomorPendaftaran);
+      }
       setSubmitted(true);
     } catch (e: any) {
       setSubmitError(e.message || "Terjadi kesalahan");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const copyNomor = () => {
+    if (!nomorPendaftaran) return;
+    navigator.clipboard.writeText(nomorPendaftaran);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const allPersyaratanChecked = form.persyaratan.every(Boolean);
@@ -234,7 +289,7 @@ export default function PendaftaranAnggota() {
           animate={{ opacity: 1, scale: 1 }}
           className="relative container mx-auto px-4 sm:px-6 lg:px-8 max-w-2xl text-center"
         >
-          <div className="bg-white rounded-3xl shadow-2xl p-10 border border-sky-100">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10 border border-sky-100">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
@@ -247,46 +302,101 @@ export default function PendaftaranAnggota() {
               Pendaftaran Berhasil Dikirim!
             </h2>
             <p className="text-slate-600 text-sm lg:text-base leading-relaxed mb-6">
-              Halo <strong>{form.namaLengkap}</strong>, pendaftaran Anda telah kami
-              terima. Tim pengurus KIPAN {form.kabupaten || "wilayah Anda"} akan
-              memverifikasi berkas dalam 3-5 hari kerja. Anda akan dihubungi via
-              WhatsApp <strong>{form.whatsapp}</strong>.
+              Halo <strong>{form.namaLengkap}</strong>, formulir pendaftaran Anda telah berhasil kami terima.
+              Silakan simpan <strong>Nomor Pendaftaran</strong> resmi berikut untuk memantau status seleksi dan verifikasi berkas Anda:
             </p>
+
+            {/* Card Nomor Pendaftaran */}
+            {nomorPendaftaran && (
+              <div className="bg-gradient-to-br from-blue-600 to-sky-600 text-white rounded-2xl p-5 sm:p-6 mb-6 shadow-lg shadow-sky-500/25 text-left">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-sky-100">
+                    Nomor Pendaftaran Resmi
+                  </span>
+                  <span className="text-[11px] bg-white/20 backdrop-blur-sm px-2.5 py-0.5 rounded-full font-medium">
+                    Simpan & Catat
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 bg-black/15 backdrop-blur-md rounded-xl px-4 py-3 border border-white/10">
+                  <span className="font-mono text-xl sm:text-2xl font-extrabold tracking-wider">
+                    {nomorPendaftaran}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={copyNomor}
+                    className="inline-flex items-center gap-1.5 bg-white text-blue-700 hover:bg-sky-50 text-xs font-bold px-3 py-2 rounded-lg shadow transition-all active:scale-95"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    {copied ? "Tersalin!" : "Salin"}
+                  </button>
+                </div>
+                <p className="text-xs text-sky-100 mt-3 leading-relaxed">
+                  Gunakan nomor ini pada fitur <strong>Lacak Pendaftaran</strong> di halaman depan untuk memantau progres verifikasi berkas Anda secara berkala.
+                </p>
+              </div>
+            )}
 
             {/* Status preview */}
             <div className="bg-sky-50 border border-sky-200 rounded-2xl p-5 text-left mb-6">
               <div className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-3">
-                Status Pendaftaran
+                Tahapan Verifikasi
               </div>
               <div className="flex items-center gap-3 mb-2">
                 <CheckCircle2 className="w-5 h-5 text-sky-500" />
-                <span className="text-sm text-slate-700">Berkas diterima</span>
+                <span className="text-sm font-medium text-slate-800">Berkas pendaftaran diterima</span>
               </div>
-              <div className="flex items-center gap-3 mb-2 opacity-50">
-                <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
-                <span className="text-sm text-slate-500">Verifikasi admin kabupaten</span>
+              <div className="flex items-center gap-3 mb-2 opacity-60">
+                <div className="w-5 h-5 rounded-full border-2 border-slate-400 flex items-center justify-center text-[10px] font-bold text-slate-500">2</div>
+                <span className="text-sm text-slate-600">Verifikasi dokumen oleh admin wilayah</span>
               </div>
-              <div className="flex items-center gap-3 opacity-50">
-                <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
-                <span className="text-sm text-slate-500">Jadwal pelatihan</span>
+              <div className="flex items-center gap-3 opacity-60">
+                <div className="w-5 h-5 rounded-full border-2 border-slate-400 flex items-center justify-center text-[10px] font-bold text-slate-500">3</div>
+                <span className="text-sm text-slate-600">Pengangkatan & penerbitan NIP resmi</span>
               </div>
             </div>
 
-            <button
-              onClick={() => {
-                setSubmitted(false);
-                setStep(1);
-                setForm({
-                  ...form,
-                  namaLengkap: "",
-                  nik: "",
-                  // reset other fields
-                });
-              }}
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-            >
-              ← Kembali ke Form Pendaftaran
-            </button>
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href="#lacak-pendaftaran"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold text-sm px-6 py-3 rounded-full shadow-lg shadow-sky-500/25 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+              >
+                Lacak Status Pendaftaran
+                <ArrowRight className="w-4 h-4" />
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitted(false);
+                  setNomorPendaftaran("");
+                  setStep(1);
+                  setForm({
+                    namaLengkap: "",
+                    nik: "",
+                    tempatLahir: "",
+                    tanggalLahir: "",
+                    jenisKelamin: "",
+                    agama: "",
+                    pendidikan: "",
+                    pekerjaan: "",
+                    status: "",
+                    alamat: "",
+                    provinsi: "",
+                    kabupaten: "",
+                    kecamatan: "",
+                    kodePos: "",
+                    email: "",
+
+                    whatsapp: "",
+                    persyaratan: persyaratan.map(() => false),
+                    motivasi: "",
+                  });
+                }}
+                className="w-full sm:w-auto text-sm font-medium text-slate-600 hover:text-blue-700 px-5 py-3 transition-colors"
+              >
+                ← Kembali ke Form Baru
+              </button>
+            </div>
           </div>
         </motion.div>
       </section>
@@ -324,70 +434,94 @@ export default function PendaftaranAnggota() {
           </p>
         </motion.div>
 
-        <div className="max-w-3xl mx-auto">
-          {/* Stepper */}
-          <div className="flex items-center justify-between mb-8 px-2">
-            {STEPS.map((s, idx) => {
+        <div className="max-w-4xl mx-auto">
+          {/* Vertical Form List */}
+          <div className="space-y-8 mb-6">
+            {STEPS.map((s) => {
               const Icon = s.icon;
-              const isActive = step === s.id;
-              const isCompleted = step > s.id;
+              const isActive = openSteps.includes(s.id);
+              
               return (
-                <div key={s.id} className="flex items-center flex-1">
-                  <div className="flex flex-col items-center gap-2">
-                    <motion.div
-                      initial={false}
-                      animate={{
-                        scale: isActive ? 1.1 : 1,
-                        backgroundColor: isCompleted
-                          ? "#10b981"
-                          : isActive
-                          ? "#047857"
-                          : "#e2e8f0",
-                      }}
-                      className={`w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center shadow-md ${
-                        isActive ? "shadow-sky-500/30" : ""
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                      ) : (
-                        <Icon className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
-                      )}
-                    </motion.div>
-                    <span
-                      className={`text-[10px] lg:text-xs font-semibold ${
-                        isActive ? "text-blue-700" : "text-slate-400"
-                      }`}
-                    >
-                      {s.label}
-                    </span>
-                  </div>
-                  {idx < STEPS.length - 1 && (
-                    <div className="flex-1 h-1 mx-2 rounded-full bg-slate-200 overflow-hidden">
-                      <motion.div
-                        initial={false}
-                        animate={{ width: step > s.id ? "100%" : "0%" }}
-                        transition={{ duration: 0.3 }}
-                        className="h-full bg-gradient-to-r from-sky-500 to-blue-600"
-                      />
+                <div key={s.id} className="flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpenSteps(prev => 
+                        prev.includes(s.id) 
+                          ? prev.filter(id => id !== s.id) 
+                          : [...prev, s.id]
+                      );
+                    }}
+                    className="w-full flex items-center justify-between px-6 py-4 sm:px-8 sm:py-5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 transition-all rounded-full shadow-lg shadow-sky-500/30"
+                  >
+                    <div className="flex items-center gap-4 sm:gap-5">
+                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2} />
+                      <h3 className="font-bold text-white text-sm sm:text-base tracking-wide">
+                        {s.label}
+                      </h3>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    <ChevronDown
+                      className={`w-5 h-5 text-white/90 transition-transform duration-300 ${
+                        isActive ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  
+                  <AnimatePresence initial={false}>
+                    {isActive && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-8 lg:p-10 shadow-xl shadow-sky-900/5 mt-4">
 
-          {/* Form card */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="bg-white rounded-3xl shadow-2xl border border-sky-100 p-6 lg:p-10"
-          >
-            <AnimatePresence mode="wait">
+          {/* Security Guarantee Banner (Only in Step 1) */}
+          {s.id === 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="mb-8 bg-blue-950 rounded-2xl p-6 sm:p-8 border border-sky-500/20 shadow-xl"
+            >
+            <div className="flex gap-4 sm:gap-6 items-start">
+              <div className="w-12 h-16 bg-emerald-600 rounded-b-full rounded-t flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
+                <Lock className="w-6 h-6 text-emerald-100" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="flex items-center gap-2 text-emerald-400 font-bold text-sm sm:text-base mb-3">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Jaminan Keamanan & Kerahasiaan Data (Standar UU PDP)
+                </h4>
+                <p className="text-sky-200/80 text-sm leading-relaxed mb-6 text-justify">
+                  Seluruh data identitas, NIK, dan dokumen KTP Anda dienkripsi secara aman dengan standar protokol enkripsi tingkat tinggi (AES-256) dan hanya digunakan untuk keperluan verifikasi keanggotaan resmi organisasi. Data Anda terlindungi dan tidak akan dialihkan ke pihak ketiga tanpa izin.
+                </p>
+                <div className="flex items-center justify-between gap-1 sm:gap-4 text-[9px] sm:text-xs font-medium border-t border-sky-500/10 pt-4 w-full whitespace-nowrap">
+                  <div className="flex items-center gap-1.5 text-emerald-500 shrink-0">
+                    <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span>SSL 256-bit Encrypted</span>
+                  </div>
+                  <div className="w-1 h-1 rounded-full bg-sky-500/30 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-sky-400 shrink-0">
+                    <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span>UU Perlindungan Data Pribadi</span>
+                  </div>
+                  <div className="w-1 h-1 rounded-full bg-sky-500/30 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-amber-400 shrink-0">
+                    <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span>Verifikasi e-KYC Otentik</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+          )}
+
+          {/* Form Content is now inside the Accordion body */}
               {/* STEP 1: Data Diri */}
-              {step === 1 && (
+              {s.id === 1 && (
                 <motion.div
                   key="step1"
                   initial={{ opacity: 0, x: 20 }}
@@ -403,7 +537,7 @@ export default function PendaftaranAnggota() {
                     <input
                       type="text"
                       value={form.namaLengkap}
-                      onChange={(e) => update("namaLengkap", e.target.value)}
+                      onChange={(e) => update("namaLengkap", e.target.value.replace(/[^a-zA-Z\s'.-]/g, ""))}
                       className="form-input"
                       placeholder="Nama lengkap sesuai KTP"
                     />
@@ -424,7 +558,7 @@ export default function PendaftaranAnggota() {
                       <input
                         type="text"
                         value={form.tempatLahir}
-                        onChange={(e) => update("tempatLahir", e.target.value)}
+                        onChange={(e) => update("tempatLahir", e.target.value.replace(/[^a-zA-Z\s'.-]/g, ""))}
                         className="form-input"
                         placeholder="Tempat lahir"
                       />
@@ -454,11 +588,12 @@ export default function PendaftaranAnggota() {
                   </div>
 
                   <div className="grid sm:grid-cols-3 gap-4">
-                    <Field label="Agama">
+                    <Field label="Agama" required>
                       <select
                         value={form.agama}
                         onChange={(e) => update("agama", e.target.value)}
                         className="form-input"
+                        required
                       >
                         <option value="">Pilih...</option>
                         <option>Islam</option>
@@ -469,11 +604,12 @@ export default function PendaftaranAnggota() {
                         <option>Konghucu</option>
                       </select>
                     </Field>
-                    <Field label="Pendidikan">
+                    <Field label="Pendidikan" required>
                       <select
                         value={form.pendidikan}
                         onChange={(e) => update("pendidikan", e.target.value)}
                         className="form-input"
+                        required
                       >
                         <option value="">Pilih...</option>
                         <option>SMP</option>
@@ -484,13 +620,14 @@ export default function PendaftaranAnggota() {
                         <option>S3</option>
                       </select>
                     </Field>
-                    <Field label="Pekerjaan">
+                    <Field label="Pekerjaan" required>
                       <input
                         type="text"
                         value={form.pekerjaan}
-                        onChange={(e) => update("pekerjaan", e.target.value)}
+                        onChange={(e) => update("pekerjaan", e.target.value.replace(/[^a-zA-Z\s'.-]/g, ""))}
                         className="form-input"
                         placeholder="Pekerjaan"
+                        required
                       />
                     </Field>
                   </div>
@@ -543,26 +680,25 @@ export default function PendaftaranAnggota() {
                         })()}
                       </select>
                     </Field>
-                    <Field label="Kecamatan">
+                    <Field label="Kecamatan" required>
                       <select
                         value={form.kecamatan}
                         onChange={(e) => update("kecamatan", e.target.value)}
-                        disabled={!form.kabupaten}
+                        disabled={!form.kabupaten || loadingKecamatan}
                         className="form-input disabled:bg-slate-50 disabled:text-slate-400"
+                        required
                       >
-                        <option value="">Pilih Kecamatan...</option>
-                        {form.kabupaten && (() => {
-                          const prov = MASTER_PROVINSI.find((p) => p.nama === form.provinsi);
-                          if (!prov) return null;
-                          const kab = MASTER_KABUPATEN.find((k) => k.nama === form.kabupaten && k.provinsiKode === prov.kode);
-                          if (!kab) return null;
-                          return getKecamatanByKabupaten(kab.kode).map((kec) => (
-                            <option key={kec.kode} value={kec.nama}>{kec.nama}</option>
-                          ));
-                        })()}
+                        <option value="">
+                          {loadingKecamatan ? "Memuat Kecamatan..." : "Pilih Kecamatan..."}
+                        </option>
+                        {kecamatanList.map((kec) => (
+                          <option key={kec.kode} value={kec.nama}>
+                            {kec.nama}
+                          </option>
+                        ))}
                       </select>
                     </Field>
-                    <Field label="Kode Pos">
+                    <Field label="Kode Pos" required>
                       <input
                         type="text"
                         maxLength={5}
@@ -570,14 +706,15 @@ export default function PendaftaranAnggota() {
                         onChange={(e) => update("kodePos", e.target.value.replace(/\D/g, ""))}
                         className="form-input"
                         placeholder="Kode pos"
+                        required
                       />
                     </Field>
                   </div>
                 </motion.div>
               )}
 
-              {/* STEP 2: Kontak */}
-              {step === 2 && (
+              {/* STEP 2: Kontak & Media Sosial */}
+              {s.id === 2 && (
                 <motion.div
                   key="step2"
                   initial={{ opacity: 0, x: 20 }}
@@ -599,26 +736,15 @@ export default function PendaftaranAnggota() {
                     />
                   </Field>
 
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <Field label="Nomor HP" required>
-                      <input
-                        type="tel"
-                        value={form.nomorHP}
-                        onChange={(e) => update("nomorHP", e.target.value)}
-                        className="form-input"
-                        placeholder="08xxxxxxxxxx"
-                      />
-                    </Field>
-                    <Field label="Nomor WhatsApp" required>
-                      <input
-                        type="tel"
-                        value={form.whatsapp}
-                        onChange={(e) => update("whatsapp", e.target.value)}
-                        className="form-input"
-                        placeholder="08xxxxxxxxxx"
-                      />
-                    </Field>
-                  </div>
+                  <Field label="Nomor WhatsApp" required>
+                    <input
+                      type="tel"
+                      value={form.whatsapp}
+                      onChange={(e) => update("whatsapp", e.target.value.replace(/\D/g, ""))}
+                      className="form-input"
+                      placeholder="08xxxxxxxxxx (Aktif & Valid)"
+                    />
+                  </Field>
 
                   <Field label="Motivasi Bergabung dengan KIPAN">
                     <textarea
@@ -643,6 +769,7 @@ export default function PendaftaranAnggota() {
                         { key: "ktp", label: "KTP", icon: IdCard },
                         { key: "foto", label: "Pas Foto", icon: User },
                         { key: "cv", label: "CV/Resume", icon: FileText },
+                        { key: "sk", label: "SK (Surat Keputusan)", icon: FileText },
                         { key: "suratPernyataan", label: "Surat Pernyataan", icon: ScrollText },
                         { key: "suratSehat", label: "Surat Sehat", icon: HeartPulse },
                       ].map((doc) => {
@@ -659,7 +786,11 @@ export default function PendaftaranAnggota() {
                             </div>
                             <input
                               type="file"
-                              accept="image/*,.pdf"
+                              accept={
+                                doc.key === "foto" ? "image/jpeg,image/png,image/jpg" :
+                                doc.key === "ktp" ? "image/jpeg,image/png,image/jpg,.pdf" :
+                                ".pdf"
+                              }
                               onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (!file) return;
@@ -714,7 +845,7 @@ export default function PendaftaranAnggota() {
               )}
 
               {/* STEP 3: Persyaratan */}
-              {step === 3 && (
+              {s.id === 3 && (
                 <motion.div
                   key="step3"
                   initial={{ opacity: 0, x: 20 }}
@@ -785,7 +916,7 @@ export default function PendaftaranAnggota() {
               )}
 
               {/* STEP 4: Konfirmasi */}
-              {step === 4 && (
+              {s.id === 4 && (
                 <motion.div
                   key="step4"
                   initial={{ opacity: 0, x: 20 }}
@@ -813,7 +944,6 @@ export default function PendaftaranAnggota() {
                       Kontak
                     </div>
                     <Row label="Email" value={form.email} />
-                    <Row label="HP" value={form.nomorHP} />
                     <Row label="WhatsApp" value={form.whatsapp} />
                   </div>
 
@@ -827,56 +957,52 @@ export default function PendaftaranAnggota() {
                   </div>
                 </motion.div>
               )}
-            </AnimatePresence>
-
-            {/* Navigation buttons */}
-            <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
-              <button
-                onClick={prevStep}
-                disabled={step === 1}
-                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-slate-600 hover:text-blue-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Kembali
-              </button>
-
-              {step < STEPS.length ? (
-                <button
-                  onClick={nextStep}
-                  disabled={(step === 3 && !allPersyaratanChecked)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold rounded-full shadow-lg shadow-sky-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                >
-                  Lanjut
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <div className="flex flex-col items-end gap-2">
-                  {submitError && (
-                    <div className="text-xs text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 max-w-xs">
-                      ⚠️ {submitError}
-                    </div>
-                  )}
-                  <button
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold rounded-full shadow-lg shadow-sky-500/30 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Mengirim...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        Kirim Pendaftaran
-                      </>
+                        </div>
+                      </motion.div>
                     )}
-                  </button>
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Submit Button Section */}
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 overflow-hidden shadow-xl p-6 sm:p-10">
+            <div className="flex flex-col items-center text-center max-w-md mx-auto">
+              <h3 className="text-xl font-bold text-blue-950 mb-3">
+                Kirim Pendaftaran
+              </h3>
+              <p className="text-sm text-slate-600 mb-8">
+                Pastikan seluruh data yang Anda isikan sudah benar dan sesuai dengan identitas resmi.
+              </p>
+              
+              {submitError && (
+                <div className="w-full text-sm text-rose-600 bg-rose-50 border border-rose-200 rounded-xl p-4 mb-6 text-left flex items-start gap-3">
+                  <span className="text-xl leading-none">⚠️</span>
+                  <span>{submitError}</span>
                 </div>
               )}
+
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !allPersyaratanChecked}
+                className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold text-lg rounded-2xl shadow-[0_8px_30px_rgb(14,165,233,0.3)] hover:shadow-[0_8px_30px_rgb(14,165,233,0.5)] hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              >
+                {submitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Memproses Data...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Kirim Pendaftaran
+                  </>
+                )}
+              </button>
             </div>
-          </motion.div>
+          </div>
+
         </div>
       </div>
 
@@ -885,16 +1011,22 @@ export default function PendaftaranAnggota() {
         .form-input {
           width: 100%;
           padding: 0.625rem 0.875rem;
-          font-size: 0.875rem;
+          font-size: 16px; /* 16px on mobile prevents iOS Safari auto-zoom! */
           border-radius: 0.5rem;
           border: 1px solid #e2e8f0;
           background: white;
           outline: none;
           transition: all 0.2s;
+          -webkit-appearance: none;
+        }
+        @media (min-width: 640px) {
+          .form-input {
+            font-size: 0.875rem;
+          }
         }
         .form-input:focus {
-          border-color: #10b981;
-          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
       `}</style>
     </section>

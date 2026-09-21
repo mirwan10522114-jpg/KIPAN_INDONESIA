@@ -31,15 +31,17 @@ export const STATS = [
 ];
 
 export const NAV_LINKS = [
-  { label: "Beranda", href: "#beranda" },
-  { label: "Tentang", href: "#tentang" },
-  { label: "Struktur", href: "#struktur" },
-  { label: "Program", href: "#program" },
-  { label: "Berita", href: "#berita" },
-  { label: "Galeri", href: "#galeri" },
-  { label: "Pengurus", href: "#pengurus" },
-  { label: "Daftar", href: "#pendaftaran" },
-  { label: "Kontak", href: "#kontak" },
+  { label: "Beranda", href: "/" },
+  { label: "Tentang", href: "/#tentang" },
+  { label: "Struktur", href: "/#struktur" },
+  { label: "Program", href: "/program" },
+  { label: "Berita", href: "/berita" },
+  { label: "Galeri", href: "/galeri" },
+  { label: "Pengurus", href: "/#pengurus" },
+  { label: "Daftar", href: "/pendaftaran" },
+  { label: "Lacak", href: "/lacak-pendaftaran" },
+  { label: "Cek Anggota", href: "/cek-anggota" },
+  { label: "Kontak", href: "/kontak" },
 ];
 
 // ============================================================
@@ -116,22 +118,6 @@ export const STRUKTUR_LEVELS = [
     icon: "Building2",
     color: "from-cyan-600 to-sky-600",
     count: "514 Kab/Kota",
-  },
-  {
-    level: "Kecamatan",
-    title: "Pengurus Kecamatan",
-    desc: "Pengurus lapangan yang melakukan rekrutmen dan pendampingan pengurus di komunitas.",
-    icon: "Users",
-    color: "from-sky-600 to-blue-600",
-    count: "Opsional",
-  },
-  {
-    level: "Anggota",
-    title: "Anggota Divisi",
-    desc: "Jabatan dalam divisi-divisi KIPAN yang menjadi ujung tombak gerakan di masyarakat.",
-    icon: "User",
-    color: "from-blue-600 to-indigo-600",
-    count: "Jabatan",
   },
 ];
 
@@ -733,7 +719,6 @@ export const TESTIMONIALS: Testimonial[] = [
 
 export const TESTIMONIAL_STATS = [
   { value: "98%", label: "Pengurus Aktif", icon: "Users" },
-  { value: "4.9/5", label: "Kepuasan Program", icon: "Star" },
   { value: "1.000+", label: "Pengurus Nasional", icon: "Award" },
   { value: "38", label: "Provinsi Tersebar", icon: "MapPin" },
 ];

@@ -15,39 +15,34 @@ import {
 } from "lucide-react";
 import { PERSYARATAN } from "@/lib/kipan-data";
 
+import { useAuthStore } from "@/lib/auth-store";
+
 export default function VerifikasiPage() {
+  const { role, wilayah } = useAuthStore();
   const [list, setList] = useState<any[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("data-diri");
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
-  const [jabatanList, setJabatanList] = useState<any[]>([]);
-  const [selectedJabatanId, setSelectedJabatanId] = useState<string>("");
   const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showNotesDialog, setShowNotesDialog] = useState(false);
+  const [notesType, setNotesType] = useState<"PERBAIKAN" | "DITOLAK">("PERBAIKAN");
+  const [notesInput, setNotesInput] = useState("");
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [pendRes, jabRes] = await Promise.all([
-        fetch("/api/pendaftaran", { cache: "no-store" }),
-        fetch("/api/jabatan?level=Kabupaten", { cache: "no-store" }),
-      ]);
+      const params = new URLSearchParams();
+      if (role) params.append("role", role);
+      if (wilayah) params.append("wilayah", wilayah);
+      
+      const pendRes = await fetch(`/api/pendaftaran?${params.toString()}`, { cache: "no-store" });
       const pendJson = await pendRes.json();
-      const jabJson = await jabRes.json();
       if (pendJson.success) {
         setList(pendJson.data);
         if (pendJson.data.length > 0 && selectedId === null) {
           setSelectedId(pendJson.data[0].id);
         }
-      }
-      if (jabJson.success) {
-        // Filter hanya yang nama "Anggota" atau semua jabatan level Kabupaten
-        setJabatanList(jabJson.data);
-        // Default: pilih "Anggota" di "Divisi Organisasi dan Keanggotaan"
-        const defaultJab = jabJson.data.find(
-          (j: any) => j.nama === "Anggota" && j.bidang === "Divisi Organisasi dan Keanggotaan"
-        ) || jabJson.data.find((j: any) => j.nama === "Anggota");
-        if (defaultJab) setSelectedJabatanId(String(defaultJab.id));
       }
     } catch (e) {
       console.error(e);
@@ -62,15 +57,12 @@ export default function VerifikasiPage() {
 
   const selected = list.find((p) => p.id === selectedId);
 
-  const updateStatus = async (newStatus: string, catatan?: string, jabatanId?: string) => {
+  const updateStatus = async (newStatus: string, catatan?: string) => {
     if (!selectedId) return;
     setActing(true);
     try {
       const payload: any = { status: newStatus, catatan };
-      if (newStatus === "DISETUJUI" && jabatanId) {
-        payload.jabatanId = parseInt(jabatanId);
-      }
-      const res = await fetch(`/api/pendaftaran/${selectedId}/verifikasi`, {
+      const res = await fetch(`/api/pendaftaran/${selectedId}/verifikasi?role=${role}&wilayah=${wilayah || ""}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -79,6 +71,8 @@ export default function VerifikasiPage() {
       if (json.success) {
         alert(json.message);
         setShowApproveDialog(false);
+        setShowNotesDialog(false);
+        setNotesInput("");
         fetchData();
       } else {
         alert(json.error || "Gagal update status");
@@ -95,33 +89,38 @@ export default function VerifikasiPage() {
     { nama: "KTP", uploaded: !!selected.ktp, url: selected.ktp },
     { nama: "Pas Foto", uploaded: !!selected.foto, url: selected.foto },
     { nama: "CV/Resume", uploaded: !!selected.cv, url: selected.cv },
+    { nama: "SK (Surat Keputusan)", uploaded: !!selected.sk, url: selected.sk },
     { nama: "Surat Pernyataan", uploaded: !!selected.suratPernyataan, url: selected.suratPernyataan },
     { nama: "Surat Sehat", uploaded: !!selected.suratSehat, url: selected.suratSehat },
   ] : [];
 
   const openDoc = (url: string, nama: string) => {
     if (!url) return;
-    if (url.startsWith("data:")) {
-      const w = window.open();
-      if (w) {
-        if (url.startsWith("data:image/")) {
-          w.document.write(`<html><head><title>${nama}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#1e293b"><img src="${url}" style="max-width:100%;max-height:100vh;object-fit:contain" /></body></html>`);
-        } else if (url.startsWith("data:application/pdf")) {
-          w.document.write(`<html><head><title>${nama}</title></head><body style="margin:0"><iframe src="${url}" style="width:100vw;height:100vh;border:0"></iframe></body></html>`);
-        } else {
-          w.document.write(`<html><head><title>${nama}</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh"><a href="${url}" download="${nama}" style="padding:12px 24px;background:#0ea5e9;color:white;text-decoration:none;border-radius:8px">Download ${nama}</a></body></html>`);
+    try {
+      if (url.startsWith("data:")) {
+        const arr = url.split(',');
+        const mime = arr[0].match(/:(.*?);/)?.[1] || "";
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
         }
-        w.document.close();
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+      } else {
+        window.open(url, "_blank");
       }
-    } else {
-      window.open(url, "_blank");
+    } catch (e) {
+      alert("Gagal membuka file. Format file tidak valid.");
     }
   };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-blue-950">Verifikasi Pengurus</h1>
+        <h1 className="text-2xl font-bold text-blue-950">Verifikasi Anggota</h1>
         <div className="bg-white rounded-2xl p-12 text-center">
           <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3" />
           <p className="text-sm text-slate-500">Memuat data...</p>
@@ -134,8 +133,8 @@ export default function VerifikasiPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-blue-950">Verifikasi Pengurus</h1>
-          <p className="text-slate-500 text-sm mt-1">Verifikasi berkas dan persyaratan calon pengurus</p>
+          <h1 className="text-2xl font-bold text-blue-950">Verifikasi Anggota</h1>
+          <p className="text-slate-500 text-sm mt-1">Verifikasi berkas dan persyaratan calon anggota KIPAN</p>
         </div>
         <button
           onClick={fetchData}
@@ -149,7 +148,7 @@ export default function VerifikasiPage() {
         {/* List */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-4 border-b border-slate-100">
-            <h3 className="font-bold text-blue-950 text-sm">Calon Pengurus ({list.length})</h3>
+            <h3 className="font-bold text-blue-950 text-sm">Calon Anggota ({list.length})</h3>
           </div>
           <ul className="max-h-[600px] overflow-y-auto">
             {list.map((p) => (
@@ -242,7 +241,7 @@ export default function VerifikasiPage() {
                     <Info label="Pendidikan" value={selected.pendidikan || "-"} />
                     <Info label="Pekerjaan" value={selected.pekerjaan || "-"} />
                     <Info label="Email" value={selected.email} />
-                    <Info label="HP" value={selected.hp} />
+                    
                     <Info label="WhatsApp" value={selected.whatsapp || "-"} />
                     <div className="col-span-2">
                       <Info label="Alamat" value={`${selected.alamat}, Kec. ${selected.kecamatan || "-"}, ${selected.kabupaten?.nama}, ${selected.provinsi?.nama}`} />
@@ -351,12 +350,13 @@ export default function VerifikasiPage() {
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  Setujui & Jadikan Pengurus
+                  Setujui & Jadikan Anggota
                 </button>
                 <button
                   onClick={() => {
-                    const catatan = prompt("Masukkan catatan perbaikan:");
-                    if (catatan) updateStatus("PERBAIKAN", catatan);
+                    setNotesType("PERBAIKAN");
+                    setNotesInput("");
+                    setShowNotesDialog(true);
                   }}
                   disabled={acting}
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 disabled:opacity-50"
@@ -366,8 +366,9 @@ export default function VerifikasiPage() {
                 </button>
                 <button
                   onClick={() => {
-                    const catatan = prompt("Masukkan alasan penolakan:");
-                    if (catatan) updateStatus("DITOLAK", catatan);
+                    setNotesType("DITOLAK");
+                    setNotesInput("");
+                    setShowNotesDialog(true);
                   }}
                   disabled={acting}
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 text-white text-sm font-semibold rounded-lg hover:bg-rose-700 disabled:opacity-50"
@@ -387,13 +388,13 @@ export default function VerifikasiPage() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl p-12 text-center text-slate-500">
-              Pilih calon pengurus dari daftar untuk verifikasi
+              Pilih calon anggota dari daftar untuk verifikasi
             </div>
           )}
         </div>
       </div>
 
-      {/* Approve Dialog — Pilih Bidang & Jabatan */}
+      {/* Approve Dialog — Konfirmasi sederhana (tanpa pilih jabatan) */}
       {showApproveDialog && selected && (
         <div
           className="fixed inset-0 z-[300] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4"
@@ -415,7 +416,7 @@ export default function VerifikasiPage() {
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold">Setujui & Jadikan Pengurus</h2>
+                  <h2 className="text-lg font-bold">Setujui & Jadikan Anggota</h2>
                   <p className="text-xs text-emerald-100">{selected.namaLengkap}</p>
                 </div>
               </div>
@@ -423,45 +424,17 @@ export default function VerifikasiPage() {
 
             <div className="p-6 space-y-4">
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-xs text-emerald-800">
-                ℹ️ Saat disetujui, sistem akan otomatis membuat:
+                ℹ️ Saat disetujui, sistem akan otomatis:
                 <ul className="list-disc list-inside mt-1 space-y-0.5">
-                  <li>Record data person (NIP auto-generate)</li>
-                  <li>Record Pengurus dengan jabatan "Anggota" di divisi yang Anda pilih</li>
-                  <li>Level default: <strong>Kabupaten</strong> sesuai wilayah pendaftaran</li>
+                  <li>Membuat record <strong>Anggota KIPAN</strong> resmi</li>
+                  <li>Menerbitkan <strong>NIA</strong> (Nomor Induk Anggota) otomatis</li>
+                  <li>Menghapus data pendaftaran dari antrean verifikasi</li>
                 </ul>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Pilih Bidang & Jabatan *
-                </label>
-                <select
-                  value={selectedJabatanId}
-                  onChange={(e) => setSelectedJabatanId(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
-                >
-                  {/* Group by bidang */}
-                  {Object.entries(
-                    jabatanList.reduce((acc: any, j: any) => {
-                      if (!acc[j.bidang]) acc[j.bidang] = [];
-                      acc[j.bidang].push(j);
-                      return acc;
-                    }, {})
-                  ).sort(([a], [b]) => a.localeCompare(b)).map(([bidang, items]: [string, any]) => (
-                    <optgroup key={bidang} label={bidang}>
-                      {items
-                        .sort((a: any, b: any) => a.urutan - b.urutan)
-                        .map((j: any) => (
-                          <option key={j.id} value={j.id}>
-                            {j.nama}
-                          </option>
-                        ))}
-                    </optgroup>
-                  ))}
-                </select>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Default: jabatan "Anggota" di "Divisi Organisasi dan Keanggotaan". Anda bisa pilih jabatan lain jika perlu.
-                </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+                💡 <strong>Catatan:</strong> Pendaftar akan menjadi <strong>Anggota biasa</strong> (bukan Pengurus). 
+                Untuk menjadikan Pengurus, gunakan menu <strong>Surat Keputusan → Tambah Pengurus ke SK</strong> setelah ini.
               </div>
             </div>
 
@@ -473,8 +446,8 @@ export default function VerifikasiPage() {
                 Batal
               </button>
               <button
-                onClick={() => updateStatus("DISETUJUI", undefined, selectedJabatanId)}
-                disabled={acting || !selectedJabatanId}
+                onClick={() => updateStatus("DISETUJUI")}
+                disabled={acting}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 disabled:opacity-50"
               >
                 {acting ? (
@@ -485,10 +458,62 @@ export default function VerifikasiPage() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    Setujui & Buat Pengurus
+                    Setujui & Buat Anggota
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Catatan (Revisi / Tolak) */}
+      {showNotesDialog && selected && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-xl">
+            <div className={`p-6 text-white ${notesType === "PERBAIKAN" ? "bg-amber-500" : "bg-rose-600"}`}>
+              <h3 className="text-xl font-bold">
+                {notesType === "PERBAIKAN" ? "Minta Perbaikan Data" : "Tolak Pendaftaran"}
+              </h3>
+              <p className="text-sm opacity-90 mt-1">
+                {notesType === "PERBAIKAN" 
+                  ? "Berikan catatan mengenai dokumen atau data apa saja yang perlu diperbaiki oleh pendaftar."
+                  : "Berikan alasan mengapa pendaftaran ini ditolak."}
+              </p>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Catatan {notesType === "PERBAIKAN" ? "Perbaikan" : "Penolakan"}
+              </label>
+              <textarea
+                value={notesInput}
+                onChange={(e) => setNotesInput(e.target.value)}
+                placeholder={notesType === "PERBAIKAN" ? "Contoh: KTP buram, silakan unggah ulang foto KTP yang lebih jelas..." : "Alasan penolakan..."}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-blue-500 outline-none resize-none h-32 text-sm"
+              ></textarea>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setShowNotesDialog(false)}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-lg"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    if (!notesInput.trim()) {
+                      alert("Catatan wajib diisi!");
+                      return;
+                    }
+                    updateStatus(notesType, notesInput.trim());
+                  }}
+                  disabled={acting || !notesInput.trim()}
+                  className={`px-4 py-2 text-sm font-semibold text-white rounded-lg disabled:opacity-50 ${
+                    notesType === "PERBAIKAN" ? "bg-amber-500 hover:bg-amber-600" : "bg-rose-600 hover:bg-rose-700"
+                  }`}
+                >
+                  {acting ? "Memproses..." : "Kirim Catatan & Update Status"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

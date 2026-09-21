@@ -54,3 +54,11 @@ server.log
 /skills/
 # Download screenshots
 /download/
+
+# Workspace specific / Large unused files
+/upload/
+/tool-results/
+/scratch/
+check*.ts
+check*.js
+seed-*.js

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
-import { MASTER_KABUPATEN } from "@/lib/master-wilayah";
+import { MASTER_PROVINSI, MASTER_KABUPATEN } from "@/lib/master-wilayah";
+import { encryptNIK, decryptNIK } from "@/lib/encryption";
 
 // ============================================================
 // GET /api/pendaftaran — List semua pendaftaran
@@ -10,8 +11,31 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
+    const role = searchParams.get("role");
+    const wilayah = searchParams.get("wilayah");
 
-    const where = status && status !== "Semua" ? { status } : {};
+    let where: any = {};
+    if (status && status !== "Semua") {
+      where.status = status;
+    }
+
+    if (role === "ADMIN_PROVINSI" && wilayah) {
+      const w = wilayah.replace("Provinsi ", "").trim();
+      const prov = await db.provinsi.findFirst({ where: { nama: w } });
+      if (prov) {
+        where.provinsiId = prov.id;
+      } else {
+        where.provinsiId = -1;
+      }
+    } else if (role === "ADMIN_KABUPATEN" && wilayah) {
+      const w = wilayah.replace("Kabupaten ", "Kab. ").trim();
+      const kab = await db.kabupaten.findFirst({ where: { nama: w } });
+      if (kab) {
+        where.kabupatenId = kab.id;
+      } else {
+        where.kabupatenId = -1;
+      }
+    }
 
     const pendaftaran = await db.pendaftaran.findMany({
       where,
@@ -23,10 +47,16 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
+    // Dekripsi NIK untuk ditampilkan di Admin Dashboard
+    const pendaftaranWithDecryptedNik = pendaftaran.map(p => ({
+      ...p,
+      nik: decryptNIK(p.nik)
+    }));
+
     return NextResponse.json({
       success: true,
-      data: pendaftaran,
-      total: pendaftaran.length,
+      data: pendaftaranWithDecryptedNik,
+      total: pendaftaranWithDecryptedNik.length,
     });
   } catch (error) {
     console.error("GET /api/pendaftaran error:", error);
@@ -48,7 +78,7 @@ export async function POST(req: NextRequest) {
     const requiredFields = [
       "namaLengkap", "nik", "tempatLahir", "tanggalLahir",
       "jenisKelamin", "alamat", "provinsiNama", "kabupatenKode",
-      "email", "hp",
+      "email", "whatsapp",
     ];
     for (const field of requiredFields) {
       if (!body[field] || String(body[field]).trim() === "") {
@@ -83,19 +113,38 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Lookup Provinsi by nama (DB menggunakan kode 2-huruf yang berbeda dari master-wilayah,
-    // jadi lookup by nama adalah yang paling reliable)
-    const provinsi = await db.provinsi.findFirst({
+    // Lookup Provinsi by nama (jika belum ada di DB, auto-create dari MASTER_PROVINSI)
+    let provinsi = await db.provinsi.findFirst({
       where: { nama: String(body.provinsiNama) },
     });
     if (!provinsi) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Provinsi "${body.provinsiNama}" belum terdaftar di database. Jalankan seed-provinsi terlebih dahulu.`,
-        },
-        { status: 400 }
+      const masterProv = MASTER_PROVINSI.find(
+        (p) =>
+          p.nama.toLowerCase() === String(body.provinsiNama).toLowerCase() ||
+          p.kode === String(body.provinsiKode)
       );
+      if (!masterProv) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Provinsi "${body.provinsiNama}" tidak ditemukan di master wilayah.`,
+          },
+          { status: 400 }
+        );
+      }
+      // Pastikan kode unik
+      const existingKode = await db.provinsi.findUnique({
+        where: { kode: masterProv.kode },
+      });
+      const kodeFinal = existingKode ? `${masterProv.kode}-${Date.now().toString().slice(-4)}` : masterProv.kode;
+      provinsi = await db.provinsi.create({
+        data: {
+          kode: kodeFinal,
+          nama: masterProv.nama,
+          status: "Aktif",
+        },
+      });
+      console.log(`[pendaftaran] Auto-created provinsi: ${provinsi.nama} (${provinsi.kode})`);
     }
 
     // Lookup Kabupaten by kode Kemendagri (4-digit) — pastikan milik provinsi yg dipilih
@@ -152,7 +201,7 @@ export async function POST(req: NextRequest) {
       data: {
         nomorPendaftaran,
         namaLengkap: body.namaLengkap,
-        nik: body.nik,
+        nik: encryptNIK(body.nik),
         tempatLahir: body.tempatLahir,
         tanggalLahir: tanggalLahir,
         jenisKelamin: body.jenisKelamin,
@@ -167,12 +216,12 @@ export async function POST(req: NextRequest) {
         desa: body.desa || null,
         kodePos: body.kodePos || null,
         email: body.email,
-        hp: body.hp,
-        whatsapp: body.whatsapp || body.hp,
+        whatsapp: body.whatsapp,
         motivasi: body.motivasi || null,
         foto: body.foto || null,
         ktp: body.ktp || null,
         cv: body.cv || null,
+        sk: body.sk || null,
         suratPernyataan: body.suratPernyataan || null,
         suratSehat: body.suratSehat || null,
         persyaratan: JSON.stringify(body.persyaratan || []),
@@ -188,6 +237,18 @@ export async function POST(req: NextRequest) {
         oleh: "Calon Anggota",
       },
     });
+
+    // Notify Admins
+    import("@/lib/notification-service").then(({ notifyAdmins }) => {
+      notifyAdmins({
+        title: "Pendaftaran Baru",
+        message: `${body.namaLengkap} mendaftar sebagai anggota dari ${kabupaten.nama}.`,
+        type: "PENDAFTARAN",
+        link: "#admin?page=verifikasi",
+        provinsiId: provinsi.id,
+        kabupatenId: kabupaten.id,
+      });
+    }).catch(e => console.error("Failed to load notification-service", e));
 
     return NextResponse.json({
       success: true,

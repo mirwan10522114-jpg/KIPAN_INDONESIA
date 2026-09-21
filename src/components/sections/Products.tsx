@@ -10,18 +10,17 @@ import {
   ArrowUpRight,
   Filter,
 } from "lucide-react";
-import { useContentStore } from "@/lib/content-store";
+
 import type { Berita } from "@/lib/kipan-data";
 import SafeImage from "@/components/ui/safe-image";
 
 const BERITA_CATEGORIES = ["Semua", "Nasional", "Provinsi", "Kabupaten"] as const;
 
 export default function Products() {
-  const storeBerita = useContentStore((s) => s.berita);
   const [apiBerita, setApiBerita] = useState<Berita[]>([]);
-  const [useApi, setUseApi] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch berita from API for consistency with admin
+  // Fetch berita from API — no hardcode fallback
   useEffect(() => {
     fetch("/api/berita?status=Published", { cache: "no-store" })
       .then((res) => res.json())
@@ -37,13 +36,13 @@ export default function Products() {
             location: "Indonesia",
           }));
           setApiBerita(mapped);
-          setUseApi(true);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  const berita = useApi ? apiBerita : storeBerita;
+  const berita = apiBerita;
   const [filter, setFilter] = useState<string>("Semua");
   const [selected, setSelected] = useState<Berita | null>(null);
 
@@ -169,6 +168,19 @@ export default function Products() {
             ))}
           </AnimatePresence>
         </motion.div>
+
+        {/* Empty state */}
+        {!loading && berita.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-16"
+          >
+            <Newspaper className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500 text-lg font-medium">Belum ada berita yang dipublikasikan.</p>
+            <p className="text-slate-400 text-sm mt-1">Berita akan muncul setelah admin mempublikasikan konten.</p>
+          </motion.div>
+        )}
 
         {/* Counter */}
         <motion.div

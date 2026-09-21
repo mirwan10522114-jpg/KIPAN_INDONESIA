@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { decryptNIK } from "@/lib/encryption";
 
 // GET /api/anggota/[id]/detail — Full detail with tabs data
 export async function GET(
@@ -23,7 +24,7 @@ export async function GET(
     }
 
     // Get pengurus in anggota's wilayah
-    const wherePengurus: any = { status: "Aktif" };
+    const wherePengurus: import("@prisma/client").Prisma.PengurusWhereInput = { status: "Aktif" };
     if (anggota.kabupatenId) {
       wherePengurus.OR = [
         { kabupatenId: anggota.kabupatenId },
@@ -46,18 +47,19 @@ export async function GET(
             namaLengkap: true,
             foto: true,
             email: true,
-            hp: true,
+            whatsapp: true,
             nia: true,
           },
         },
-        jabatan: { select: { nama: true, level: true, urutan: true } },
+        suratKeputusan: { select: { judul: true, nomorSK: true } },
         provinsi: { select: { nama: true } },
         kabupaten: { select: { nama: true } },
+        jabatan: { select: { nama: true } },
       },
       take: 10,
       orderBy: [
         { level: "asc" },
-        { jabatan: { urutan: "asc" } },
+        { tanggalMulai: "asc" },
       ],
     });
 
@@ -92,7 +94,7 @@ export async function GET(
           id: anggota.id,
           nia: anggota.nia,
           namaLengkap: anggota.namaLengkap,
-          nik: anggota.nik,
+          nik: decryptNIK(anggota.nik),
           tempatLahir: anggota.tempatLahir,
           tanggalLahir: anggota.tanggalLahir,
           jenisKelamin: anggota.jenisKelamin,
@@ -106,7 +108,6 @@ export async function GET(
           desa: anggota.desa,
           kodePos: anggota.kodePos,
           email: anggota.email,
-          hp: anggota.hp,
           whatsapp: anggota.whatsapp,
           foto: anggota.foto,
           ktp: anggota.ktp,
@@ -114,7 +115,6 @@ export async function GET(
           suratPernyataan: anggota.suratPernyataan,
           suratSehat: anggota.suratSehat,
           status: anggota.status,
-          angkatan: anggota.angkatan,
           tanggalDaftar: anggota.tanggalDaftar,
           tanggalAngkat: anggota.tanggalAngkat,
           createdAt: anggota.createdAt,
@@ -123,11 +123,11 @@ export async function GET(
         pengurusWilayah: pengurusWilayah.map((p) => ({
           id: p.id,
           namaLengkap: p.anggota?.namaLengkap || "-",
-          jabatan: p.jabatan?.nama || "-",
+          jabatan: p.suratKeputusan ? (p.jabatan?.nama || (p.level === "NASIONAL" ? "Pengurus Nasional" : p.level === "PROVINSI" ? "Pengurus Provinsi" : "Pengurus Kabupaten/Kota")) : "-",
           level: p.level,
           foto: p.anggota?.foto,
           email: p.anggota?.email,
-          hp: p.anggota?.hp,
+          whatsapp: p.anggota?.whatsapp,
           status: p.status,
           wilayah: p.kabupaten?.nama || p.provinsi?.nama || "Indonesia",
         })),

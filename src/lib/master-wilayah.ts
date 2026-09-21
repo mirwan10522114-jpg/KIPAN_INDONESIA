@@ -610,27 +610,58 @@ export const MASTER_KABUPATEN: MasterKabupaten[] = [
   { kode: "8272", nama: "Tidore Kepulauan", provinsiKode: "82", jenis: "Kota" },
 
   // Papua (91) - 8 kabupaten + 1 kota
-  { kode: "9101", nama: "Mappi", provinsiKode: "91", jenis: "Kabupaten" },
-  { kode: "9102", nama: "Asmat", provinsiKode: "91", jenis: "Kabupaten" },
-  { kode: "9103", nama: "Yapen Waropen", provinsiKode: "91", jenis: "Kabupaten" },
+  { kode: "9103", nama: "Kepulauan Yapen", provinsiKode: "91", jenis: "Kabupaten" },
   { kode: "9104", nama: "Biak Numfor", provinsiKode: "91", jenis: "Kabupaten" },
-  { kode: "9105", nama: "Supiori", provinsiKode: "91", jenis: "Kabupaten" },
-  { kode: "9106", nama: "Nabire", provinsiKode: "91", jenis: "Kabupaten" },
-  { kode: "9107", nama: "Paniai", provinsiKode: "91", jenis: "Kabupaten" },
-  { kode: "9108", nama: "Mimika", provinsiKode: "91", jenis: "Kabupaten" },
+  { kode: "9110", nama: "Sarmi", provinsiKode: "91", jenis: "Kabupaten" },
+  { kode: "9111", nama: "Keerom", provinsiKode: "91", jenis: "Kabupaten" },
+  { kode: "9115", nama: "Waropen", provinsiKode: "91", jenis: "Kabupaten" },
+  { kode: "9119", nama: "Supiori", provinsiKode: "91", jenis: "Kabupaten" },
+  { kode: "9120", nama: "Mamberamo Raya", provinsiKode: "91", jenis: "Kabupaten" },
+  { kode: "9101", nama: "Jayapura", provinsiKode: "91", jenis: "Kabupaten" },
   { kode: "9171", nama: "Jayapura", provinsiKode: "91", jenis: "Kota" },
 
-  // Papua Barat (92) - 7 kabupaten + 1 kota
-  { kode: "9201", nama: "Sorong", provinsiKode: "92", jenis: "Kabupaten" },
+  // Papua Barat (92) - 7 kabupaten
   { kode: "9202", nama: "Manokwari", provinsiKode: "92", jenis: "Kabupaten" },
   { kode: "9203", nama: "Fakfak", provinsiKode: "92", jenis: "Kabupaten" },
   { kode: "9204", nama: "Kaimana", provinsiKode: "92", jenis: "Kabupaten" },
   { kode: "9205", nama: "Teluk Bintuni", provinsiKode: "92", jenis: "Kabupaten" },
   { kode: "9206", nama: "Teluk Wondama", provinsiKode: "92", jenis: "Kabupaten" },
-  { kode: "9207", nama: "Raja Ampat", provinsiKode: "92", jenis: "Kabupaten" },
-  { kode: "9208", nama: "Tambrauw", provinsiKode: "92", jenis: "Kabupaten" },
-  { kode: "9209", nama: "Maybrat", provinsiKode: "92", jenis: "Kabupaten" },
-  { kode: "9271", nama: "Sorong", provinsiKode: "92", jenis: "Kota" },
+  { kode: "9211", nama: "Manokwari Selatan", provinsiKode: "92", jenis: "Kabupaten" },
+  { kode: "9212", nama: "Pegunungan Arfak", provinsiKode: "92", jenis: "Kabupaten" },
+
+  // Papua Selatan (93) - 4 kabupaten
+  { kode: "9301", nama: "Merauke", provinsiKode: "93", jenis: "Kabupaten" },
+  { kode: "9302", nama: "Boven Digoel", provinsiKode: "93", jenis: "Kabupaten" },
+  { kode: "9303", nama: "Mappi", provinsiKode: "93", jenis: "Kabupaten" },
+  { kode: "9304", nama: "Asmat", provinsiKode: "93", jenis: "Kabupaten" },
+
+  // Papua Tengah (94) - 8 kabupaten
+  { kode: "9401", nama: "Nabire", provinsiKode: "94", jenis: "Kabupaten" },
+  { kode: "9402", nama: "Puncak Jaya", provinsiKode: "94", jenis: "Kabupaten" },
+  { kode: "9403", nama: "Paniai", provinsiKode: "94", jenis: "Kabupaten" },
+  { kode: "9404", nama: "Mimika", provinsiKode: "94", jenis: "Kabupaten" },
+  { kode: "9405", nama: "Puncak", provinsiKode: "94", jenis: "Kabupaten" },
+  { kode: "9406", nama: "Dogiyai", provinsiKode: "94", jenis: "Kabupaten" },
+  { kode: "9407", nama: "Intan Jaya", provinsiKode: "94", jenis: "Kabupaten" },
+  { kode: "9408", nama: "Deiyai", provinsiKode: "94", jenis: "Kabupaten" },
+
+  // Papua Pegunungan (95) - 8 kabupaten
+  { kode: "9501", nama: "Jayawijaya", provinsiKode: "95", jenis: "Kabupaten" },
+  { kode: "9502", nama: "Pegunungan Bintang", provinsiKode: "95", jenis: "Kabupaten" },
+  { kode: "9503", nama: "Yahukimo", provinsiKode: "95", jenis: "Kabupaten" },
+  { kode: "9504", nama: "Tolikara", provinsiKode: "95", jenis: "Kabupaten" },
+  { kode: "9505", nama: "Mamberamo Tengah", provinsiKode: "95", jenis: "Kabupaten" },
+  { kode: "9506", nama: "Yalimo", provinsiKode: "95", jenis: "Kabupaten" },
+  { kode: "9507", nama: "Lanny Jaya", provinsiKode: "95", jenis: "Kabupaten" },
+  { kode: "9508", nama: "Nduga", provinsiKode: "95", jenis: "Kabupaten" },
+
+  // Papua Barat Daya (96) - 5 kabupaten + 1 kota
+  { kode: "9601", nama: "Sorong", provinsiKode: "96", jenis: "Kabupaten" },
+  { kode: "9602", nama: "Sorong Selatan", provinsiKode: "96", jenis: "Kabupaten" },
+  { kode: "9603", nama: "Raja Ampat", provinsiKode: "96", jenis: "Kabupaten" },
+  { kode: "9604", nama: "Tambrauw", provinsiKode: "96", jenis: "Kabupaten" },
+  { kode: "9605", nama: "Maybrat", provinsiKode: "96", jenis: "Kabupaten" },
+  { kode: "9671", nama: "Sorong", provinsiKode: "96", jenis: "Kota" },
 ];
 
 // ============================================================

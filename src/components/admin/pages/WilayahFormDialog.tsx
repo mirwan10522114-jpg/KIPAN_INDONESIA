@@ -318,7 +318,7 @@ export default function WilayahFormDialog({
                         <option value="">— Pilih Ketua dari Pengurus —</option>
                         {pengurusList.map((p) => (
                           <option key={p.id} value={p.namaLengkap}>
-                            {p.namaLengkap} {p.jabatan ? `(${p.jabatan}${p.bidang && p.bidang !== "Pengurus Harian" ? ` - ${p.bidang}` : ""})` : ""}
+                            {p.namaLengkap} ({p.jabatan})
                           </option>
                         ))}
                       </select>

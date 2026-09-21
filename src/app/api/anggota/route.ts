@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateNIP } from "@/lib/nip";
 import { handleApiError, safeParseInt } from "@/lib/api-error";
+import { encryptNIK, decryptNIK } from "@/lib/encryption";
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,16 +12,42 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || "";
     const provinsiId = searchParams.get("provinsiId") || "";
     const search = searchParams.get("search") || "";
+    const role = searchParams.get("role");
+    const wilayah = searchParams.get("wilayah");
 
-    const where: any = {};
+    const where: any = {
+      pengurus: {
+        none: {
+          status: "Aktif"
+        }
+      }
+    };
     if (status && status !== "Semua") where.status = status;
     if (provinsiId && provinsiId !== "Semua") where.provinsiId = parseInt(provinsiId);
     if (search) {
       where.OR = [
         { namaLengkap: { contains: search } },
         { nia: { contains: search } },
-        { nik: { contains: search } },
+        { nik: { equals: encryptNIK(search) } }, // Exact match for encrypted search
       ];
+    }
+
+    if (role === "ADMIN_PROVINSI" && wilayah) {
+      const w = wilayah.replace("Provinsi ", "").trim();
+      const prov = await db.provinsi.findFirst({ where: { nama: w } });
+      if (prov) {
+        where.provinsiId = prov.id;
+      } else {
+        where.provinsiId = -1;
+      }
+    } else if (role === "ADMIN_KABUPATEN" && wilayah) {
+      const w = wilayah.replace("Kabupaten ", "Kab. ").trim();
+      const kab = await db.kabupaten.findFirst({ where: { nama: w } });
+      if (kab) {
+        where.kabupatenId = kab.id;
+      } else {
+        where.kabupatenId = -1;
+      }
     }
 
     const total = await db.anggota.count({ where });
@@ -39,9 +66,14 @@ export async function GET(req: NextRequest) {
       take: limit,
     });
 
+    const anggotaDecrypted = anggota.map(a => ({
+      ...a,
+      nik: decryptNIK(a.nik)
+    }));
+
     return NextResponse.json({
       success: true,
-      data: anggota,
+      data: anggotaDecrypted,
       total,
       page: currentPage,
       limit,
@@ -63,7 +95,7 @@ export async function POST(req: NextRequest) {
       { key: "tanggalLahir", label: "Tanggal Lahir" },
       { key: "alamat", label: "Alamat" },
       { key: "email", label: "Email" },
-      { key: "hp", label: "No. HP" },
+      { key: "whatsapp", label: "No. WhatsApp" },
       { key: "provinsiId", label: "Provinsi" },
       { key: "kabupatenId", label: "Kabupaten/Kota" },
     ];
@@ -79,10 +111,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Format email tidak valid. Contoh: nama@domain.com" }, { status: 400 });
     }
 
-    // Validasi format HP Indonesia
-    const hpRegex = /^08\d{8,12}$/;
-    if (!hpRegex.test(String(body.hp).replace(/[\s-]/g, ""))) {
-      return NextResponse.json({ success: false, error: "Format No. HP tidak valid. Gunakan format: 08xxxxxxxxxx (8-13 digit setelah 08)" }, { status: 400 });
+    // Validasi format WhatsApp Indonesia
+    const waRegex = /^08\d{8,12}$/;
+    if (!waRegex.test(String(body.whatsapp).replace(/[\s-]/g, ""))) {
+      return NextResponse.json({ success: false, error: "Format No. WhatsApp tidak valid. Gunakan format: 08xxxxxxxxxx (8-13 digit setelah 08)" }, { status: 400 });
     }
 
     // Validasi NIK 16 digit numeric (wajib)
@@ -111,6 +143,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Provinsi atau kabupaten tidak ditemukan" }, { status: 400 });
     }
 
+    const role = req.nextUrl.searchParams.get("role") || "SUPER_ADMIN";
+    const wilayah = req.nextUrl.searchParams.get("wilayah");
+
+    if (role === "ADMIN_PROVINSI" && wilayah && parseInt(wilayah) !== provIdNum) {
+      return NextResponse.json({ success: false, error: "Akses ditolak: Anda hanya dapat mendaftarkan anggota di provinsi Anda." }, { status: 403 });
+    }
+    if (role === "ADMIN_KABUPATEN" && wilayah && parseInt(wilayah) !== kabIdNum) {
+      return NextResponse.json({ success: false, error: "Akses ditolak: Anda hanya dapat mendaftarkan anggota di kabupaten Anda." }, { status: 403 });
+    }
+
     // Transaction: create anggota → generate NIP → update NIP
     const updated = await db.$transaction(async (tx) => {
       // 1. Create anggota dengan NIP placeholder
@@ -118,7 +160,7 @@ export async function POST(req: NextRequest) {
         data: {
           nia: "TEMP-" + Date.now(),
           namaLengkap: body.namaLengkap,
-          nik: body.nik,
+          nik: encryptNIK(body.nik),
           tempatLahir: body.tempatLahir || "",
           tanggalLahir: body.tanggalLahir ? new Date(body.tanggalLahir) : new Date("2000-01-01"),
           jenisKelamin: body.jenisKelamin || "L",
@@ -130,15 +172,13 @@ export async function POST(req: NextRequest) {
           kabupatenId: kabIdNum,
           kecamatan: body.kecamatan || null,
           email: body.email || "",
-          hp: body.hp || "",
-          whatsapp: body.whatsapp || null,
+          whatsapp: body.whatsapp || "",
           foto: body.foto || null,
           ktp: body.ktp || null,
           cv: body.cv || null,
           suratPernyataan: body.suratPernyataan || null,
           suratSehat: body.suratSehat || null,
           status: "Aktif",
-          angkatan: body.angkatan || "XII",
           tanggalAngkat: new Date(),
         },
       });
@@ -164,8 +204,9 @@ export async function POST(req: NextRequest) {
       return { anggota: result, nia };
     });
 
-    return NextResponse.json({ success: true, data: updated.anggota, message: `Pengurus berhasil ditambahkan dengan NIP: ${updated.nia}` });
+    return NextResponse.json({ success: true, data: updated.anggota, message: `Anggota berhasil ditambahkan dengan NIP: ${updated.nia}` });
   } catch (error) {
     return handleApiError(error, "POST /api/anggota", "Gagal menambahkan anggota");
   }
 }
+ 
