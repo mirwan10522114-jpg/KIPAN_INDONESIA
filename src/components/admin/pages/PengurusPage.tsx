@@ -52,7 +52,7 @@ export default function PengurusPage({
 }) {
   const { role, wilayah } = useAuthStore();
   const [search, setSearch] = useState("");
-  const [levelFilter, setLevelFilter] = useState("Semua");
+  const [levelFilter, setLevelFilter] = useState(userRole === "ADMIN_PROVINSI" ? "Provinsi" : userRole === "ADMIN_KABUPATEN" ? "Kabupaten" : "Semua");
   const [provinsiFilter, setProvinsiFilter] = useState("Semua");
   const [kabupatenFilter, setKabupatenFilter] = useState("Semua");
   const [statusFilter, setStatusFilter] = useState("Semua");

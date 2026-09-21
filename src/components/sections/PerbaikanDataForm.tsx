@@ -46,6 +46,20 @@ const PERSYARATAN_ICONS: Record<string, React.ComponentType<{ className?: string
   HandHeart,
 };
 
+const PEKERJAAN_OPTIONS = [
+  "Pelajar/Mahasiswa",
+  "Pegawai Negeri Sipil (PNS)",
+  "TNI/Polri",
+  "Karyawan Swasta",
+  "Wiraswasta/Pengusaha",
+  "Guru/Dosen",
+  "Pegawai BUMN/BUMD",
+  "Tenaga Medis",
+  "Buruh/Pekerja Harian",
+  "Mengurus Rumah Tangga",
+  "Belum/Tidak Bekerja",
+];
+
 interface FormData {
   // Data Diri
   namaLengkap: string;
@@ -125,6 +139,10 @@ export default function PerbaikanDataForm({ initialData }: { initialData: any })
 
   const [kecamatanList, setKecamatanList] = useState<{kode: string, nama: string}[]>([]);
   const [loadingKecamatan, setLoadingKecamatan] = useState(false);
+  const [isCustomPekerjaan, setIsCustomPekerjaan] = useState(() => {
+    const p = initialData?.pekerjaan || "";
+    return p !== "" && !PEKERJAAN_OPTIONS.includes(p);
+  });
 
   useEffect(() => {
     if (!form.kabupaten || !form.provinsi) {
@@ -143,21 +161,33 @@ export default function PerbaikanDataForm({ initialData }: { initialData: any })
     }
 
     setLoadingKecamatan(true);
-    fetch(`https://emsifa.github.io/api-wilayah-indonesia/api/districts/${kab.kode}.json`)
+    setKecamatanList([]);
+    fetch(`/api/wilayah/kecamatan?kabupatenKode=${kab.kode}`)
       .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) {
-          const formatted = data.map((d: any) => ({
-            kode: d.id,
-            nama: d.name,
-          }));
-          formatted.sort((a, b) => a.nama.localeCompare(b.nama));
-          setKecamatanList(formatted);
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setKecamatanList(json.data);
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.error("Gagal memuat kecamatan:", err);
+        setKecamatanList([]);
+      })
       .finally(() => setLoadingKecamatan(false));
   }, [form.kabupaten, form.provinsi]);
+
+  useEffect(() => {
+    if (form.kecamatan) {
+      fetch(`/api/wilayah/kodepos?kecamatan=${encodeURIComponent(form.kecamatan)}&kabupaten=${encodeURIComponent(form.kabupaten || "")}`)
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.success && json.data) {
+            update("kodePos", json.data);
+          }
+        })
+        .catch((err) => console.error("Gagal memuat kodepos:", err));
+    }
+  }, [form.kecamatan]);
 
   const nextStep = () => setStep((s) => Math.min(s + 1, STEPS.length));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
@@ -613,7 +643,7 @@ export default function PerbaikanDataForm({ initialData }: { initialData: any })
                         <option>Konghucu</option>
                       </select>
                     </Field>
-                    <Field label="Pendidikan" required>
+                    <Field label="Pendidikan Terakhir" required>
                       <select
                         value={form.pendidikan}
                         onChange={(e) => update("pendidikan", e.target.value)}
@@ -630,14 +660,40 @@ export default function PerbaikanDataForm({ initialData }: { initialData: any })
                       </select>
                     </Field>
                     <Field label="Pekerjaan" required>
-                      <input
-                        type="text"
-                        value={form.pekerjaan}
-                        onChange={(e) => update("pekerjaan", e.target.value.replace(/[^a-zA-Z\s'.-]/g, ""))}
-                        className="form-input"
-                        placeholder="Pekerjaan"
-                        required
-                      />
+                      <div className="flex flex-col gap-2">
+                        <select
+                          value={isCustomPekerjaan ? "Lainnya" : form.pekerjaan}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "Lainnya") {
+                              setIsCustomPekerjaan(true);
+                              update("pekerjaan", "");
+                            } else {
+                              setIsCustomPekerjaan(false);
+                              update("pekerjaan", val);
+                            }
+                          }}
+                          className="form-input"
+                          required={!isCustomPekerjaan}
+                        >
+                          <option value="">Pilih...</option>
+                          {PEKERJAAN_OPTIONS.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                          <option value="Lainnya">Lainnya (Ketik Manual)</option>
+                        </select>
+                        {isCustomPekerjaan && (
+                          <input
+                            type="text"
+                            value={form.pekerjaan}
+                            onChange={(e) => update("pekerjaan", e.target.value.replace(/[^a-zA-Z\s'.-]/g, ""))}
+                            className="form-input"
+                            placeholder="Ketik pekerjaan Anda"
+                            required
+                            autoFocus
+                          />
+                        )}
+                      </div>
                     </Field>
                   </div>
 

@@ -156,22 +156,22 @@ export default function KtaCardRenderer({ data: p }: KtaCardRendererProps) {
 
               {/* Detail Rows */}
               <div className="mt-1 relative z-20 border-l-2 border-[#FFC307] pl-3 py-0.5">
-                <div className="grid grid-cols-[110px_8px_1fr] text-[9.5px] font-bold leading-[1.3] items-start gap-y-1">
-                  <span className="text-[#0284c7]">Tempat Tanggal Lahir</span>
+                <div className="grid grid-cols-[110px_8px_1fr] text-[9.5px] font-bold leading-[1.3] items-start gap-y-1 text-left">
+                  <span className="text-[#0284c7] text-left">Tempat Tanggal Lahir</span>
                   <span className="text-[#002060] text-center">:</span>
-                  <span className="text-[#002060] truncate pr-2">{p?.tempatLahir ? p.tempatLahir + ", " : ""}{p?.tanggalLahir ? formatTanggal(p.tanggalLahir) : "-"}</span>
+                  <span className="text-[#002060] truncate pr-2 text-left">{p?.tempatLahir ? p.tempatLahir + ", " : ""}{p?.tanggalLahir ? formatTanggal(p.tanggalLahir) : "-"}</span>
 
-                  <span className="text-[#0284c7]">Jenis Kelamin</span>
+                  <span className="text-[#0284c7] text-left">Jenis Kelamin</span>
                   <span className="text-[#002060] text-center">:</span>
-                  <span className="text-[#002060] truncate pr-2">{p?.jenisKelamin === 'L' ? 'Laki-laki' : p?.jenisKelamin === 'P' ? 'Perempuan' : '-'}</span>
+                  <span className="text-[#002060] truncate pr-2 text-left">{p?.jenisKelamin === 'L' ? 'Laki-laki' : p?.jenisKelamin === 'P' ? 'Perempuan' : '-'}</span>
 
-                  <span className="text-[#0284c7]">Agama</span>
+                  <span className="text-[#0284c7] text-left">Agama</span>
                   <span className="text-[#002060] text-center">:</span>
-                  <span className="text-[#002060] truncate pr-2">{p?.agama || "-"}</span>
+                  <span className="text-[#002060] truncate pr-2 text-left">{p?.agama || "-"}</span>
 
-                  <span className="text-[#0284c7]">Alamat Lengkap</span>
+                  <span className="text-[#0284c7] text-left">Alamat Lengkap</span>
                   <span className="text-[#002060] text-center">:</span>
-                  <span className="text-[#002060] line-clamp-2 pr-2">{p?.alamat || "-"}</span>
+                  <span className="text-[#002060] line-clamp-2 pr-2 text-left">{p?.alamat || "-"}</span>
                 </div>
               </div>
             </div>

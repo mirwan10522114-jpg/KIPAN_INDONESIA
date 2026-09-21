@@ -17,11 +17,12 @@ export async function PATCH(
     if (!currentPengurus) {
       return NextResponse.json({ success: false, error: "Pengurus tidak ditemukan" }, { status: 404 });
     }
+    const pengurusLevel = currentPengurus.level.toUpperCase();
 
-    if (role === "ADMIN_PROVINSI" && !["Provinsi", "Kabupaten"].includes(currentPengurus.level)) {
+    if (role === "ADMIN_PROVINSI" && !["PROVINSI", "KABUPATEN"].includes(pengurusLevel)) {
       return NextResponse.json({ success: false, error: "Tidak memiliki hak akses mengubah pengurus Nasional." }, { status: 403 });
     }
-    if (role === "ADMIN_KABUPATEN" && currentPengurus.level !== "Kabupaten") {
+    if (role === "ADMIN_KABUPATEN" && pengurusLevel !== "KABUPATEN") {
       return NextResponse.json({ success: false, error: "Hanya dapat mengubah pengurus Kabupaten." }, { status: 403 });
     }
 

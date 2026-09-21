@@ -20,13 +20,22 @@ export async function GET(req: NextRequest) {
       };
     }
 
+    // Filter out anyone who is currently "Aktif" in any pengurus role
+    const activePengurusIds = (await db.pengurus.findMany({
+      where: { status: "Aktif" },
+      select: { anggotaId: true }
+    })).map(p => p.anggotaId);
+
+    if (activePengurusIds.length > 0) {
+      where.anggotaId = { notIn: activePengurusIds };
+    }
+
     // Determine what they can see based on role
     if (role === "ADMIN_PROVINSI" && wilayah) {
       const w = wilayah.replace("Provinsi ", "").trim();
       const prov = await db.provinsi.findFirst({ where: { nama: w } });
       if (prov) {
         where.provinsiId = prov.id;
-        // Provincial admin can only pull from Kabupaten within their province, or existing Provinsi members
       }
     } else if (role === "ADMIN_KABUPATEN" && wilayah) {
       const w = wilayah.replace("Kabupaten ", "Kab. ").trim();
@@ -35,6 +44,13 @@ export async function GET(req: NextRequest) {
         where.kabupatenId = kab.id;
       }
     }
+
+    // Optional filter by specific Kabupaten from UI
+    const filterKabupaten = searchParams.get("filterKabupaten");
+    if (filterKabupaten) {
+      where.kabupatenId = parseInt(filterKabupaten);
+    }
+
     // SUPER_ADMIN / ADMIN_NASIONAL can see all
 
     // We only want to show recent Pengurus (e.g. limit to 50 for quick search)

@@ -20,7 +20,8 @@ const NAV_GROUPS = [
     label: "Informasi",
     items: [
       { label: "Program", href: "/program" },
-      { label: "Berita", href: "/berita" },
+      { label: "Berita Internal", href: "/berita" },
+      { label: "Berita Terkini", href: "/berita-terkini" },
       { label: "Galeri", href: "/galeri" },
     ]
   },
@@ -70,9 +71,11 @@ export default function Navbar() {
           {/* Logo */}
           <a href="#beranda" className="flex items-center gap-2.5 group shrink-0">
             <div className="relative">
-              <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-sky-500/30 group-hover:scale-105 transition-transform">
-                <Shield className="w-6 h-6 text-white" strokeWidth={2.5} />
-              </div>
+              <img 
+                src="/logo-kipan.jpg" 
+                alt="Logo KIPAN" 
+                className="w-10 h-10 lg:w-11 lg:h-11 rounded-full object-cover shadow-lg shadow-sky-500/20 group-hover:scale-105 transition-transform bg-white" 
+              />
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-sky-400 rounded-full ring-2 ring-white animate-pulse" />
             </div>
             <div className="flex flex-col leading-tight">

@@ -163,8 +163,8 @@ export default function AdminDashboard({ onClose }: { onClose: () => void }) {
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center shadow-md shrink-0">
-              <Shield className="w-6 h-6 text-white" strokeWidth={2.5} />
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md shrink-0 overflow-hidden">
+              <img src="/logo-kipan.jpg" alt="Logo KIPAN" className="w-full h-full object-cover" />
             </div>
             {sidebarOpen && (
               <div className="overflow-hidden">

@@ -31,10 +31,20 @@ export default function SKPage() {
   const [filterLevel, setFilterLevel] = useState("Semua");
   const [filterStatus, setFilterStatus] = useState("Semua");
   const [filterApproval, setFilterApproval] = useState("Semua");
-  const { role: activeRole, wilayah } = useAuthStore();
+  const { role: activeRole, wilayah, provinsiId: authProvinsiId, kabupatenId: authKabupatenId } = useAuthStore();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showAddPengurusDialog, setShowAddPengurusDialog] = useState(false);
+  const [showNonaktifDialog, setShowNonaktifDialog] = useState(false);
+  const [targetNonaktifSk, setTargetNonaktifSk] = useState<any>(null);
+  const [nonaktifForm, setNonaktifForm] = useState({ keterangan: "", statusPengurus: "Demisioner" });
+  
+  const canNonaktifkan = (sk: any) => {
+    if (activeRole === "SUPER_ADMIN" || activeRole === "ADMIN_NASIONAL") return true;
+    if (activeRole === "ADMIN_PROVINSI" && (sk.level === "PROVINSI" || sk.level === "KABUPATEN")) return true;
+    if (activeRole === "ADMIN_KABUPATEN" && sk.level === "KABUPATEN") return true;
+    return false;
+  };
   const [selectedSK, setSelectedSK] = useState<any>(null);
   const [skDetail, setSKDetail] = useState<any>(null);
   const [provinsiList, setProvinsiList] = useState<any[]>([]);
@@ -54,6 +64,7 @@ export default function SKPage() {
   const [searchingAnggota, setSearchingAnggota] = useState(false);
   const [jabatanList, setJabatanList] = useState<any[]>([]);
   const [selectedJabatan, setSelectedJabatan] = useState("");
+  const [filterPromosiKabupaten, setFilterPromosiKabupaten] = useState("");
 
   const fetchSKList = async () => {
     setLoading(true);
@@ -72,6 +83,29 @@ export default function SKPage() {
       if (json.success) setSKList(json.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
+  };
+
+  const openDoc = (url: string) => {
+    if (!url) return;
+    try {
+      if (url.startsWith("data:")) {
+        const arr = url.split(',');
+        const mime = arr[0].match(/:(.*?);/)?.[1] || "application/pdf";
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
+      } else {
+        window.open(url, "_blank");
+      }
+    } catch (e) {
+      alert("Gagal membuka file. Format file tidak valid.");
+    }
   };
 
   const fetchProvinsi = async () => {
@@ -101,6 +135,22 @@ export default function SKPage() {
 
   useEffect(() => { fetchSKList(); fetchProvinsi(); }, []);
   useEffect(() => { fetchSKList(); }, [search, filterLevel, filterStatus, filterApproval]);
+
+  // Populate kabupatenList for filter
+  useEffect(() => {
+    if (provinsiList.length > 0) {
+      if (activeRole === "ADMIN_PROVINSI" && wilayah) {
+        const w = wilayah.replace("Provinsi ", "").trim();
+        const prov = provinsiList.find((p: any) => p.nama === w);
+        if (prov) fetchKabupaten(String(prov.id));
+      } else if (activeRole === "SUPER_ADMIN" || activeRole === "ADMIN_NASIONAL") {
+        fetch("/api/wilayah?type=kabupaten&limit=600")
+          .then(res => res.json())
+          .then(json => { if (json.success) setKabupatenList(json.data); })
+          .catch(e => console.error(e));
+      }
+    }
+  }, [provinsiList, activeRole, wilayah]);
 
   const fetchSKDetail = async (id: number) => {
     try {
@@ -148,24 +198,27 @@ export default function SKPage() {
     let defaultProvId = "";
     let defaultKabId = "";
 
-    if (activeRole === "ADMIN_PROVINSI" && wilayah) {
+    if (activeRole === "ADMIN_PROVINSI" && authProvinsiId) {
       defaultLevel = "PROVINSI";
-      const prov = provinsiList.find((p) => p.nama === wilayah);
-      if (prov) defaultProvId = String(prov.id);
-    } else if (activeRole === "ADMIN_KABUPATEN" && wilayah) {
+      defaultProvId = String(authProvinsiId);
+      // Fetch kabupaten list untuk provinsi ini
+      fetchKabupaten(defaultProvId);
+    } else if (activeRole === "ADMIN_KABUPATEN" && authKabupatenId) {
       defaultLevel = "KABUPATEN";
-      try {
-        const res = await fetch("/api/wilayah?type=kabupaten&limit=1000");
-        const json = await res.json();
-        if (json.success) {
-          setKabupatenList(json.data);
-          const kab = json.data.find((k: any) => k.nama === wilayah);
-          if (kab) {
-            defaultKabId = String(kab.id);
-            defaultProvId = String(kab.provinsiId);
+      defaultKabId = String(authKabupatenId);
+      // Cari provinsiId dari kabupaten menggunakan kabupatenId yang diketahui
+      if (authProvinsiId) {
+        defaultProvId = String(authProvinsiId);
+      } else {
+        // Fallback: fetch kabupaten detail untuk mendapatkan provinsiId
+        try {
+          const res = await fetch(`/api/wilayah?type=kabupaten&id=${authKabupatenId}`);
+          const json = await res.json();
+          if (json.success && json.data?.[0]?.provinsiId) {
+            defaultProvId = String(json.data[0].provinsiId);
           }
-        }
-      } catch (e) {}
+        } catch (e) {}
+      }
     }
 
     setForm({
@@ -173,10 +226,6 @@ export default function SKPage() {
       provinsiId: defaultProvId, kabupatenId: defaultKabId,
       tanggalTerbit: "", tanggalBerakhir: "", fileSK: ""
     });
-
-    if (activeRole === "ADMIN_PROVINSI" && defaultProvId) {
-      fetchKabupaten(defaultProvId);
-    }
 
     setShowCreateDialog(true);
   };
@@ -204,14 +253,30 @@ export default function SKPage() {
     } catch (e: any) { alert(e.message); }
   };
 
-  const handleNonaktifkan = async (sk: any) => {
-    if (!confirm(`Nonaktifkan SK "${sk.nomorSK}"?\n\nSemua pengurus di SK ini akan otomatis berstatus "Selesai".`)) return;
+  const initiateNonaktifkan = (sk: any) => {
+    setTargetNonaktifSk(sk);
+    setNonaktifForm({ keterangan: "", statusPengurus: "Demisioner" });
+    setShowNonaktifDialog(true);
+  };
+
+  const executeNonaktifkan = async () => {
+    if (!targetNonaktifSk) return;
+    if (!nonaktifForm.keterangan.trim()) {
+      alert("Keterangan wajib diisi.");
+      return;
+    }
+    
     try {
-      const res = await fetch(`/api/surat-keputusan/${sk.id}/nonaktifkan`, { method: "POST" });
+      const res = await fetch(`/api/surat-keputusan/${targetNonaktifSk.id}/nonaktifkan`, { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...nonaktifForm, role: activeRole })
+      });
       const json = await res.json();
       alert(json.message || json.error);
       fetchSKList();
-      if (skDetail?.id === sk.id) fetchSKDetail(sk.id);
+      if (skDetail?.id === targetNonaktifSk.id) fetchSKDetail(targetNonaktifSk.id);
+      setShowNonaktifDialog(false);
     } catch (e: any) { alert(e.message); }
   };
 
@@ -249,6 +314,8 @@ export default function SKPage() {
         if (activeRole) params.append("role", activeRole);
         if (wilayah) params.append("wilayah", wilayah);
         if (skDetail?.level) params.append("skLevel", skDetail.level);
+        if (filterPromosiKabupaten) params.append("filterKabupaten", filterPromosiKabupaten);
+        
         const res = await fetch(`/api/pengurus/list-promosi?${params.toString()}`);
         const json = await res.json();
         if (json.success) {
@@ -267,15 +334,19 @@ export default function SKPage() {
   };
 
   useEffect(() => {
-    if (anggotaSearch) {
+    if (anggotaSearch || filterPromosiKabupaten) {
       searchAnggota(anggotaSearch, pengurusSearchMode);
     } else {
       setAnggotaResults([]);
     }
-  }, [pengurusSearchMode]);
+  }, [pengurusSearchMode, filterPromosiKabupaten]);
 
   const handleAddPengurus = async (anggotaId: number) => {
     if (!skDetail) return;
+    if (!selectedJabatan) {
+      alert("Harap pilih jabatan terlebih dahulu!");
+      return;
+    }
     try {
       const res = await fetch(`/api/surat-keputusan/${skDetail.id}/pengurus`, {
         method: "POST",
@@ -379,7 +450,7 @@ export default function SKPage() {
                   <th className="text-center px-4 py-3 font-semibold">Pengurus</th>
                   <th className="text-center px-4 py-3 font-semibold">Approval</th>
                   <th className="text-center px-4 py-3 font-semibold">Status SK</th>
-                  <th className="text-left px-4 py-3 font-semibold">Tanggal</th>
+                  <th className="text-left px-4 py-3 font-semibold">Masa Berlaku</th>
                   <th className="text-center px-4 py-3 font-semibold">Aksi</th>
                 </tr>
               </thead>
@@ -418,12 +489,20 @@ export default function SKPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                        sk.status === "Aktif" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-                      }`}>{sk.status === "Aktif" ? "Aktif" : "Tidak Aktif"}</span>
+                      {(() => {
+                        const isExpired = sk.tanggalBerakhir && new Date(sk.tanggalBerakhir).getTime() < new Date().setHours(0,0,0,0);
+                        if (sk.status !== "Aktif") {
+                          return <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600">Tidak Aktif</span>;
+                        }
+                        if (isExpired) {
+                          return <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-700">SK Sudah Habis</span>;
+                        }
+                        return <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">Aktif</span>;
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500">
-                      {new Date(sk.tanggalTerbit).toLocaleDateString("id-ID")}
+                      <div>Mulai: <span className="font-medium text-slate-700">{new Date(sk.tanggalTerbit).toLocaleDateString("id-ID")}</span></div>
+                      <div>Akhir: <span className="font-medium text-slate-700">{sk.tanggalBerakhir ? new Date(sk.tanggalBerakhir).toLocaleDateString("id-ID") : "-"}</span></div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
@@ -431,8 +510,8 @@ export default function SKPage() {
                           className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600">
                           <Eye className="w-4 h-4" />
                         </button>
-                        {sk.status === "Aktif" && (
-                          <button onClick={() => handleNonaktifkan(sk)} title="Nonaktifkan"
+                        {sk.status === "Aktif" && canNonaktifkan(sk) && (
+                          <button onClick={() => initiateNonaktifkan(sk)} title="Nonaktifkan"
                             className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-500 hover:text-amber-600">
                             <Power className="w-4 h-4" />
                           </button>
@@ -553,6 +632,10 @@ export default function SKPage() {
                   className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 focus:border-blue-500 outline-none" />
                   {form.fileSK && <div className="text-xs text-emerald-600 mt-1">✓ File siap diupload</div>}
               </div>
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3 rounded-lg flex items-start gap-2 mt-2">
+                <div className="shrink-0 mt-0.5">⚠️</div>
+                <p><strong>Penting (Aturan SK Tunggal):</strong> Mengajukan dan menyetujui SK baru ini akan <strong>otomatis menonaktifkan SK lama</strong> yang masih aktif di wilayah ini beserta seluruh pengurusnya (menjadi Demisioner).</p>
+              </div>
             </div>
             <div className="p-5 border-t border-slate-100 flex justify-end gap-2">
               <button onClick={() => setShowCreateDialog(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
@@ -591,6 +674,11 @@ export default function SKPage() {
                 <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Terbit: {new Date(skDetail.tanggalTerbit).toLocaleDateString("id-ID")}</span>
                 {skDetail.tanggalBerakhir && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Berakhir: {new Date(skDetail.tanggalBerakhir).toLocaleDateString("id-ID")}</span>}
                 <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {skDetail.pengurus?.length || 0} Pengurus</span>
+                {skDetail.fileSK && (
+                  <button onClick={() => openDoc(skDetail.fileSK)} className="flex items-center gap-1 bg-white/20 hover:bg-white/30 px-2 py-0.5 rounded transition-colors text-white font-semibold cursor-pointer">
+                    <ExternalLink className="w-3 h-3" /> Lihat Lampiran SK
+                  </button>
+                )}
               </div>
             </div>
 
@@ -670,8 +758,8 @@ export default function SKPage() {
             {/* Actions */}
             <div className="p-5 border-t border-slate-100 flex justify-between">
               <div className="flex gap-2">
-                {skDetail.status === "Aktif" && (
-                  <button onClick={() => handleNonaktifkan(skDetail)}
+                {skDetail.status === "Aktif" && canNonaktifkan(skDetail) && (
+                  <button onClick={() => initiateNonaktifkan(skDetail)}
                     className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white text-xs font-semibold rounded-lg hover:bg-amber-600">
                     <Power className="w-3.5 h-3.5" /> Nonaktifkan SK
                   </button>
@@ -710,10 +798,10 @@ export default function SKPage() {
             </div>
             <div className="p-6 space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-                💡 Pilih jabatan terlebih dahulu (opsional), kemudian cari anggota berdasarkan <strong>nama</strong> atau <strong>NIA</strong>, lalu klik untuk menambahkannya sebagai pengurus di SK ini.
+                💡 Pilih jabatan terlebih dahulu, kemudian cari anggota berdasarkan <strong>nama</strong> atau <strong>NIA</strong>, lalu klik untuk menambahkannya sebagai pengurus di SK ini.
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Pilih Jabatan (Opsional)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Pilih Jabatan *</label>
                 <div className="relative">
                   <select
                     value={selectedJabatan}
@@ -753,6 +841,21 @@ export default function SKPage() {
                   className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
                   autoFocus />
               </div>
+              
+              {pengurusSearchMode === "pengurus" && (activeRole === "ADMIN_PROVINSI" || activeRole === "SUPER_ADMIN" || activeRole === "ADMIN_NASIONAL") && (
+                <div className="mt-2">
+                  <select 
+                    value={filterPromosiKabupaten} 
+                    onChange={(e) => setFilterPromosiKabupaten(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+                  >
+                    <option value="">Semua Kabupaten / Kota</option>
+                    {kabupatenList.map((k: any) => (
+                      <option key={k.id} value={k.id}>{k.nama}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {searchingAnggota && (
                 <div className="text-center py-3">
                   <div className="w-5 h-5 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
@@ -769,11 +872,29 @@ export default function SKPage() {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-slate-800 truncate">{a.namaLengkap}</div>
                         <div className="text-[10px] text-slate-500 font-mono">{a.nia}</div>
-                        {a._pengurusInfo && (
-                          <div className="text-[10px] font-semibold text-amber-600 mt-0.5">
-                            Menjabat: {a._pengurusInfo.jabatan?.nama || "-"} ({a._pengurusInfo.suratKeputusan?.level})
-                          </div>
-                        )}
+                        {(() => {
+                          if (a._pengurusInfo) {
+                            return (
+                              <div className="text-[10px] font-semibold text-amber-600 mt-0.5">
+                                {a._pengurusInfo.status === "Aktif" ? "Menjabat:" : a._pengurusInfo.status} {a._pengurusInfo.jabatan?.nama || "-"} ({a._pengurusInfo.level === "KABUPATEN" ? a._pengurusInfo.kabupaten?.nama : a._pengurusInfo.level === "PROVINSI" ? a._pengurusInfo.provinsi?.nama : "Nasional"})
+                              </div>
+                            );
+                          } else if (a.pengurus && a.pengurus.length > 0) {
+                            const activeP = a.pengurus.find((p: any) => p.status === "Aktif");
+                            const latestP = activeP || a.pengurus[0];
+                            return (
+                              <div className="text-[10px] font-semibold text-amber-600 mt-0.5">
+                                {latestP.status === "Aktif" ? "Pengurus Aktif" : latestP.status === "Demisioner" ? "Demisioner" : latestP.status} {latestP.jabatan?.nama || "-"} ({latestP.level === "KABUPATEN" ? latestP.kabupaten?.nama : latestP.level === "PROVINSI" ? latestP.provinsi?.nama : "Nasional"})
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="text-[10px] font-medium text-slate-400 mt-0.5">
+                                - (Belum ada riwayat pengurus)
+                              </div>
+                            );
+                          }
+                        })()}
                       </div>
                       <div className="text-[10px] text-slate-400 text-right">
                         <div>{a.provinsi?.nama}</div>
@@ -797,6 +918,47 @@ export default function SKPage() {
           </div>
         </div>
       )}
+      {/* Nonaktif Dialog */}
+      {showNonaktifDialog && targetNonaktifSk && (
+        <div className="fixed inset-0 z-[400] bg-blue-950/90 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setShowNonaktifDialog(false)}>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
+                <Power className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800">Nonaktifkan SK</h3>
+                <p className="text-xs text-slate-500">{targetNonaktifSk.nomorSK}</p>
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Status Pengurus Akhir</label>
+              <select 
+                value={nonaktifForm.statusPengurus}
+                onChange={(e) => setNonaktifForm({ ...nonaktifForm, statusPengurus: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none"
+              >
+                <option value="Demisioner">Demisioner</option>
+                <option value="Diberhentikan">Diberhentikan</option>
+              </select>
+            </div>
+            <div className="mb-6">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Keterangan / Alasan <span className="text-rose-500">*</span></label>
+              <textarea
+                value={nonaktifForm.keterangan}
+                onChange={(e) => setNonaktifForm({ ...nonaktifForm, keterangan: e.target.value })}
+                placeholder="Misal: Dibekukan, Masa Jabatan Selesai, dll..."
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:border-blue-500 outline-none resize-none h-24"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowNonaktifDialog(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Batal</button>
+              <button onClick={executeNonaktifkan} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-lg">Nonaktifkan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

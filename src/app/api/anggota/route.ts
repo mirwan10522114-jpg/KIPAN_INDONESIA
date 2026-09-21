@@ -15,13 +15,7 @@ export async function GET(req: NextRequest) {
     const role = searchParams.get("role");
     const wilayah = searchParams.get("wilayah");
 
-    const where: any = {
-      pengurus: {
-        none: {
-          status: "Aktif"
-        }
-      }
-    };
+    const where: any = {};
     if (status && status !== "Semua") where.status = status;
     if (provinsiId && provinsiId !== "Semua") where.provinsiId = parseInt(provinsiId);
     if (search) {
@@ -33,16 +27,14 @@ export async function GET(req: NextRequest) {
     }
 
     if (role === "ADMIN_PROVINSI" && wilayah) {
-      const w = wilayah.replace("Provinsi ", "").trim();
-      const prov = await db.provinsi.findFirst({ where: { nama: w } });
+      const prov = await db.provinsi.findFirst({ where: { nama: wilayah } });
       if (prov) {
         where.provinsiId = prov.id;
       } else {
         where.provinsiId = -1;
       }
     } else if (role === "ADMIN_KABUPATEN" && wilayah) {
-      const w = wilayah.replace("Kabupaten ", "Kab. ").trim();
-      const kab = await db.kabupaten.findFirst({ where: { nama: w } });
+      const kab = await db.kabupaten.findFirst({ where: { nama: wilayah } });
       if (kab) {
         where.kabupatenId = kab.id;
       } else {
@@ -60,6 +52,14 @@ export async function GET(req: NextRequest) {
       include: {
         provinsi: { select: { nama: true, kode: true } },
         kabupaten: { select: { nama: true, kode: true } },
+        pengurus: {
+          include: { 
+            jabatan: true,
+            provinsi: { select: { nama: true } },
+            kabupaten: { select: { nama: true } }
+          },
+          orderBy: { tanggalMulai: "desc" }
+        }
       },
       orderBy: { createdAt: "desc" },
       skip,
@@ -146,11 +146,19 @@ export async function POST(req: NextRequest) {
     const role = req.nextUrl.searchParams.get("role") || "SUPER_ADMIN";
     const wilayah = req.nextUrl.searchParams.get("wilayah");
 
-    if (role === "ADMIN_PROVINSI" && wilayah && parseInt(wilayah) !== provIdNum) {
-      return NextResponse.json({ success: false, error: "Akses ditolak: Anda hanya dapat mendaftarkan anggota di provinsi Anda." }, { status: 403 });
+    if (role === "ADMIN_PROVINSI" && wilayah) {
+      const w = wilayah.replace("Provinsi ", "").trim();
+      const provCheck = await db.provinsi.findFirst({ where: { nama: w } });
+      if (!provCheck || provCheck.id !== provIdNum) {
+        return NextResponse.json({ success: false, error: "Akses ditolak: Anda hanya dapat mendaftarkan anggota di provinsi Anda." }, { status: 403 });
+      }
     }
-    if (role === "ADMIN_KABUPATEN" && wilayah && parseInt(wilayah) !== kabIdNum) {
-      return NextResponse.json({ success: false, error: "Akses ditolak: Anda hanya dapat mendaftarkan anggota di kabupaten Anda." }, { status: 403 });
+    if (role === "ADMIN_KABUPATEN" && wilayah) {
+      const w = wilayah.replace("Kabupaten ", "Kab. ").trim();
+      const kabCheck = await db.kabupaten.findFirst({ where: { nama: w } });
+      if (!kabCheck || kabCheck.id !== kabIdNum) {
+        return NextResponse.json({ success: false, error: "Akses ditolak: Anda hanya dapat mendaftarkan anggota di kabupaten Anda." }, { status: 403 });
+      }
     }
 
     // Transaction: create anggota → generate NIP → update NIP

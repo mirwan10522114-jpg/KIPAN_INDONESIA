@@ -129,25 +129,6 @@ export default function About() {
                   <p className="text-lg font-bold">KIPAN Indonesia</p>
                   <p className="text-sm text-sky-200">{company.tagline}</p>
                 </div>
-                
-                {/* Pengurus Aktif Badge */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.4, type: "spring" }}
-                  className="absolute -top-2 right-2 sm:-top-4 sm:-right-4 bg-white rounded-2xl shadow-2xl p-4 sm:p-5 border border-sky-100 max-w-[170px] sm:max-w-[200px] hover:scale-105 transition-transform z-10"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
-                    <div className="text-2xl sm:text-3xl font-extrabold text-gradient-water">
-                      <Counter value={totalPengurus} suffix="" />
-                    </div>
-                  </div>
-                  <div className="text-[11px] sm:text-xs text-slate-600 font-medium leading-tight">
-                    Pengurus Aktif di {totalProvinsi} Provinsi
-                  </div>
-                </motion.div>
               </div>
 
               {/* Smaller Images Row */}

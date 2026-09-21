@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, User, X, ShieldCheck, Eye, EyeOff } from "lucide-react";
-import { useAuthStore, ADMIN_CREDENTIALS } from "@/lib/auth-store";
+import { useAuthStore } from "@/lib/auth-store";
 import { toast } from "sonner";
 
 interface AdminLoginProps {
@@ -18,7 +18,6 @@ export default function AdminLogin({ open, onClose, onSuccess }: AdminLoginProps
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const login = useAuthStore((s) => s.login);
   const setAuthData = useAuthStore((s) => s.setAuthData);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,20 +26,7 @@ export default function AdminLogin({ open, onClose, onSuccess }: AdminLoginProps
     setLoading(true);
 
     try {
-      // First try dummy login if they are explicitly using the dummy credentials for testing
-      const isDummy = ADMIN_CREDENTIALS.some(u => u.username === username.trim() && u.password === password);
-      if (isDummy && password === "123") {
-        const ok = login(username, password);
-        if (ok) {
-          toast.success("Login berhasil! (Mode Demo)");
-          onSuccess();
-          setUsername("");
-          setPassword("");
-          return;
-        }
-      }
-
-      // Real login via API
+      // Login via API — selalu menggunakan database (sesuai PRD §2)
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,13 +82,13 @@ export default function AdminLogin({ open, onClose, onSuccess }: AdminLoginProps
                 <X className="w-4 h-4" />
               </button>
               <div className="relative flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-                  <ShieldCheck className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden shadow-md">
+                  <img src="/logo-kipan.jpg" alt="Logo KIPAN" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h2 className="text-lg font-bold">Admin Panel</h2>
                   <p className="text-xs text-sky-100 mt-0.5">
-                    Dunia Pool & Pond — Content Management
+                    KIPAN Indonesia — Sistem Informasi Manajemen
                   </p>
                 </div>
               </div>

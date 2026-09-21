@@ -29,10 +29,10 @@ export default function Hero() {
       .catch(() => {});
   }, []);
 
-  const stats = apiStats || [
-    { value: "—", label: "Provinsi" },
-    { value: "—", label: "Kabupaten/Kota" },
-    { value: "—", label: "Pengurus" },
+  const stats = apiStats || storeStats || [
+    { value: "38", label: "Provinsi" },
+    { value: "514", label: "Kabupaten/Kota" },
+    { value: "1.000+", label: "Pengurus" },
   ];
 
   return (

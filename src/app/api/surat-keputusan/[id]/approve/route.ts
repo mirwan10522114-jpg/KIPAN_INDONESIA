@@ -45,6 +45,38 @@ export async function POST(
       },
     });
 
+    // Otomatis menonaktifkan SK lama (Demisioner) jika SK ini Disetujui Final (Single Active SK Rule)
+    if (nextStatus === "DISETUJUI") {
+      // Find old active SKs in the same level and region
+      const oldSks = await db.suratKeputusan.findMany({
+        where: {
+          id: { not: id }, // exclude this new SK
+          status: "Aktif",
+          level: sk.level,
+          ...(sk.level === "PROVINSI" && { provinsiId: sk.provinsiId }),
+          ...(sk.level === "KABUPATEN" && { provinsiId: sk.provinsiId, kabupatenId: sk.kabupatenId }),
+        }
+      });
+
+      for (const oldSk of oldSks) {
+        // Nonaktifkan SK lama
+        await db.suratKeputusan.update({
+          where: { id: oldSk.id },
+          data: { status: "Tidak Aktif" }
+        });
+        
+        // Demisionerkan semua pengurus di SK lama
+        await db.pengurus.updateMany({
+          where: { suratKeputusanId: oldSk.id, status: "Aktif" },
+          data: { 
+            status: "Demisioner",
+            keteranganStatus: `Otomatis demisioner karena SK baru (${sk.nomorSK}) telah diterbitkan dan disetujui.`,
+            tanggalSelesai: sk.tanggalTerbit || new Date()
+          }
+        });
+      }
+    }
+
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
     return handleApiError(error, "POST /api/surat-keputusan/[id]/approve", "Gagal memperbarui status approval SK");

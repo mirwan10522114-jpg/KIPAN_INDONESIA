@@ -289,9 +289,12 @@ export default function AnggotaPage({
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase w-12 text-center">No</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">NIP</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Nama</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Pekerjaan</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Riwayat</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Provinsi</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Kab/Kota</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Kecamatan</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">No. WhatsApp</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Status</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase">Aksi</th>
               </tr>
@@ -301,13 +304,36 @@ export default function AnggotaPage({
                 <tr key={a.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setSelectedId(a.id)}>
                   <td className="px-4 py-3 text-sm text-slate-500 text-center">{idx + 1}</td>
                   <td className="px-4 py-3 text-sm font-mono text-blue-600">{a.nia}</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-blue-950">{a.namaLengkap}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{a.pekerjaan || "-"}</td>
                   <td className="px-4 py-3">
-                    <div className="text-sm font-semibold text-blue-950">{a.namaLengkap}</div>
-                    <div className="text-xs text-slate-500">{a.pekerjaan}</div>
+                    {(() => {
+                      if (!a.pengurus || a.pengurus.length === 0) {
+                        return <span className="text-slate-400 text-sm font-medium">-</span>;
+                      }
+                      const activeP = a.pengurus.find((p: any) => p.status === "Aktif");
+                      const latestP = activeP || a.pengurus[0];
+                      
+                      if (latestP.status === "Aktif") {
+                        return (
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 text-indigo-700">
+                            Pengurus Aktif {latestP.jabatan?.nama || "Anggota"} {latestP.level === "KABUPATEN" ? latestP.kabupaten?.nama : latestP.level === "PROVINSI" ? latestP.provinsi?.nama : "Nasional"}
+                          </span>
+                        );
+                      } else if (latestP.status === "Demisioner") {
+                        return (
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">
+                            Demisioner {latestP.jabatan?.nama || "Pengurus"} {latestP.level === "KABUPATEN" ? latestP.kabupaten?.nama : latestP.level === "PROVINSI" ? latestP.provinsi?.nama : "Nasional"}
+                          </span>
+                        );
+                      }
+                      return <span className="text-slate-400 text-xs">-</span>;
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">{a.provinsi?.nama || "-"}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{a.kabupaten?.nama || "-"}</td>
                   <td className="px-4 py-3 text-sm text-slate-600">{a.kecamatan || "-"}</td>
+                  <td className="px-4 py-3 text-sm text-slate-600">{a.whatsapp || "-"}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                       a.status === "Aktif" ? "bg-emerald-100 text-emerald-700" :

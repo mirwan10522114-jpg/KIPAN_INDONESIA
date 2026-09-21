@@ -20,6 +20,12 @@ export async function POST(
       );
     }
     const jabatanId = safeParseInt(body.jabatanId);
+    if (jabatanId === null) {
+      return NextResponse.json(
+        { success: false, error: "jabatanId wajib diisi. Silakan pilih jabatan terlebih dahulu." },
+        { status: 400 }
+      );
+    }
 
     // Validasi SK exists dan aktif
     const sk = await db.suratKeputusan.findUnique({ where: { id: skId } });
@@ -48,7 +54,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: "Anggota tidak ditemukan." }, { status: 404 });
     }
 
-    // Cek apakah sudah ada di SK ini
+    // Cek apakah anggota sudah ada di SK ini
     const alreadyInSK = await db.pengurus.findFirst({
       where: { anggotaId, suratKeputusanId: skId },
     });
@@ -57,6 +63,26 @@ export async function POST(
         { success: false, error: `${anggota.namaLengkap} sudah tercantum di SK ini.` },
         { status: 400 }
       );
+    }
+
+    // Cek apakah jabatan ini adalah jabatan tunggal yang sudah diisi (mencegah Ketua ganda dsb)
+    if (jabatanId) {
+      const jabatanInfo = await db.jabatan.findUnique({ where: { id: jabatanId } });
+      if (jabatanInfo) {
+        const uniqueRoles = ["Ketua Umum", "Ketua", "Sekretaris Jenderal", "Sekretaris", "Bendahara Umum", "Bendahara"];
+        // Jika jabatan tersebut termasuk jabatan inti yang tidak boleh ganda
+        if (uniqueRoles.includes(jabatanInfo.nama)) {
+          const roleTaken = await db.pengurus.findFirst({
+            where: { suratKeputusanId: skId, jabatanId: jabatanInfo.id }
+          });
+          if (roleTaken) {
+            return NextResponse.json(
+              { success: false, error: `Jabatan '${jabatanInfo.nama}' sudah diisi oleh orang lain di SK ini. Jabatan inti tidak boleh ganda.` },
+              { status: 400 }
+            );
+          }
+        }
+      }
     }
 
     // Demisionerkan pengurus lama untuk anggota ini jika ada

@@ -22,6 +22,28 @@ export async function POST(
       );
     }
 
+    let body = { keterangan: "", statusPengurus: "Demisioner", role: "SUPER_ADMIN" };
+    try {
+      body = await req.json();
+    } catch (e) {
+      // ignore if no body
+    }
+
+    const { keterangan, statusPengurus, role } = body;
+    const finalStatus = statusPengurus || "Demisioner";
+
+    // Validasi Hak Akses berdasar Tingkat SK
+    const canNonaktifkan = () => {
+      if (role === "SUPER_ADMIN" || role === "ADMIN_NASIONAL") return true;
+      if (role === "ADMIN_PROVINSI" && (sk.level === "PROVINSI" || sk.level === "KABUPATEN")) return true;
+      if (role === "ADMIN_KABUPATEN" && sk.level === "KABUPATEN") return true;
+      return false;
+    };
+
+    if (!canNonaktifkan()) {
+      return NextResponse.json({ success: false, error: "Akses ditolak: Anda tidak memiliki hak untuk menonaktifkan SK ini." }, { status: 403 });
+    }
+
     // Transaction: nonaktifkan SK + semua pengurus terkait
     const result = await db.$transaction(async (tx) => {
       // 1. Nonaktifkan SK
@@ -30,14 +52,15 @@ export async function POST(
         data: { status: "TidakAktif" },
       });
 
-      // 2. Update semua pengurus aktif di SK ini → Selesai
+      // 2. Update semua pengurus aktif di SK ini
       const updated = await tx.pengurus.updateMany({
         where: {
           suratKeputusanId: id,
           status: "Aktif",
         },
         data: {
-          status: "Selesai",
+          status: finalStatus,
+          keteranganStatus: keterangan || null,
           tanggalSelesai: new Date(),
         },
       });
@@ -60,7 +83,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: `SK "${sk.nomorSK}" berhasil dinonaktifkan. ${result} pengurus otomatis berstatus "Selesai".`,
+      message: `SK "${sk.nomorSK}" berhasil dinonaktifkan. ${result} pengurus otomatis berstatus "Demisioner".`,
     });
   } catch (error) {
     return handleApiError(error, "POST /api/surat-keputusan/[id]/nonaktifkan", "Gagal menonaktifkan SK");

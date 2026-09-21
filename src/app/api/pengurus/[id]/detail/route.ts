@@ -90,7 +90,6 @@ export async function GET(
           pekerjaan: a.pekerjaan,
           alamat: a.alamat,
           email: a.email,
-          
           whatsapp: a.whatsapp,
           foto: a.foto,
           // Dokumen anggota
@@ -104,11 +103,6 @@ export async function GET(
           kecamatan: a.kecamatan,
           desa: a.desa,
           kodePos: a.kodePos,
-          // Dokumen anggota
-          ktp: a.ktp,
-          cv: a.cv,
-          suratPernyataan: a.suratPernyataan,
-          suratSehat: a.suratSehat,
           // Wilayah
           provinsi: pengurus.provinsi || a.provinsi,
           kabupaten: pengurus.kabupaten || a.kabupaten,

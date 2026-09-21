@@ -16,13 +16,15 @@ export async function GET(req: NextRequest) {
     const suratKeputusanId = searchParams.get("suratKeputusanId") || "";
     const role = searchParams.get("role");
     const wilayah = searchParams.get("wilayah");
+    const jabatanNama = searchParams.get("jabatanNama");
 
     // Build where clause — server-side filtering
     const where: any = {};
-    if (level && level !== "Semua") where.level = level;
+    if (level && level !== "Semua") where.level = level.toUpperCase();
     if (status && status !== "Semua") where.status = status;
     if (provinsiId && provinsiId !== "Semua") where.provinsiId = parseInt(provinsiId);
     if (kabupatenId && kabupatenId !== "Semua") where.kabupatenId = parseInt(kabupatenId);
+    if (jabatanNama) where.jabatan = { nama: { contains: jabatanNama } };
 
     if (role === "ADMIN_PROVINSI" && wilayah) {
       const w = wilayah.replace("Provinsi ", "").trim();
@@ -74,7 +76,7 @@ export async function GET(req: NextRequest) {
             kabupaten: { select: { nama: true, kode: true } },
           },
         },
-        suratKeputusan: { select: { nomorSK: true, judul: true, level: true, status: true, fileSK: true } },
+        suratKeputusan: { select: { nomorSK: true, judul: true, level: true, status: true, fileSK: true, tanggalBerakhir: true } },
         provinsi: { select: { nama: true, kode: true } },
         kabupaten: { select: { nama: true, kode: true } },
         jabatan: { select: { nama: true } },
@@ -84,14 +86,23 @@ export async function GET(req: NextRequest) {
       take: limit,
     });
 
-    const pengurusDecrypted = pengurus.map(p => ({
-      ...p,
-      anggota: {
-        ...p.anggota,
-        nik: decryptNIK(p.anggota.nik)
-      },
-      jabatan: p.jabatan?.nama || (p.level === "NASIONAL" ? "Pengurus Nasional" : p.level === "PROVINSI" ? "Pengurus Provinsi" : "Pengurus Kabupaten/Kota")
-    }));
+    const pengurusDecrypted = pengurus.map(p => {
+      // Dynamic Demisioner Check
+      const isExpired = p.suratKeputusan?.tanggalBerakhir && new Date(p.suratKeputusan.tanggalBerakhir).getTime() < new Date().setHours(0,0,0,0);
+      const computedStatus = (p.suratKeputusan?.status !== "Aktif" || isExpired) && p.status === "Aktif" 
+        ? "Demisioner" 
+        : p.status;
+
+      return {
+        ...p,
+        status: computedStatus,
+        anggota: {
+          ...p.anggota,
+          nik: decryptNIK(p.anggota.nik)
+        },
+        jabatan: p.jabatan?.nama || (p.level === "NASIONAL" ? "Pengurus Nasional" : p.level === "PROVINSI" ? "Pengurus Provinsi" : "Pengurus Kabupaten/Kota")
+      };
+    });
 
     return NextResponse.json({
       success: true,

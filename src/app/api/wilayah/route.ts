@@ -18,7 +18,14 @@ export async function GET(req: NextRequest) {
       orderBy: { nama: "asc" },
     });
 
+    const provinsiIdFilter = searchParams.get("provinsiId");
+    const kabupatenWhere: any = {};
+    if (provinsiIdFilter) {
+      kabupatenWhere.provinsiId = parseInt(provinsiIdFilter);
+    }
+
     const kabupaten = await db.kabupaten.findMany({
+      where: kabupatenWhere,
       include: {
         provinsi: { select: { nama: true, kode: true } },
       },

@@ -19,17 +19,16 @@ export async function GET(req: NextRequest) {
       where.status = status;
     }
 
-    if (role === "ADMIN_PROVINSI" && wilayah) {
-      const w = wilayah.replace("Provinsi ", "").trim();
-      const prov = await db.provinsi.findFirst({ where: { nama: w } });
-      if (prov) {
-        where.provinsiId = prov.id;
-      } else {
-        where.provinsiId = -1;
-      }
-    } else if (role === "ADMIN_KABUPATEN" && wilayah) {
-      const w = wilayah.replace("Kabupaten ", "Kab. ").trim();
-      const kab = await db.kabupaten.findFirst({ where: { nama: w } });
+    // PRD §3.3 DON'Ts: Admin Provinsi TIDAK berwenang melihat atau memverifikasi pendaftaran
+    if (role === "ADMIN_PROVINSI") {
+      return NextResponse.json(
+        { success: false, error: "Akses Ditolak: Admin Provinsi tidak memiliki wewenang atas data pendaftaran. Verifikasi pendaftaran adalah wewenang eksklusif Admin Kabupaten/Kota.", data: [], total: 0 },
+        { status: 403 }
+      );
+    }
+
+    if (role === "ADMIN_KABUPATEN" && wilayah) {
+      const kab = await db.kabupaten.findFirst({ where: { nama: wilayah } });
       if (kab) {
         where.kabupatenId = kab.id;
       } else {

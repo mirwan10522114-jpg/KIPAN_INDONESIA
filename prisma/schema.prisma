@@ -59,6 +59,7 @@ model Provinsi {
   pendaftaran     Pendaftaran[]
   users           User[]
   suratKeputusan  SuratKeputusan[]
+  berita          Berita[]
 
   @@map("provinsi")
 }
@@ -78,6 +79,7 @@ model Kabupaten {
   pendaftaran     Pendaftaran[]
   users           User[]
   suratKeputusan  SuratKeputusan[]
+  berita          Berita[]
 
   @@map("kabupaten")
 }
@@ -281,7 +283,10 @@ model Berita {
   id            Int      @id @default(autoincrement())
   judul         String
   slug          String   @unique
-  kategori      String   // Nasional | Provinsi | Kabupaten
+  jenis         String   @default("INTERNAL") // INTERNAL | UMUM
+  kategori      String   // Nasional | Provinsi | Kabupaten (Digunakan jika jenis = INTERNAL)
+  provinsiId    Int?
+  kabupatenId   Int?
   excerpt       String   @db.Text
   konten        String   @db.LongText
   thumbnail     String?  @db.LongText
@@ -290,6 +295,9 @@ model Berita {
   publishedAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  provinsi      Provinsi?  @relation(fields: [provinsiId], references: [id])
+  kabupaten     Kabupaten? @relation(fields: [kabupatenId], references: [id])
 
   @@map("berita")
 }
@@ -301,10 +309,15 @@ model Berita {
 model Galeri {
   id            Int      @id @default(autoincrement())
   judul         String
+  deskripsi     String?  @db.Text
   album         String?
   foto          String   @db.LongText
   lokasi        String?
   kategori      String   @default("Kegiatan") // Kegiatan | Pelatihan | Sosialisasi | Rapat | Kampanye
+  level         String   @default("Nasional")  // Nasional | Provinsi | Kabupaten
+  provinsiId    Int?
+  kabupatenId   Int?
+  penulis       String   @default("Admin")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

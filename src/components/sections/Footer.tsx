@@ -31,15 +31,21 @@ export default function Footer() {
         <div className="grid lg:grid-cols-12 gap-10">
           {/* Brand */}
           <div className="lg:col-span-4">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg">
-                <Shield className="w-6 h-6 text-white" strokeWidth={2.5} />
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-2.5 shrink-0">
+                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden">
+                  <img src="/logo-bnn.jpg" alt="Logo BNN" title="Mitra Binaan BNN" className="w-full h-full object-cover scale-[1.03]" />
+                </div>
+                <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden p-0.5">
+                  <img src="/logo-kipan.jpg" alt="Logo KIPAN" className="w-full h-full object-contain" />
+                </div>
               </div>
-              <div>
-                <div className="font-bold text-lg text-white">
+              <div className="flex flex-col">
+                <div className="font-bold text-lg text-white leading-tight">
                   {company.name} <span className="text-sky-400">Indonesia</span>
                 </div>
-                <div className="text-[10px] text-sky-300">
+                <div className="text-xs text-slate-400">Mitra Binaan BNN RI</div>
+                <div className="text-[10px] text-sky-300 mt-0.5 leading-tight">
                   {company.fullName}
                 </div>
               </div>

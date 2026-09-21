@@ -58,6 +58,8 @@ export async function POST(req: NextRequest) {
         displayName: user.name,
         role: user.role,
         wilayah: wilayahStr,
+        provinsiId: user.provinsiId ?? null,
+        kabupatenId: user.kabupatenId ?? null,
       },
     });
   } catch (error) {

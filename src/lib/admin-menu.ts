@@ -62,8 +62,8 @@ export const MENU_GROUPS: MenuGroup[] = [
   {
     label: "CMS Publikasi",
     items: [
-      { id: "berita", label: "Berita & Artikel", icon: Newspaper, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
-      { id: "galeri", label: "Galeri Kegiatan", icon: Image, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
+      { id: "berita", label: "Berita & Artikel", icon: Newspaper, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI", "ADMIN_KABUPATEN"] },
+      { id: "galeri", label: "Galeri Kegiatan", icon: Image, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI", "ADMIN_KABUPATEN"] },
       { id: "program", label: "Program Kerja", icon: Calendar, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
     ],
   },
@@ -71,7 +71,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     label: "Laporan",
     items: [
       { id: "statistik", label: "Statistik", icon: BarChart3, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL"] },
-      { id: "laporan", label: "Cetak Laporan", icon: FileBarChart, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI"] },
+      { id: "laporan", label: "Cetak Laporan", icon: FileBarChart, allowedRoles: ["SUPER_ADMIN", "ADMIN_NASIONAL", "ADMIN_PROVINSI", "ADMIN_KABUPATEN"] },
     ],
   },
   {

@@ -85,11 +85,12 @@ export default function DashboardPage({ onNavigate }: { onNavigate?: (page: stri
   };
 
   useEffect(() => {
+    if (!role) return; // Wait for hydration
     fetchData();
     // Auto-refresh every 60 seconds
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
-  }, [trendFilter]);
+  }, [trendFilter, role, wilayah]);
 
   if (loading || !data) {
     return (

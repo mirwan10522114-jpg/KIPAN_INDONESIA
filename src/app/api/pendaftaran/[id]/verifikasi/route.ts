@@ -24,7 +24,7 @@ export async function PATCH(
       );
     }
 
-    const currentPendaftaran = await db.pendaftaran.findUnique({ where: { id }, select: { kabupatenId: true } });
+    const currentPendaftaran = await db.pendaftaran.findUnique({ where: { id }, select: { kabupatenId: true, provinsiId: true } });
     if (!currentPendaftaran) {
       return NextResponse.json({ success: false, error: "Data pendaftaran tidak ditemukan" }, { status: 404 });
     }
@@ -32,8 +32,19 @@ export async function PATCH(
     const role = req.nextUrl.searchParams.get("role") || "SUPER_ADMIN";
     const wilayah = req.nextUrl.searchParams.get("wilayah");
 
-    if (role === "ADMIN_KABUPATEN" && wilayah && parseInt(wilayah) !== currentPendaftaran.kabupatenId) {
-      return NextResponse.json({ success: false, error: "Akses ditolak: Anda hanya dapat memverifikasi pendaftaran dari wilayah kabupaten Anda." }, { status: 403 });
+    // PRD §3.3 DON'Ts: Admin Provinsi TIDAK berwenang memverifikasi pendaftaran
+    if (role === "ADMIN_PROVINSI") {
+      return NextResponse.json(
+        { success: false, error: "Akses Ditolak: Admin Provinsi tidak memiliki wewenang untuk memverifikasi pendaftaran. Wewenang ini adalah milik eksklusif Admin Kabupaten/Kota." },
+        { status: 403 }
+      );
+    }
+
+    if (role === "ADMIN_KABUPATEN" && wilayah) {
+      const kab = await db.kabupaten.findFirst({ where: { nama: wilayah } });
+      if (!kab || kab.id !== currentPendaftaran.kabupatenId) {
+        return NextResponse.json({ success: false, error: "Akses ditolak: Anda hanya dapat memverifikasi pendaftaran dari wilayah kabupaten Anda." }, { status: 403 });
+      }
     }
 
     const pendaftaran = await db.pendaftaran.update({

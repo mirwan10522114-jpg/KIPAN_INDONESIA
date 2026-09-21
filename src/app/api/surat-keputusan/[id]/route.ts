@@ -41,7 +41,15 @@ export async function GET(
       return NextResponse.json({ success: false, error: "SK tidak ditemukan" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, data: sk });
+    const isExpired = sk.tanggalBerakhir && new Date(sk.tanggalBerakhir).getTime() < new Date().setHours(0,0,0,0);
+    const mappedPengurus = sk.pengurus.map((p: any) => {
+      const computedStatus = (sk.status !== "Aktif" || isExpired) && p.status === "Aktif"
+        ? "Demisioner"
+        : p.status;
+      return { ...p, status: computedStatus };
+    });
+
+    return NextResponse.json({ success: true, data: { ...sk, pengurus: mappedPengurus } });
   } catch (error) {
     return handleApiError(error, "GET /api/surat-keputusan/[id]", "Gagal mengambil detail SK");
   }

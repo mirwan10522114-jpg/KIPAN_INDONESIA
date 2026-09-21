@@ -32,14 +32,14 @@ export default function Testimonials() {
 
   // Fetch pengurus & real stats from API for consistency with admin
   useEffect(() => {
-    fetch("/api/pengurus?limit=50", { cache: "no-store" })
+    fetch("/api/pengurus?limit=50&jabatanNama=Ketua%20Umum", { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (json.success) {
           const mapped = (json.data || []).map((p: any) => ({
             id: p.id,
             name: p.anggota?.namaLengkap || "-",
-            role: "Pengurus",
+            role: p.jabatan || "Ketua Umum",
             level: (p.level || "").toLowerCase() === "nasional" ? "Nasional" : (p.level || "").toLowerCase() === "provinsi" ? "Provinsi" : "Kabupaten",
             wilayah: (p.level || "").toLowerCase() === "nasional" ? "Indonesia" : (p.kabupaten?.nama || p.provinsi?.nama || p.anggota?.kabupaten?.nama || p.anggota?.provinsi?.nama || ""),
             photo: p.anggota?.foto || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",

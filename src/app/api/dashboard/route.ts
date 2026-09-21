@@ -198,7 +198,7 @@ export async function GET(req: Request) {
       where: { createdAt: { gte: today }, ...pendaftaranFilter },
     });
 
-    const trendFilter = req.nextUrl.searchParams.get("trendFilter") || "7_bulan";
+    const trendFilter = new URL(req.url).searchParams.get("trendFilter") || "7_bulan";
     const monthlyTrend: Array<{ bulan: string; baru: number }> = [];
 
     if (trendFilter === "7_hari" || trendFilter === "30_hari") {
